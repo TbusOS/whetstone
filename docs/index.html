@@ -1,0 +1,605 @@
+<!doctype html>
+<html lang="en" data-lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Cangjie · 仓颉 — distill engineering work into portable Agent Skills</title>
+<meta name="description" content="Cangjie distills a finished dev session into a portable, runtime-neutral Agent Skill package — reuse the design, swap only platform params, hand it to anyone.">
+<meta property="og:title" content="Cangjie · 仓颉 — distill engineering work into portable Agent Skills">
+<meta property="og:description" content="Distill a finished dev session into a portable, runtime-neutral Agent Skill package. Reuse the design, swap platform params, hand it to anyone.">
+<meta property="og:type" content="website">
+<link rel="stylesheet" href="assets/fonts.css">
+<link rel="stylesheet" href="assets/anthropic.css">
+<style>
+  html[data-lang="en"] .lang-zh { display: none !important; }
+  html[data-lang="zh"] .lang-en { display: none !important; }
+  .lang-toggle {
+    background: transparent; border: 1px solid var(--anth-light-gray); color: var(--anth-text);
+    font-family: var(--font-heading); font-size: 13px; font-weight: 500;
+    padding: 6px 12px; border-radius: var(--radius-pill); cursor: pointer; letter-spacing: 0.05em;
+  }
+  .lang-toggle:hover { background: var(--anth-light-gray); }
+  html[data-lang="zh"] body, html[data-lang="zh"] p, html[data-lang="zh"] li,
+  html[data-lang="zh"] .feat-card__body, html[data-lang="zh"] td, html[data-lang="zh"] th {
+    font-family: "Noto Sans SC", "Source Han Sans SC", "PingFang SC", sans-serif;
+  }
+  html[data-lang="zh"] h1, html[data-lang="zh"] h2, html[data-lang="zh"] h3,
+  html[data-lang="zh"] .feat-card__title, html[data-lang="zh"] .anth-badge,
+  html[data-lang="zh"] .feat-card__kicker, html[data-lang="zh"] .stat-strip .num,
+  html[data-lang="zh"] .stat-strip .lbl {
+    font-family: "Noto Sans SC", "PingFang SC", sans-serif;
+  }
+  html[data-lang="zh"] .test-card blockquote {
+    font-family: "Noto Serif SC", "Source Han Serif SC", "PingFang SC", serif; font-style: normal;
+  }
+
+  .feat-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:var(--space-5); }
+  .feat-card { background:#ffffff; border:1px solid var(--anth-light-gray); border-radius:var(--radius-lg); padding:var(--space-7); }
+  .feat-card__kicker { font-family:var(--font-heading); font-size:11.5px; letter-spacing:0.14em; text-transform:uppercase; color:var(--anth-orange); font-weight:700; }
+  html[data-lang="zh"] .feat-card__kicker { text-transform:none; letter-spacing:0.04em; }
+  .feat-card__title { font-family:var(--font-heading); font-size:22px; font-weight:600; letter-spacing:-0.01em; color:var(--anth-text); margin:var(--space-2) 0 var(--space-3); }
+  .feat-card__body { font-family:var(--font-body); font-size:16px; line-height:1.65; color:var(--anth-text); margin:0; }
+  .feat-card__icon { width:56px; height:56px; border-radius:var(--radius-md); display:grid; place-items:center; margin-bottom:var(--space-4); }
+
+  .stat-strip { display:grid; grid-template-columns:repeat(4, 1fr); gap:var(--space-5); padding:var(--space-7) var(--space-6); background:#ffffff; border:1px solid var(--anth-light-gray); border-radius:var(--radius-md); }
+  .stat-strip > div { text-align:center; }
+  .stat-strip .num { display:block; font-family:var(--font-heading); font-size:44px; font-weight:600; color:var(--anth-text); letter-spacing:-0.02em; line-height:1; }
+  .stat-strip .lbl { display:block; margin-top:var(--space-2); font-family:var(--font-heading); font-size:13px; color:var(--anth-text-secondary); letter-spacing:0.02em; }
+
+  figure { margin:0; }
+  figcaption { font-family:var(--font-heading); font-size:13px; color:var(--anth-text-secondary); text-align:center; margin-top:var(--space-3); }
+
+  .layer-table { width:100%; border-collapse:collapse; font-family:var(--font-body); font-size:15.5px; }
+  .layer-table th, .layer-table td { text-align:left; padding:var(--space-4) var(--space-4); border-bottom:1px solid var(--anth-light-gray); vertical-align:top; }
+  .layer-table th { font-family:var(--font-heading); font-size:13px; font-weight:600; color:var(--anth-text-secondary); letter-spacing:0.02em; }
+  .layer-table tbody tr:last-child td { border-bottom:none; }
+  .layer-table .lyr { font-family:var(--font-heading); font-weight:700; white-space:nowrap; }
+  .layer-table .lyr--l1 { color:var(--anth-orange); }
+  .layer-table .lyr--l2 { color:#4a7bab; }
+  .layer-table .lyr--l3 { color:#5d7045; }
+  .layer-table .lyr--l4 { color:#8a5a2a; }
+
+  .feat-grid--two { grid-template-columns:repeat(2,1fr); }
+  .mate-row { display:grid; grid-template-columns:repeat(3,1fr); gap:var(--space-5); }
+  .mate-card { background:#ffffff; border:1px solid var(--anth-light-gray); border-radius:var(--radius-md); padding:var(--space-6); }
+  .mate-card h3 { font-family:var(--font-heading); font-size:18px; font-weight:600; margin:0 0 var(--space-2); color:var(--anth-text); }
+  .mate-card .opt { font-family:var(--font-heading); font-size:11px; font-weight:700; letter-spacing:0.1em; text-transform:uppercase; color:var(--anth-green); }
+  .mate-card p { font-family:var(--font-body); font-size:15px; line-height:1.6; color:var(--anth-text-secondary); margin:var(--space-2) 0 0; }
+
+  .install-table { width:100%; border-collapse:collapse; font-family:var(--font-body); font-size:15.5px; background:#ffffff; border:1px solid var(--anth-light-gray); border-radius:var(--radius-md); overflow:hidden; }
+  .install-table th, .install-table td { text-align:left; padding:var(--space-4); border-bottom:1px solid var(--anth-light-gray); }
+  .install-table th { font-family:var(--font-heading); font-size:13px; font-weight:600; color:var(--anth-text-secondary); }
+  .install-table tbody tr:last-child td { border-bottom:none; }
+  .install-table code { font-family:var(--font-mono); font-size:13.5px; }
+
+  .scene-card { background:#ffffff; border:1px solid var(--anth-light-gray); border-radius:var(--radius-lg); padding:var(--space-7); }
+</style>
+</head>
+<body>
+
+<!-- Nav -->
+<nav class="anth-nav"><div class="anth-nav-inner">
+  <a href="#" style="font-family:var(--font-heading); font-weight:600; font-size:18px; text-decoration:none; color:var(--anth-text);">Cangjie · 仓颉</a>
+  <div>
+    <a href="#why"><span class="lang-en">Why</span><span class="lang-zh">为什么</span></a>
+    <a href="#architecture"><span class="lang-en">Architecture</span><span class="lang-zh">架构</span></a>
+    <a href="#flow"><span class="lang-en">How it works</span><span class="lang-zh">流程</span></a>
+    <a href="#install"><span class="lang-en">Install</span><span class="lang-zh">安装</span></a>
+  </div>
+  <div style="display:flex; gap:var(--space-3); align-items:center;">
+    <button type="button" class="lang-toggle" aria-label="Switch language">中 / EN</button>
+    <a class="anth-button" href="https://github.com/TbusOS/cangjie">GitHub</a>
+  </div>
+</div></nav>
+
+<!-- Banner -->
+<section style="padding:var(--space-5) var(--space-5) 0;">
+  <div class="anth-container">
+    <div class="anth-banner">
+      <span class="anth-badge" style="background:var(--anth-orange); color:#ffffff; font-weight:600;"><span class="lang-en">New</span><span class="lang-zh">新</span></span>
+      <span><span class="lang-en">Runtime-neutral skill packages — distilled on Claude Code, used on Codex, Cursor, anywhere.</span><span class="lang-zh">runtime 中立的 skill 包 —— 在 Claude Code 蒸馏，拿到 Codex、Cursor、任何地方都能用。</span></span>
+      <a class="anth-link" href="#scenario" style="margin-left:auto;"><span class="lang-en">See the scenario</span><span class="lang-zh">看场景示例</span></a>
+    </div>
+  </div>
+</section>
+
+<!-- Hero -->
+<section class="anth-hero">
+  <div class="anth-container" style="max-width:880px;">
+    <span class="anth-badge"><span aria-hidden="true" style="display:inline-block; width:8px; height:8px; border-radius:50%; background:#788c5d; margin-right:6px; vertical-align:middle;"></span><span class="lang-en">Self-contained · Zero runtime dependency · Any runtime</span><span class="lang-zh">自包含 · 零运行时依赖 · 任何 runtime</span></span>
+    <h1 style="margin-top:var(--space-4);">
+      <span class="lang-en">Distill once.<br>Reuse forever.<br>Hand it to anyone.</span>
+      <span class="lang-zh">蒸馏一次。<br>永久复用。<br>打包给任何人。</span>
+    </h1>
+    <p style="font-size:20px; color:var(--anth-text-secondary); margin:var(--space-5) auto var(--space-6); line-height:1.6; max-width:700px; font-family:var(--font-body);">
+      <span class="lang-en">Cangjie mines a finished dev session — transcript, git diff, the pitfalls you hit — and distills it into a portable Agent Skill package. The reusable design and method live in the skill; only the platform-specific values live in a swappable table. Next platform, next teammate, next runtime: load it and the capability is there.</span>
+      <span class="lang-zh">Cangjie 挖掘你做完的一次开发 —— transcript、git diff、踩过的坑 —— 蒸馏成一个可移植的 Agent Skill 包。可复用的设计和方法留在 skill 里，只有平台专属的值放进一张可替换的表。换平台、换同事、换 runtime：装上，能力就在。</span>
+    </p>
+    <div style="display:flex; gap:var(--space-3); justify-content:center; flex-wrap:wrap;">
+      <a class="anth-button" href="https://github.com/TbusOS/cangjie"><span class="lang-en">Get Cangjie on GitHub</span><span class="lang-zh">在 GitHub 获取</span></a>
+      <a class="anth-button anth-button--ghost" href="#flow"><span class="lang-en">How it works</span><span class="lang-zh">看它怎么工作</span></a>
+    </div>
+    <p style="margin-top:var(--space-5); color:var(--anth-text-secondary); font-family:var(--font-heading); font-size:13px; letter-spacing:0.02em;">
+      <span class="lang-en">Claude Code · Codex · Cursor · any skills-compatible runtime &nbsp;·&nbsp; no engram, no lock-in required</span>
+      <span class="lang-zh">Claude Code · Codex · Cursor · 任何 skills-compatible runtime &nbsp;·&nbsp；不强制 engram，不绑定</span>
+    </p>
+  </div>
+</section>
+
+<!-- Hero illustration: distill a session into a portable skill package -->
+<section class="anth-section" style="padding-top:0;">
+  <div class="anth-container anth-container--wide">
+    <figure>
+    <svg role="img" aria-label="Cangjie distills a dev session on the left into a portable skill package on the right" viewBox="0 0 1200 470" style="display:block; width:100%; max-width:1200px; height:auto; border-radius:var(--radius-lg); background:linear-gradient(135deg, #faf9f5 0%, #f0ede3 100%);">
+      <defs>
+        <filter id="hsh" x="-20%" y="-20%" width="140%" height="140%">
+          <feGaussianBlur in="SourceAlpha" stdDeviation="9"/><feOffset dy="12"/>
+          <feColorMatrix values="0 0 0 0 0.08 0 0 0 0 0.08 0 0 0 0 0.07 0 0 0 0.12 0"/>
+          <feMerge><feMergeNode/><feMergeNode in="SourceGraphic"/></feMerge>
+        </filter>
+        <marker id="harr" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0.5 L7.5,4 L0,7.5 Z" fill="#d97757"/></marker>
+      </defs>
+      <g fill="#e8e6dc"><circle cx="70" cy="60" r="3"/><circle cx="1130" cy="70" r="3"/><circle cx="600" cy="430" r="3"/></g>
+
+      <!-- Left: the finished session (terminal) -->
+      <g filter="url(#hsh)" transform="translate(70 64)"><rect width="470" height="342" rx="14" fill="#1d1c1a"/></g>
+      <g transform="translate(70 64)">
+        <circle cx="22" cy="22" r="5" fill="#e2857a"/><circle cx="40" cy="22" r="5" fill="#e8c180"/><circle cx="58" cy="22" r="5" fill="#86a35c"/>
+        <text x="235" y="26" text-anchor="middle" font-family="JetBrains Mono,monospace" font-size="11.5" fill="#9a988f">session · secure-boot bring-up</text>
+        <line x1="0" y1="40" x2="470" y2="40" stroke="#33312d"/>
+        <g font-family="JetBrains Mono,monospace" font-size="12" fill="#c9c6bd">
+          <text x="20" y="70"><tspan fill="#86a35c">$</tspan> git diff --stat</text>
+          <text x="20" y="92" fill="#8c8a80">  boot/sign.c | 41 ++++++--</text>
+          <text x="20" y="114" fill="#8c8a80">  keys/Kconfig |  6 ++</text>
+          <text x="20" y="148" fill="#9a988f"># 踩坑： 软件层 flag 误判 OTP 没烧</text>
+          <text x="20" y="170" fill="#9a988f"># 真因： 公钥缓冲按旧密钥长度定 → 越界</text>
+          <text x="20" y="204"><tspan fill="#86a35c">$</tspan> <tspan fill="#e8b48a">cangjie</tspan> distill</text>
+          <text x="20" y="226" fill="#d97757">  ▸ mining session + git diff …</text>
+          <text x="20" y="248" fill="#d97757">  ▸ layering L1–L4 …</text>
+          <text x="20" y="270" fill="#d97757">  ▸ reconciling vs library …</text>
+          <text x="20" y="298" fill="#86a35c">  ✓ proposal ready · 2 reviews →</text>
+        </g>
+      </g>
+
+      <!-- middle arrow -->
+      <line x1="556" y1="235" x2="636" y2="235" stroke="#d97757" stroke-width="2" marker-end="url(#harr)"/>
+      <text x="596" y="222" text-anchor="middle" font-family="Poppins,sans-serif" font-size="11" font-weight="600" fill="#c2613f">distill</text>
+
+      <!-- Right: the portable skill package -->
+      <g filter="url(#hsh)" transform="translate(652 64)"><rect width="478" height="342" rx="14" fill="#ffffff" stroke="#e8e6dc"/></g>
+      <g transform="translate(652 64)">
+        <text x="20" y="30" font-family="Poppins,sans-serif" font-size="13.5" font-weight="600" fill="#141413">verified-boot/</text>
+        <text x="458" y="30" text-anchor="end" font-family="Poppins,sans-serif" font-size="11" fill="#8a8a8a">portable skill package</text>
+        <line x1="0" y1="46" x2="478" y2="46" stroke="#f0ede3"/>
+        <g font-family="JetBrains Mono,monospace" font-size="12.5" fill="#3a3833">
+          <text x="22" y="78"><tspan fill="#d97757">●</tspan> SKILL.md</text>
+          <text x="150" y="78" font-family="Poppins,sans-serif" font-size="10.5" fill="#c2613f">L1 原理 + L2 设计/坑</text>
+          <text x="22" y="108"><tspan fill="#5d7045">●</tspan> params/soc-a.md</text>
+          <text x="200" y="108" font-family="Poppins,sans-serif" font-size="10.5" fill="#5d7045">L3 平台参数</text>
+          <text x="22" y="138"><tspan fill="#5d7045">●</tspan> params/soc-b.md</text>
+          <text x="200" y="138" font-family="Poppins,sans-serif" font-size="10.5" fill="#8c8a7d">换平台只加这一份</text>
+          <text x="22" y="168"><tspan fill="#4a7bab">●</tspan> pitfalls.md</text>
+          <text x="150" y="168" font-family="Poppins,sans-serif" font-size="10.5" fill="#4a7bab">L2 坑库</text>
+        </g>
+        <rect x="20" y="190" width="438" height="2" fill="#f0ede3"/>
+        <g font-family="Lora,serif" font-size="13" fill="#2b2a27">
+          <text x="22" y="218">## 原理（L1)</text>
+          <text x="22" y="240" fill="#6b6a5f">OTP 烧入不可逆 · 烧前 dump 字节基线</text>
+          <text x="22" y="270">## 坑（L2)</text>
+          <text x="22" y="292" fill="#6b6a5f">改密码参数长度 → 审所有固定缓冲区</text>
+        </g>
+      </g>
+
+      <!-- badge -->
+      <g filter="url(#hsh)" transform="translate(956 348)">
+        <rect width="174" height="58" rx="10" fill="#d97757"/>
+        <text x="16" y="22" font-family="Poppins,sans-serif" font-size="9.5" letter-spacing="0.08em" fill="#ffffff" font-weight="600">DISTILLED · PORTABLE</text>
+        <text x="16" y="42" font-family="Poppins,sans-serif" font-size="12.5" fill="#ffffff" font-weight="500">any runtime · drop-in</text>
+      </g>
+    </svg>
+    <figcaption><span class="lang-en">A finished session on the left → a portable, runtime-neutral skill package on the right.</span><span class="lang-zh">左边一次做完的会话 → 右边一个可移植、runtime 中立的 skill 包。</span></figcaption>
+    </figure>
+  </div>
+</section>
+
+<!-- Stats -->
+<section class="anth-section anth-section--subtle">
+  <div class="anth-container">
+    <div class="stat-strip">
+      <div><span class="num">4</span><span class="lbl"><span class="lang-en">knowledge layers (L1–L4)</span><span class="lang-zh">知识层级 L1–L4</span></span></div>
+      <div><span class="num">0</span><span class="lbl"><span class="lang-en">runtime dependencies</span><span class="lang-zh">运行时依赖</span></span></div>
+      <div><span class="num">2</span><span class="lbl"><span class="lang-en">human review gates</span><span class="lang-zh">人审关卡</span></span></div>
+      <div><span class="num">100%</span><span class="lbl"><span class="lang-en">plain-markdown, portable</span><span class="lang-zh">纯 markdown · 可移植</span></span></div>
+    </div>
+  </div>
+</section>
+
+<!-- Why -->
+<section class="anth-section" id="why">
+  <div class="anth-container anth-container--wide">
+    <div style="max-width:700px; margin:0 auto var(--space-8); text-align:center;">
+      <span class="anth-badge"><span class="lang-en">Why Cangjie</span><span class="lang-zh">为什么需要它</span></span>
+      <h2 style="margin-top:var(--space-3);"><span class="lang-en">Your hard-won experience keeps evaporating.</span><span class="lang-zh">你辛苦攒的经验，每次都在蒸发。</span></h2>
+      <p style="color:var(--anth-text-secondary); font-size:17px; margin-top:var(--space-3); font-family:var(--font-body);">
+        <span class="lang-en">You finish a feature. The design, the method, the pitfalls — all of it lives in one throwaway session. Next platform, you re-explain it. A teammate? They can't get it at all. Cangjie fixes the three leaks.</span>
+        <span class="lang-zh">你做完一个功能。那套设计、方法、踩过的坑 —— 全在一次用完即弃的会话里。换个平台，你又从头讲一遍。同事呢？根本拿不到。Cangjie 堵住这三个漏洞。</span>
+      </p>
+    </div>
+
+    <div class="feat-grid">
+      <article class="feat-card">
+        <div class="feat-card__icon" style="background:#f0ede3;">
+          <svg width="28" height="28" viewBox="0 0 32 32" fill="none" stroke="#d97757" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M16 4v8M16 20v8M4 16h8M20 16h8"/><circle cx="16" cy="16" r="4"/></svg>
+        </div>
+        <span class="feat-card__kicker"><span class="lang-en">Gets smarter</span><span class="lang-zh">越用越聪明</span></span>
+        <h3 class="feat-card__title"><span class="lang-en">Improve the method once, every platform benefits.</span><span class="lang-zh">方法改一次，所有平台一起受益。</span></h3>
+        <p class="feat-card__body">
+          <span class="lang-en">The transferable design and pitfalls (L1/L2) live in the skill body. Learn a better diagnosis on platform B and the skill improves for A and C too. The library compounds instead of resetting.</span>
+          <span class="lang-zh">可迁移的设计和坑（L1/L2）留在 skill 正文。在平台 B 学到更好的诊断，平台 A、C 的能力一起变强。库在累积，而不是每次归零。</span>
+        </p>
+      </article>
+
+      <article class="feat-card">
+        <div class="feat-card__icon" style="background:#f0ede3;">
+          <svg width="28" height="28" viewBox="0 0 32 32" fill="none" stroke="#d97757" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6 8h20v16H6z"/><path d="M6 14h20"/><circle cx="10" cy="11" r="1"/></svg>
+        </div>
+        <span class="feat-card__kicker"><span class="lang-en">No re-explaining</span><span class="lang-zh">换平台不重讲</span></span>
+        <h3 class="feat-card__title"><span class="lang-en">New chip? Swap one params table.</span><span class="lang-zh">换芯片？只换一张参数表。</span></h3>
+        <p class="feat-card__body">
+          <span class="lang-en">Platform-specific values (addresses, key lengths, tool names) live in <code>params/&lt;platform&gt;.md</code> — never baked into the prose. A new platform is a new table; the design and method stay untouched.</span>
+          <span class="lang-zh">平台专属的值（地址、密钥长度、工具名）放在 <code>params/&lt;platform&gt;.md</code> —— 从不写死进正文。换平台就新增一张表，设计和方法一个字不动。</span>
+        </p>
+      </article>
+
+      <article class="feat-card">
+        <div class="feat-card__icon" style="background:#f0ede3;">
+          <svg width="28" height="28" viewBox="0 0 32 32" fill="none" stroke="#d97757" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M16 4l10 5v8c0 6-4 9-10 11-6-2-10-5-10-11V9z"/><path d="M12 16l3 3 6-6"/></svg>
+        </div>
+        <span class="feat-card__kicker"><span class="lang-en">Hand it over</span><span class="lang-zh">打包即传能力</span></span>
+        <h3 class="feat-card__title"><span class="lang-en">Give the package; they get the capability.</span><span class="lang-zh">给出包，对方就有了能力。</span></h3>
+        <p class="feat-card__body">
+          <span class="lang-en">The output is a self-contained, runtime-neutral folder. Zip it, hand it to a colleague on Cursor or Codex, they drop it in — and they now have your secure-boot bring-up know-how. No onboarding call.</span>
+          <span class="lang-zh">产物是一个自包含、runtime 中立的目录。打包，递给用 Cursor 或 Codex 的同事，拖进去 —— 他立刻拥有你那套安全启动的经验。不用开会传授。</span>
+        </p>
+      </article>
+    </div>
+  </div>
+</section>
+
+<!-- Architecture -->
+<section class="anth-section anth-section--subtle" id="architecture">
+  <div class="anth-container" style="max-width:760px; margin-bottom:var(--space-7); text-align:center;">
+    <span class="anth-badge"><span class="lang-en">Architecture</span><span class="lang-zh">架构</span></span>
+    <h2 style="margin-top:var(--space-3);"><span class="lang-en">A distiller, a portable package, optional sinks.</span><span class="lang-zh">一个蒸馏器，一个可移植包，几个可选 sink。</span></h2>
+    <p style="color:var(--anth-text-secondary); font-size:17px; margin-top:var(--space-3); font-family:var(--font-body);">
+      <span class="lang-en">Runtime-specific code is isolated to a thin capture adapter. Everything you share — the skill package — is plain, neutral markdown. engram and llm-wiki are optional downstream sinks, never required.</span>
+      <span class="lang-zh">runtime 专属代码只隔离在薄薄一层采集适配器里。你对外分享的东西 —— skill 包 —— 是纯净中立的 markdown。engram、llm-wiki 是可选下游，从不强制。</span>
+    </p>
+  </div>
+  <div class="anth-container anth-container--wide">
+    <figure>
+    <svg role="img" aria-label="Three-layer architecture: distiller produces a portable skill package, which optionally syncs to engram or llm-wiki" viewBox="0 0 1180 560" style="display:block; width:100%; max-width:1180px; height:auto;">
+      <defs>
+        <pattern id="adots" width="24" height="24" patternUnits="userSpaceOnUse"><circle cx="12" cy="12" r="1" fill="#141413" opacity="0.05"/></pattern>
+        <filter id="ncard" x="-10%" y="-30%" width="120%" height="160%"><feDropShadow dx="0" dy="1" stdDeviation="2" flood-opacity="0.06"/></filter>
+        <marker id="aarr" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0.5 L7.5,4 L0,7.5 Z" fill="#d97757"/></marker>
+        <marker id="aarrg" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0.5 L7.5,4 L0,7.5 Z" fill="#a8a496"/></marker>
+      </defs>
+      <rect x="0" y="0" width="1180" height="560" rx="16" fill="#fbfaf6"/>
+      <rect x="0" y="0" width="1180" height="560" rx="16" fill="url(#adots)"/>
+
+      <!-- Zone 1: distiller (orange) -->
+      <rect x="40" y="40" width="1100" height="132" rx="12" fill="#f7e4dc" stroke="#e3b9a6"/>
+      <rect x="40" y="40" width="4" height="132" rx="2" fill="#d97757"/>
+      <circle cx="66" cy="66" r="4" fill="#d97757"/>
+      <text x="78" y="70" font-family="Poppins,sans-serif" font-size="11.5" font-weight="700" letter-spacing="0.08em" fill="#c2613f">LAYER 1 · DISTILLER (CANGJIE)</text>
+      <text x="1124" y="70" text-anchor="end" font-family="Poppins,sans-serif" font-size="10.5" font-style="italic" fill="#8c8a7d">runtime-neutral</text>
+      <g filter="url(#ncard)" font-family="Poppins,sans-serif">
+        <g transform="translate(64 90)"><rect width="248" height="64" rx="9" fill="#ffffff" stroke="#d8d4c8"/><circle cx="18" cy="28" r="3.5" fill="#d97757"/><text x="30" y="32" font-size="12.5" font-weight="600" fill="#141413">extraction-framework</text><text x="18" y="50" font-size="10.5" fill="#6b6a5f">L1–L4 分层方法</text></g>
+        <g transform="translate(332 90)"><rect width="248" height="64" rx="9" fill="#ffffff" stroke="#d8d4c8"/><circle cx="18" cy="28" r="3.5" fill="#d97757"/><text x="30" y="32" font-size="12.5" font-weight="600" fill="#141413">distiller 流程</text><text x="18" y="50" font-size="10.5" fill="#6b6a5f">Phase 0–5</text></g>
+        <g transform="translate(600 90)"><rect width="248" height="64" rx="9" fill="#ffffff" stroke="#d8d4c8"/><circle cx="18" cy="28" r="3.5" fill="#6a9bcc"/><text x="30" y="32" font-size="12.5" font-weight="600" fill="#141413">capture 适配器</text><text x="18" y="50" font-size="10.5" fill="#6b6a5f">per-runtime · 可选</text></g>
+        <g transform="translate(868 90)"><rect width="248" height="64" rx="9" fill="#ffffff" stroke="#d8d4c8"/><circle cx="18" cy="28" r="3.5" fill="#788c5d"/><text x="30" y="32" font-size="12.5" font-weight="600" fill="#141413">sync 适配器</text><text x="18" y="50" font-size="10.5" fill="#6b6a5f">engram · wiki · 可选</text></g>
+      </g>
+
+      <!-- connector 1 → 2 -->
+      <line x1="590" y1="172" x2="590" y2="222" stroke="#d97757" stroke-width="1.8" marker-end="url(#aarr)"/>
+      <text x="606" y="202" font-family="Poppins,sans-serif" font-size="11" font-weight="600" fill="#c2613f">产出 / produces</text>
+
+      <!-- Zone 2: portable skill package (blue) -->
+      <rect x="40" y="222" width="1100" height="120" rx="12" fill="#e2ecf5" stroke="#a9c4e0"/>
+      <rect x="40" y="222" width="4" height="120" rx="2" fill="#6a9bcc"/>
+      <circle cx="66" cy="248" r="4" fill="#6a9bcc"/>
+      <text x="78" y="252" font-family="Poppins,sans-serif" font-size="11.5" font-weight="700" letter-spacing="0.08em" fill="#4a7bab">LAYER 2 · PORTABLE SKILL PACKAGE ★</text>
+      <text x="1124" y="252" text-anchor="end" font-family="Poppins,sans-serif" font-size="10.5" font-style="italic" fill="#8c8a7d">plain markdown · self-contained</text>
+      <g filter="url(#ncard)" font-family="Poppins,sans-serif">
+        <g transform="translate(64 270)"><rect width="332" height="56" rx="9" fill="#ffffff" stroke="#d8d4c8"/><circle cx="18" cy="24" r="3.5" fill="#6a9bcc"/><text x="30" y="28" font-size="12.5" font-weight="600" fill="#141413">SKILL.md</text><text x="18" y="46" font-size="10.5" fill="#6b6a5f">L1 原理 + L2 设计/坑</text></g>
+        <g transform="translate(424 270)"><rect width="332" height="56" rx="9" fill="#ffffff" stroke="#d8d4c8"/><circle cx="18" cy="24" r="3.5" fill="#788c5d"/><text x="30" y="28" font-size="12.5" font-weight="600" fill="#141413">params/&lt;platform&gt;.md</text><text x="18" y="46" font-size="10.5" fill="#6b6a5f">L3 平台参数（换平台只换这个）</text></g>
+        <g transform="translate(784 270)"><rect width="332" height="56" rx="9" fill="#ffffff" stroke="#d8d4c8"/><circle cx="18" cy="24" r="3.5" fill="#6a9bcc"/><text x="30" y="28" font-size="12.5" font-weight="600" fill="#141413">pitfalls.md</text><text x="18" y="46" font-size="10.5" fill="#6b6a5f">L2 坑库</text></g>
+      </g>
+
+      <!-- connector 2 → 3 (optional, dashed) -->
+      <line x1="590" y1="342" x2="590" y2="392" stroke="#a8a496" stroke-width="1.4" stroke-dasharray="4 3" marker-end="url(#aarrg)"/>
+      <text x="606" y="372" font-family="Poppins,sans-serif" font-size="11" font-style="italic" fill="#8c8a7d">可选同步 / optional</text>
+
+      <!-- Zone 3: optional sinks (olive) -->
+      <rect x="40" y="392" width="1100" height="120" rx="12" fill="#e5e9dd" stroke="#b3c098"/>
+      <rect x="40" y="392" width="4" height="120" rx="2" fill="#788c5d"/>
+      <circle cx="66" cy="418" r="4" fill="#788c5d"/>
+      <text x="78" y="422" font-family="Poppins,sans-serif" font-size="11.5" font-weight="700" letter-spacing="0.08em" fill="#5d7045">LAYER 3 · OPTIONAL SINKS</text>
+      <text x="1124" y="422" text-anchor="end" font-family="Poppins,sans-serif" font-size="10.5" font-style="italic" fill="#8c8a7d">装了才用 / install-to-use</text>
+      <g filter="url(#ncard)" font-family="Poppins,sans-serif">
+        <g transform="translate(64 440)"><rect width="332" height="56" rx="9" fill="#ffffff" stroke="#d8d4c8"/><circle cx="18" cy="24" r="3.5" fill="#788c5d"/><text x="30" y="28" font-size="12.5" font-weight="600" fill="#141413">engram</text><text x="18" y="46" font-size="10.5" fill="#6b6a5f">记忆库 · 去重 / 召回</text></g>
+        <g transform="translate(424 440)"><rect width="332" height="56" rx="9" fill="#ffffff" stroke="#d8d4c8"/><circle cx="18" cy="24" r="3.5" fill="#c9913f"/><text x="30" y="28" font-size="12.5" font-weight="600" fill="#141413">llm-wiki</text><text x="18" y="46" font-size="10.5" fill="#6b6a5f">人看的 wiki 页</text></g>
+        <g transform="translate(784 440)"><rect width="332" height="56" rx="9" fill="#ffffff" stroke="#d8d4c8"/><circle cx="18" cy="24" r="3.5" fill="#c9913f"/><text x="30" y="28" font-size="12.5" font-weight="600" fill="#141413">darwin</text><text x="18" y="46" font-size="10.5" fill="#6b6a5f">给 skill 打分 / 进化</text></g>
+      </g>
+
+      <!-- legend -->
+      <g font-family="Poppins,sans-serif" font-size="11" fill="#6b6a5f" transform="translate(40 534)">
+        <circle cx="6" cy="-3" r="4" fill="#d97757"/><text x="16" y="0">蒸馏器 / 主路径</text>
+        <circle cx="172" cy="-3" r="4" fill="#6a9bcc"/><text x="182" y="0">可移植产物</text>
+        <circle cx="316" cy="-3" r="4" fill="#788c5d"/><text x="326" y="0">可选 sink</text>
+      </g>
+    </svg>
+    <figcaption><span class="lang-en">Runtime-specifics stay in the capture adapter. The shared unit is Layer 2 — neutral, self-contained.</span><span class="lang-zh">runtime 专属只在采集适配器。对外分享的单位是层 2 —— 中立、自包含。</span></figcaption>
+    </figure>
+  </div>
+</section>
+
+<!-- L1-L4 table -->
+<section class="anth-section">
+  <div class="anth-container">
+    <div style="max-width:680px; margin:0 auto var(--space-7); text-align:center;">
+      <span class="anth-badge"><span class="lang-en">The ruler</span><span class="lang-zh">那把尺子</span></span>
+      <h2 style="margin-top:var(--space-3);"><span class="lang-en">One ruler: how far does this carry?</span><span class="lang-zh">一把尺子：这条知识能走多远？</span></h2>
+      <p style="color:var(--anth-text-secondary); font-size:17px; margin-top:var(--space-3); font-family:var(--font-body);">
+        <span class="lang-en">The wider a piece of knowledge applies, the higher its layer — and the closer it lives to the reusable skill body. The narrower, the more it belongs in a swappable table.</span>
+        <span class="lang-zh">一条知识适用范围越宽，层级越高，越靠近可复用的 skill 正文；越窄，越该放进可替换的参数表。</span>
+      </p>
+    </div>
+    <div style="background:#ffffff; border:1px solid var(--anth-light-gray); border-radius:var(--radius-md); padding:var(--space-3) var(--space-6);">
+    <table class="layer-table">
+      <thead><tr>
+        <th><span class="lang-en">Layer</span><span class="lang-zh">层</span></th>
+        <th><span class="lang-en">Scope — how far it carries</span><span class="lang-zh">作用域 — 能走多远</span></th>
+        <th><span class="lang-en">Example (secure boot)</span><span class="lang-zh">例（安全启动）</span></th>
+        <th><span class="lang-en">Lives in</span><span class="lang-zh">落点</span></th>
+      </tr></thead>
+      <tbody>
+        <tr>
+          <td class="lyr lyr--l1">L1 <span class="lang-en">Principle</span><span class="lang-zh">原理</span></td>
+          <td><span class="lang-en">True on any platform — the problem's objective constraint.</span><span class="lang-zh">任何平台都成立 —— 问题本身的客观约束。</span></td>
+          <td><span class="lang-en">OTP burns are irreversible; dump bytes before burning.</span><span class="lang-zh">OTP 烧入不可逆；烧前 dump 字节基线。</span></td>
+          <td>SKILL.md</td>
+        </tr>
+        <tr>
+          <td class="lyr lyr--l2">L2 <span class="lang-en">Method / pitfall</span><span class="lang-zh">方法 / 坑</span></td>
+          <td><span class="lang-en">Carries across platforms, but it's your chosen approach.</span><span class="lang-zh">换平台仍成立，但是你选的做法。</span></td>
+          <td><span class="lang-en">Verify fails? Byte-dump both hashes — don't infer from flags.</span><span class="lang-zh">验签不过？字节级对比两端 hash，别从 flag 推。</span></td>
+          <td>SKILL.md · pitfalls.md</td>
+        </tr>
+        <tr>
+          <td class="lyr lyr--l3">L3 <span class="lang-en">Platform value</span><span class="lang-zh">平台值</span></td>
+          <td><span class="lang-en">Changes per platform — a value, not a principle.</span><span class="lang-zh">换平台就变 —— 是个值，不是理。</span></td>
+          <td><span class="lang-en">OTP hash address, key length, signing tool name.</span><span class="lang-zh">OTP hash 地址、密钥长度、签名工具名。</span></td>
+          <td>params/&lt;platform&gt;.md</td>
+        </tr>
+        <tr>
+          <td class="lyr lyr--l4">L4 <span class="lang-en">State</span><span class="lang-zh">状态</span></td>
+          <td><span class="lang-en">Changes next session — ephemeral.</span><span class="lang-zh">下次会话就变 —— 瞬时。</span></td>
+          <td><span class="lang-en">Which key is loaded right now, current HEAD.</span><span class="lang-zh">当前用哪把 key、当前 HEAD。</span></td>
+          <td><span class="lang-en">memory (timestamped)</span><span class="lang-zh">memory（带时间戳）</span></td>
+        </tr>
+      </tbody>
+    </table>
+    </div>
+  </div>
+</section>
+
+<!-- Flow -->
+<section class="anth-section anth-section--subtle" id="flow">
+  <div class="anth-container" style="max-width:720px; margin-bottom:var(--space-7); text-align:center;">
+    <span class="anth-badge"><span class="lang-en">How it works</span><span class="lang-zh">怎么工作</span></span>
+    <h2 style="margin-top:var(--space-3);"><span class="lang-en">Mine. Layer. Reconcile. You approve.</span><span class="lang-zh">挖掘。分层。对账。你点头。</span></h2>
+    <p style="color:var(--anth-text-secondary); font-size:17px; margin-top:var(--space-3); font-family:var(--font-body);">
+      <span class="lang-en">Two human gates bracket an automatic middle. Nothing reaches the live library without your sign-off — because an LLM's self-judgment of skill quality is only ~46% accurate.</span>
+      <span class="lang-zh">两道人审关卡夹着一段自动流程。没有你点头，东西进不了正式库 —— 因为 LLM 自评 skill 质量准确率只有约 46%。</span>
+    </p>
+  </div>
+  <div class="anth-container anth-container--wide">
+    <figure>
+    <svg role="img" aria-label="Cangjie distillation flow: six phases with two human review gates" viewBox="0 0 1140 220" style="display:block; width:100%; max-width:1140px; height:auto;">
+      <defs>
+        <pattern id="fdots" width="24" height="24" patternUnits="userSpaceOnUse"><circle cx="12" cy="12" r="1" fill="#141413" opacity="0.04"/></pattern>
+        <filter id="fcard" x="-10%" y="-30%" width="120%" height="160%"><feDropShadow dx="0" dy="1" stdDeviation="2" flood-opacity="0.06"/></filter>
+        <marker id="farr" viewBox="0 0 8 8" refX="6.5" refY="4" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0.5 L7.5,4 L0,7.5 Z" fill="#d97757"/></marker>
+      </defs>
+      <rect x="0" y="0" width="1140" height="220" rx="14" fill="#fbfaf6"/>
+      <rect x="0" y="0" width="1140" height="220" rx="14" fill="url(#fdots)"/>
+
+      <!-- 6 phase cards -->
+      <g font-family="Poppins,sans-serif" filter="url(#fcard)">
+        <g transform="translate(16 78)"><rect width="150" height="66" rx="9" fill="#ffffff" stroke="#d8d4c8"/><circle cx="14" cy="14" r="11" fill="#d97757"/><text x="14" y="18" text-anchor="middle" font-size="11" font-weight="700" fill="#ffffff">0</text><circle cx="40" cy="40" r="3.5" fill="#6a9bcc"/><text x="50" y="44" font-size="12.5" font-weight="600" fill="#141413">圈范围</text><text x="16" y="60" font-size="10" fill="#6b6a5f">锁素材 · 判领域</text></g>
+        <g transform="translate(202 78)"><rect width="150" height="66" rx="9" fill="#ffffff" stroke="#d8d4c8"/><circle cx="14" cy="14" r="11" fill="#d97757"/><text x="14" y="18" text-anchor="middle" font-size="11" font-weight="700" fill="#ffffff">1</text><circle cx="40" cy="40" r="3.5" fill="#6a9bcc"/><text x="50" y="44" font-size="12.5" font-weight="600" fill="#141413">挖掘</text><text x="16" y="60" font-size="10" fill="#6b6a5f">4 镜头扫会话</text></g>
+        <g transform="translate(388 78)"><rect width="150" height="66" rx="9" fill="#ffffff" stroke="#d8d4c8"/><circle cx="14" cy="14" r="11" fill="#d97757"/><text x="14" y="18" text-anchor="middle" font-size="11" font-weight="700" fill="#ffffff">2</text><circle cx="40" cy="40" r="3.5" fill="#6a9bcc"/><text x="50" y="44" font-size="12.5" font-weight="600" fill="#141413">分层</text><text x="16" y="60" font-size="10" fill="#6b6a5f">套 L1–L4 · 拆坑</text></g>
+        <g transform="translate(574 78)"><rect width="150" height="66" rx="9" fill="#ffffff" stroke="#d8d4c8"/><circle cx="14" cy="14" r="11" fill="#d97757"/><text x="14" y="18" text-anchor="middle" font-size="11" font-weight="700" fill="#ffffff">3</text><circle cx="40" cy="40" r="3.5" fill="#6a9bcc"/><text x="50" y="44" font-size="12.5" font-weight="600" fill="#141413">对账</text><text x="16" y="60" font-size="10" fill="#6b6a5f">去重 · 替代 · 冲突</text></g>
+        <g transform="translate(760 78)"><rect width="150" height="66" rx="9" fill="#ffffff" stroke="#d8d4c8"/><circle cx="14" cy="14" r="11" fill="#d97757"/><text x="14" y="18" text-anchor="middle" font-size="11" font-weight="700" fill="#ffffff">4</text><circle cx="40" cy="40" r="3.5" fill="#6a9bcc"/><text x="50" y="44" font-size="12.5" font-weight="600" fill="#141413">质检</text><text x="16" y="60" font-size="10" fill="#6b6a5f">独立 agent 查</text></g>
+        <g transform="translate(946 78)"><rect width="150" height="66" rx="9" fill="#ffffff" stroke="#d8d4c8"/><circle cx="14" cy="14" r="11" fill="#d97757"/><text x="14" y="18" text-anchor="middle" font-size="11" font-weight="700" fill="#ffffff">5</text><circle cx="40" cy="40" r="3.5" fill="#788c5d"/><text x="50" y="44" font-size="12.5" font-weight="600" fill="#141413">入库</text><text x="16" y="60" font-size="10" fill="#6b6a5f">进 skill 库</text></g>
+      </g>
+
+      <!-- arrows between cards -->
+      <g stroke="#d97757" stroke-width="1.8" marker-end="url(#farr)">
+        <line x1="170" y1="111" x2="198" y2="111"/>
+        <line x1="356" y1="111" x2="384" y2="111"/>
+        <line x1="542" y1="111" x2="570" y2="111"/>
+        <line x1="728" y1="111" x2="756" y2="111"/>
+        <line x1="914" y1="111" x2="942" y2="111"/>
+      </g>
+
+      <!-- human-gate pills above arrow 2→3 and 4→5 -->
+      <g font-family="Poppins,sans-serif">
+        <g transform="translate(528 44)"><rect width="56" height="22" rx="11" fill="#d97757"/><text x="28" y="15" text-anchor="middle" font-size="10.5" font-weight="600" fill="#ffffff">人审 ①</text><line x1="28" y1="22" x2="28" y2="34" stroke="#d97757" stroke-width="1.4"/></g>
+        <g transform="translate(900 44)"><rect width="56" height="22" rx="11" fill="#d97757"/><text x="28" y="15" text-anchor="middle" font-size="10.5" font-weight="600" fill="#ffffff">人审 ②</text><line x1="28" y1="22" x2="28" y2="34" stroke="#d97757" stroke-width="1.4"/></g>
+      </g>
+
+      <!-- input / output labels + legend -->
+      <g font-family="Poppins,sans-serif" font-size="11" fill="#6b6a5f">
+        <text x="16" y="172">输入： 会话 + git diff + 踩坑</text>
+        <text x="1096" y="172" text-anchor="end">输出： 可移植 skill 包 →</text>
+      </g>
+      <g font-family="Poppins,sans-serif" font-size="11" fill="#6b6a5f" transform="translate(16 200)">
+        <circle cx="6" cy="-3" r="4" fill="#d97757"/><text x="16" y="0">主流程 / 人审关</text>
+        <circle cx="156" cy="-3" r="4" fill="#6a9bcc"/><text x="166" y="0">自动阶段</text>
+        <circle cx="286" cy="-3" r="4" fill="#788c5d"/><text x="296" y="0">入库</text>
+      </g>
+    </svg>
+    <figcaption><span class="lang-en">Phases 0–5. Capture is optional; reconciliation (3) dedups against your existing library so it never bloats.</span><span class="lang-zh">Phase 0–5。采集可选；对账（3）与已有库去重，库才不会膨胀。</span></figcaption>
+    </figure>
+  </div>
+</section>
+
+<!-- Scenario -->
+<section class="anth-section" id="scenario">
+  <div class="anth-container anth-container--narrow">
+    <div style="text-align:center; margin-bottom:var(--space-6);">
+      <span class="anth-badge"><span class="lang-en">A real scenario</span><span class="lang-zh">一个真实场景</span></span>
+      <h2 style="margin-top:var(--space-3);"><span class="lang-en">Secure boot, done once — owned by everyone.</span><span class="lang-zh">安全启动做一次，人人都有。</span></h2>
+    </div>
+    <div class="scene-card">
+      <ol style="margin:0; padding-left:1.2em; font-family:var(--font-body); font-size:17px; line-height:1.9; color:var(--anth-text);">
+        <li><span class="lang-en">You finish secure-boot bring-up on one SoC — keys, OTP, the signing chain, and a nasty buffer-overrun pitfall you only found by dumping bytes.</span><span class="lang-zh">你在一颗 SoC 上做完安全启动 —— 密钥、OTP、签名链，还有一个靠 dump 字节才揪出来的缓冲区越界坑。</span></li>
+        <li><span class="lang-en">Run <code>cangjie distill</code>. It separates the transferable design + pitfall (L1/L2) from this chip's addresses and key length (L3). You approve at two gates.</span><span class="lang-zh">跑 <code>cangjie distill</code>。它把可迁移的设计+坑（L1/L2）和这颗芯片的地址、密钥长度（L3）分开。你在两道关卡点头。</span></li>
+        <li><span class="lang-en">Out comes a <code>verified-boot/</code> package — neutral markdown, self-contained.</span><span class="lang-zh">产出一个 <code>verified-boot/</code> 包 —— 中立 markdown，自包含。</span></li>
+        <li><span class="lang-en">A teammate on <strong>Cursor</strong> (or Codex) drops it into their skills folder. They now have your secure-boot know-how — design, method, and the byte-dump pitfall — instantly.</span><span class="lang-zh">用 <strong>Cursor</strong>（或 Codex）的同事把它拖进 skills 目录。他立刻拥有你那套安全启动经验 —— 设计、方法、那个 dump 字节的坑。</span></li>
+        <li><span class="lang-en">Next SoC? Add one <code>params/soc-b.md</code>. The design and pitfalls carry over untouched. Optionally sync the whole thing into engram, or publish a wiki page via llm-wiki.</span><span class="lang-zh">下一颗 SoC？加一份 <code>params/soc-b.md</code>。设计和坑原样复用。可选：整包同步进 engram，或用 llm-wiki 发一篇 wiki 页。</span></li>
+      </ol>
+    </div>
+  </div>
+</section>
+
+<!-- Optional companions -->
+<section class="anth-section anth-section--subtle">
+  <div class="anth-container anth-container--wide">
+    <div style="max-width:680px; margin:0 auto var(--space-7); text-align:center;">
+      <span class="anth-badge"><span class="lang-en">Optional companions</span><span class="lang-zh">可选搭档</span></span>
+      <h2 style="margin-top:var(--space-3);"><span class="lang-en">Plays well with others — needs none of them.</span><span class="lang-zh">能配合，但谁都不强制。</span></h2>
+    </div>
+    <div class="mate-row">
+      <div class="mate-card">
+        <span class="opt"><span class="lang-en">Optional</span><span class="lang-zh">可选</span></span>
+        <h3>engram</h3>
+        <p><span class="lang-en">Sync packages into a local memory store that handles dedup, decay and recall. If absent, your runtime's native skill triggering still works.</span><span class="lang-zh">把包同步进本地记忆库，交给它做去重、衰减、召回。没装，靠 runtime 原生触发也能用。</span></p>
+      </div>
+      <div class="mate-card">
+        <span class="opt"><span class="lang-en">Optional</span><span class="lang-zh">可选</span></span>
+        <h3>llm-wiki</h3>
+        <p><span class="lang-en">Publish the distilled knowledge as a human-browsable wiki page — for reading, not loading. A distinct layer, not a duplicate.</span><span class="lang-zh">把蒸馏出的知识发成人看的 wiki 页 —— 给人读，不是给 agent 装。是另一层，不是重复。</span></p>
+      </div>
+      <div class="mate-card">
+        <span class="opt"><span class="lang-en">Optional · 3rd-party</span><span class="lang-zh">可选 · 第三方</span></span>
+        <h3>darwin-skill</h3>
+        <p><span class="lang-en">Score and hill-climb an individual skill's quality over time. Cangjie grows the library; darwin polishes single skills.</span><span class="lang-zh">给单个 skill 打分、逐步进化。Cangjie 让库长大，darwin 打磨单个 skill。</span></p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Install -->
+<section class="anth-section" id="install">
+  <div class="anth-container">
+    <div style="max-width:680px; margin:0 auto var(--space-6); text-align:center;">
+      <span class="anth-badge"><span class="lang-en">Install</span><span class="lang-zh">安装</span></span>
+      <h2 style="margin-top:var(--space-3);"><span class="lang-en">Drop the folder into any runtime.</span><span class="lang-zh">把目录放进任何 runtime。</span></h2>
+      <p style="color:var(--anth-text-secondary); font-size:17px; margin-top:var(--space-3); font-family:var(--font-body);">
+        <span class="lang-en">Cangjie ships as an Agent Skill plus references. Clone it, place the directory in your runtime's skills folder. No dependencies.</span>
+        <span class="lang-zh">Cangjie 以一个 Agent Skill + 参考资料的形式发布。clone 下来，把目录放进你 runtime 的 skills 文件夹。零依赖。</span>
+      </p>
+    </div>
+    <table class="install-table">
+      <thead><tr>
+        <th>Runtime</th>
+        <th><span class="lang-en">Where it goes</span><span class="lang-zh">放哪</span></th>
+      </tr></thead>
+      <tbody>
+        <tr><td>Claude Code</td><td><code>~/.claude/skills/cangjie/</code></td></tr>
+        <tr><td>Codex / Cursor / <span class="lang-en">others</span><span class="lang-zh">其他</span></td><td><span class="lang-en">the corresponding skills / rules folder</span><span class="lang-zh">对应的 skills / rules 目录</span></td></tr>
+      </tbody>
+    </table>
+    <p style="text-align:center; margin-top:var(--space-5); font-family:var(--font-mono); font-size:14px; color:var(--anth-text-secondary);">git clone git@github.com:TbusOS/cangjie.git</p>
+  </div>
+</section>
+
+<!-- Final CTA -->
+<section class="anth-section anth-section--subtle">
+  <div class="anth-container anth-container--narrow" style="text-align:center;">
+    <h2><span class="lang-en">Distill your next feature.</span><span class="lang-zh">把你下一个功能蒸馏掉。</span></h2>
+    <p style="font-size:19px; color:var(--anth-text-secondary); margin:var(--space-4) auto var(--space-6); line-height:1.6; max-width:600px; font-family:var(--font-body);">
+      <span class="lang-en">Stop letting hard-won experience evaporate at the end of every session. Capture the reusable part once, and carry it everywhere.</span>
+      <span class="lang-zh">别再让辛苦攒的经验在每次会话结束时蒸发。把可复用的那部分捕获一次，带着它走到任何地方。</span>
+    </p>
+    <div style="display:flex; gap:var(--space-3); justify-content:center; flex-wrap:wrap;">
+      <a class="anth-button" href="https://github.com/TbusOS/cangjie"><span class="lang-en">Get Cangjie</span><span class="lang-zh">获取 Cangjie</span></a>
+      <a class="anth-button anth-button--ghost" href="#architecture"><span class="lang-en">Re-read the architecture</span><span class="lang-zh">再看架构</span></a>
+    </div>
+  </div>
+</section>
+
+<!-- Footer -->
+<footer class="anth-footer">
+  <div class="anth-footer-grid">
+    <div class="anth-footer-group"><h5>Cangjie</h5><a href="#why"><span class="lang-en">Why</span><span class="lang-zh">为什么</span></a><a href="#architecture"><span class="lang-en">Architecture</span><span class="lang-zh">架构</span></a><a href="#flow"><span class="lang-en">How it works</span><span class="lang-zh">流程</span></a><a href="#install"><span class="lang-en">Install</span><span class="lang-zh">安装</span></a></div>
+    <div class="anth-footer-group"><h5><span class="lang-en">Output</span><span class="lang-zh">产物</span></h5><a href="#architecture"><span class="lang-en">Skill package</span><span class="lang-zh">Skill 包</span></a><a href="#flow">L1–L4</a><a href="#scenario"><span class="lang-en">Scenario</span><span class="lang-zh">场景</span></a></div>
+    <div class="anth-footer-group"><h5><span class="lang-en">Companions</span><span class="lang-zh">搭档</span></h5><a href="https://github.com/TbusOS">engram</a><a href="https://github.com/TbusOS">llm-wiki</a><a href="https://github.com/alchaincyf/darwin-skill">darwin</a></div>
+    <div class="anth-footer-group"><h5><span class="lang-en">Credits</span><span class="lang-zh">致谢</span></h5><a href="https://github.com/alchaincyf/nuwa-skill">nuwa-skill</a><a href="https://github.com/alchaincyf/darwin-skill">darwin-skill</a><a href="https://github.com/TbusOS">TbusOS</a></div>
+  </div>
+  <div class="anth-footer-legal">
+    <span>© 2026 Cangjie · 仓颉 · MIT</span>
+    <span><span class="lang-en">Distillation architecture inspired by nuwa-skill · ratchet discipline by darwin-skill (3rd-party). Theory: EvolveR · AgentFactory · MemoryBank · SkillLens.</span><span class="lang-zh">蒸馏架构借鉴 nuwa-skill · 棘轮纪律借鉴 darwin-skill（第三方）。理论：EvolveR · AgentFactory · MemoryBank · SkillLens。</span></span>
+  </div>
+</footer>
+
+<script>
+(function () {
+  var html = document.documentElement;
+  var queryLang = new URLSearchParams(location.search).get('lang');
+  var saved;
+  if (queryLang === 'zh' || queryLang === 'en') { saved = queryLang; }
+  else {
+    try { saved = localStorage.getItem('cangjie-lang'); } catch (e) {}
+    if (!saved) { saved = (navigator.language || 'en').toLowerCase().indexOf('zh') === 0 ? 'zh' : 'en'; }
+  }
+  function apply(lang) {
+    html.setAttribute('data-lang', lang);
+    html.setAttribute('lang', lang === 'zh' ? 'zh-CN' : 'en');
+    try { localStorage.setItem('cangjie-lang', lang); } catch (e) {}
+    document.querySelectorAll('.lang-toggle').forEach(function (btn) { btn.textContent = lang === 'zh' ? 'EN / 中' : '中 / EN'; });
+  }
+  apply(saved);
+  document.addEventListener('DOMContentLoaded', function () {
+    document.querySelectorAll('.lang-toggle').forEach(function (btn) {
+      btn.addEventListener('click', function () { apply(html.getAttribute('data-lang') === 'zh' ? 'en' : 'zh'); });
+    });
+  });
+})();
+</script>
+
+<!-- design-review:self-diff v1
+Skill: anthropic
+Page-type: landing
+Created: 2026-06-17 · original (tool intro for Cangjie)
+
+Decisions (6):
+1. [hero-three-line-stack] "Distill once. / Reuse forever. / Hand it to anyone." three-line noun-phrase per canonical signature, over a single descriptive headline — keeps anthropic cadence and states the 3 value props (compounding / portability / transfer) in three breaths.
+2. [hero-svg-as-product] hero SVG is a realistic split mock (left: a terminal showing a finished session + `cangjie distill` log; right: the generated verified-boot/ package tree + SKILL.md snippet) over abstract shapes — Cangjie's "product" is the distillation act, so the mock shows session→package, the strongest "here's what it does" proof.
+3. [testimonials→scenario] replaced the canonical's 3 testimonials with a single honest 5-step scenario card (secure-boot done once → handed to a Cursor teammate). Because: the tool is brand-new with no real users; fabricating attributed quotes would be dishonest. The scenario carries the same "make it concrete" job without inventing people.
+4. [two-engineering-diagrams] two SVG figures — a 3-layer architecture (orange distiller / blue portable package / olive optional sinks, ≥3 semantic hues, tinted zones not solid bands) and a 6-phase flow with two orange human-gate pills — satisfy the diagram-density contract for "system structure" and "≥3-step process".
+5. [L1-L4-table] the layering ruler is a 4-row table with per-layer hue-coded labels (orange/blue/olive/gold) rather than prose, so "how far does this carry" is scannable.
+6. [optional-everywhere] engram/llm-wiki/darwin are presented as "Optional" badged cards and the olive bottom zone of the architecture, never as requirements — encoding the zero-runtime-dependency, runtime-neutral positioning the whole tool rests on.
+
+Known trade-offs:
+- The hero and architecture SVGs are hand-maintained; if the package layout or phase names change, the mocks must be hand-updated or they drift. Accepted for the scalable hand-drawn anthropic feel over screenshot PNGs.
+- Single scenario instead of three testimonials means less "social proof" surface; chosen deliberately over fabricated quotes for a pre-release tool (honesty > pitch-deck density).
+- Bilingual EN/zh doubles copy maintenance; kept because the repo is open-sourced for an international + Chinese audience and §G expects a language toggle.
+/design-review:self-diff -->
+
+</body>
+</html>

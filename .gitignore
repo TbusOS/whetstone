@@ -1,0 +1,10 @@
+# 运行时产物 —— 不入库
+journal/*
+!journal/.gitkeep
+inbox/*
+!inbox/.gitkeep
+*.bak
+*.bak.*
+
+# 设计评审产物(截图)
+shots/
