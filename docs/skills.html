@@ -1,0 +1,285 @@
+<!doctype html>
+<html lang="en" data-lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Whetstone · Skills — what a distilled skill looks like & how to use one</title>
+<meta name="description" content="What a whetstone-distilled Agent Skill looks like: a SKILL.md the runtime selects on, platform values in params/, pitfalls split out — archetypes + usage.">
+<meta property="og:title" content="Whetstone · Skills — anatomy, archetypes, usage">
+<meta property="og:description" content="A portable Agent Skill package: SKILL.md + params/<platform>.md + pitfalls.md. Archetypes and how to use one.">
+<meta property="og:type" content="website">
+<link rel="stylesheet" href="assets/fonts.css">
+<link rel="stylesheet" href="assets/anthropic.css">
+<style>
+  html[data-lang="en"] .lang-zh { display: none !important; }
+  html[data-lang="zh"] .lang-en { display: none !important; }
+  .lang-toggle { background: transparent; border: 1px solid var(--anth-light-gray); color: var(--anth-text);
+    font-family: var(--font-heading); font-size: 13px; font-weight: 500; padding: 6px 12px; border-radius: var(--radius-pill); cursor: pointer; letter-spacing: 0.05em; }
+  .lang-toggle:hover { background: var(--anth-light-gray); }
+  html[data-lang="zh"] body, html[data-lang="zh"] p, html[data-lang="zh"] li,
+  html[data-lang="zh"] td, html[data-lang="zh"] th, html[data-lang="zh"] .mate-card p {
+    font-family: "Noto Sans SC", "Source Han Sans SC", "PingFang SC", sans-serif; }
+  html[data-lang="zh"] h1, html[data-lang="zh"] h2, html[data-lang="zh"] h3,
+  html[data-lang="zh"] .anth-badge, html[data-lang="zh"] .kicker, html[data-lang="zh"] .mate-card h3,
+  html[data-lang="zh"] .layer-table th, html[data-lang="zh"] .layer-table .lyr {
+    font-family: "Noto Sans SC", "PingFang SC", sans-serif; }
+
+  .kicker { font-family:var(--font-heading); font-size:11.5px; letter-spacing:0.14em; text-transform:uppercase; color:var(--anth-orange); font-weight:700; }
+  html[data-lang="zh"] .kicker { text-transform:none; letter-spacing:0.04em; }
+
+  .stat-strip { display:grid; grid-template-columns:repeat(4,1fr); gap:var(--space-5); padding:var(--space-7) var(--space-6); background:#ffffff; border:1px solid var(--anth-light-gray); border-radius:var(--radius-md); }
+  .stat-strip > div { text-align:center; }
+  .stat-strip .num { display:block; font-family:var(--font-heading); font-size:42px; font-weight:600; color:var(--anth-text); letter-spacing:-0.02em; line-height:1; }
+  .stat-strip .lbl { display:block; margin-top:var(--space-2); font-family:var(--font-heading); font-size:13px; color:var(--anth-text-secondary); }
+
+  .layer-table { width:100%; border-collapse:collapse; font-family:var(--font-body); font-size:15.5px; }
+  .layer-table th, .layer-table td { text-align:left; padding:var(--space-4); border-bottom:1px solid var(--anth-light-gray); vertical-align:top; }
+  .layer-table th { font-family:var(--font-heading); font-size:13px; font-weight:600; color:var(--anth-text-secondary); }
+  .layer-table tbody tr:last-child td { border-bottom:none; }
+  .layer-table .lyr { font-family:var(--font-heading); font-weight:700; white-space:nowrap; }
+  .lyr--l1 { color:var(--anth-orange); } .lyr--l2 { color:#4a7bab; } .lyr--l3 { color:#5d7045; } .lyr--l4 { color:#8a5a2a; }
+
+  .mate-row { display:grid; grid-template-columns:repeat(2,1fr); gap:var(--space-5); }
+  .mate-card { background:#ffffff; border:1px solid var(--anth-light-gray); border-radius:var(--radius-md); padding:var(--space-6); }
+  .mate-card h3 { font-family:var(--font-heading); font-size:18px; font-weight:600; margin:0 0 var(--space-2); color:var(--anth-text); }
+  .mate-card h3 .dot { display:inline-block; width:8px; height:8px; border-radius:50%; margin-right:8px; vertical-align:middle; }
+  .mate-card .opt { font-family:var(--font-heading); font-size:11px; font-weight:700; letter-spacing:0.1em; text-transform:uppercase; color:var(--anth-green); }
+  .mate-card p { font-family:var(--font-body); font-size:15px; line-height:1.6; color:var(--anth-text-secondary); margin:var(--space-2) 0 0; }
+  .mate-card .l3 { font-family:var(--font-mono); font-size:12px; color:#5d7045; margin-top:var(--space-3); display:block; }
+
+  figure { margin:0; } figcaption { font-family:var(--font-heading); font-size:13px; color:var(--anth-text-secondary); text-align:center; margin-top:var(--space-3); }
+  .scene-card { background:#ffffff; border:1px solid var(--anth-light-gray); border-radius:var(--radius-lg); padding:var(--space-7); }
+  @media (max-width:720px){ .mate-row,.stat-strip{ grid-template-columns:1fr; } }
+</style>
+</head>
+<body>
+
+<nav class="anth-nav"><div class="anth-nav-inner">
+  <a href="index.html" style="font-family:var(--font-heading); font-weight:600; font-size:18px; text-decoration:none; color:var(--anth-text);">Whetstone · 磨刀石</a>
+  <div>
+    <a href="index.html#architecture"><span class="lang-en">Architecture</span><span class="lang-zh">架构</span></a>
+    <a href="index.html#flow"><span class="lang-en">How it works</span><span class="lang-zh">流程</span></a>
+    <a href="#anatomy"><span class="lang-en">Anatomy</span><span class="lang-zh">解剖</span></a>
+    <a href="#archetypes"><span class="lang-en">Archetypes</span><span class="lang-zh">原型</span></a>
+    <a href="#usage"><span class="lang-en">Usage</span><span class="lang-zh">用法</span></a>
+  </div>
+  <div style="display:flex; gap:var(--space-3); align-items:center;">
+    <button type="button" class="lang-toggle" aria-label="Switch language">中 / EN</button>
+    <a class="anth-button" href="https://github.com/TbusOS/whetstone">GitHub</a>
+  </div>
+</div></nav>
+
+<!-- Hero -->
+<section class="anth-section" style="padding-bottom:var(--space-6);">
+  <div class="anth-container" style="text-align:center; max-width:840px;">
+    <span class="kicker"><span class="lang-en">The output</span><span class="lang-zh">产物</span></span>
+    <h1 style="margin:var(--space-3) 0 var(--space-3); font-size:46px; letter-spacing:-0.02em;"><span class="lang-en">What a distilled skill looks like.</span><span class="lang-zh">蒸出来的 skill 长什么样。</span></h1>
+    <p style="font-size:18px; line-height:1.75; color:var(--anth-text-secondary);">
+      <span class="lang-en">A whetstone skill is a portable, runtime-neutral package: a <code>SKILL.md</code> the runtime selects on, platform-specific values quarantined in <code>params/&lt;platform&gt;.md</code>, and pitfalls split out. Here's the anatomy, the kinds of skills people distill, and how to use one. <strong>All examples below are generic</strong> — real skills carry your own platform values.</span>
+      <span class="lang-zh">whetstone 的 skill 是一个可移植、runtime 中立的包：一份 runtime 据以选择的 <code>SKILL.md</code>、隔离到 <code>params/&lt;platform&gt;.md</code> 的平台具体值、单独拆出的坑库。下面讲它的解剖、能蒸哪类 skill、怎么用。<strong>例子全是通用占位</strong> —— 真实 skill 带你自己的平台值。</span>
+    </p>
+  </div>
+</section>
+
+<section class="anth-section" style="padding-top:0;">
+  <div class="anth-container">
+    <div class="stat-strip">
+      <div><span class="num">3</span><span class="lbl"><span class="lang-en">files / package</span><span class="lang-zh">文件 / 包</span></span></div>
+      <div><span class="num">L1–L4</span><span class="lbl"><span class="lang-en">scope layers</span><span class="lang-zh">作用域分层</span></span></div>
+      <div><span class="num">1</span><span class="lbl"><span class="lang-en">params file / platform</span><span class="lang-zh">params / 平台</span></span></div>
+      <div><span class="num">0</span><span class="lbl"><span class="lang-en">runtime deps</span><span class="lang-zh">运行时依赖</span></span></div>
+    </div>
+  </div>
+</section>
+
+<!-- Anatomy -->
+<section class="anth-section anth-section--subtle" id="anatomy">
+  <div class="anth-container" style="max-width:820px; text-align:center; margin-bottom:var(--space-6);">
+    <span class="anth-badge"><span class="lang-en">Anatomy</span><span class="lang-zh">解剖</span></span>
+    <h2 style="margin-top:var(--space-3);"><span class="lang-en">Three files, four scope layers.</span><span class="lang-zh">三个文件，四层作用域。</span></h2>
+  </div>
+  <div class="anth-container anth-container--wide">
+    <figure>
+      <svg role="img" aria-label="A skill package is three files: SKILL.md carrying the name and description the runtime selects on plus the platform-neutral L1/L2 body; params per platform carrying L3 values; and pitfalls. Swapping platform means adding one params file." viewBox="0 0 1180 300" style="display:block; width:100%; max-width:1180px; height:auto;">
+        <defs>
+          <pattern id="skdots" width="24" height="24" patternUnits="userSpaceOnUse"><circle cx="12" cy="12" r="1" fill="#141413" opacity="0.05"/></pattern>
+          <filter id="skcard" x="-10%" y="-30%" width="120%" height="160%"><feDropShadow dx="0" dy="1" stdDeviation="2" flood-opacity="0.06"/></filter>
+        </defs>
+        <rect x="0" y="0" width="1180" height="300" rx="16" fill="#fbfaf6"/>
+        <rect x="0" y="0" width="1180" height="300" rx="16" fill="url(#skdots)"/>
+
+        <!-- SKILL.md -->
+        <g filter="url(#skcard)">
+          <rect x="40" y="44" width="470" height="212" rx="12" fill="#ffffff" stroke="#e8bba8"/>
+          <rect x="40" y="44" width="4" height="212" rx="2" fill="#d97757"/>
+        </g>
+        <text x="64" y="74" font-family="Poppins,sans-serif" font-size="13" font-weight="700" fill="#141413">SKILL.md</text>
+        <g font-family="Poppins,sans-serif">
+          <g transform="translate(62 90)"><rect width="426" height="44" rx="8" fill="#fdf3ee" stroke="#e8bba8"/><text x="14" y="20" font-size="11" font-weight="700" fill="#c2613f">name + description</text><text x="14" y="36" font-size="10" fill="#8a6b5c">→ the menu the runtime selects on (always in context)</text></g>
+          <g transform="translate(62 144)"><rect width="426" height="40" rx="8" fill="#ffffff" stroke="#e3decf"/><text x="14" y="18" font-size="11" font-weight="600" fill="#d97757">L1</text><text x="40" y="18" font-size="10.5" fill="#3d3d39">principle (any platform)</text><text x="14" y="34" font-size="11" font-weight="600" fill="#4a7bab">L2</text><text x="40" y="34" font-size="10.5" fill="#3d3d39">method / SOP / transferable lesson</text></g>
+          <g transform="translate(62 192)"><rect width="426" height="40" rx="8" fill="#fbfaf6" stroke="#e3decf"/><text x="14" y="24" font-size="10.5" fill="#6b6a5f">lazy-loaded only when the skill is picked</text></g>
+        </g>
+
+        <!-- params -->
+        <g filter="url(#skcard)">
+          <rect x="540" y="44" width="300" height="212" rx="12" fill="#ffffff" stroke="#bcd0a6"/>
+          <rect x="540" y="44" width="4" height="212" rx="2" fill="#788c5d"/>
+        </g>
+        <text x="564" y="74" font-family="Poppins,sans-serif" font-size="13" font-weight="700" fill="#141413">params/&lt;platform&gt;.md</text>
+        <g font-family="Poppins,sans-serif">
+          <g transform="translate(562 90)"><rect width="256" height="30" rx="7" fill="#f2f6ec" stroke="#bcd0a6"/><text x="12" y="19" font-size="11" font-weight="700" fill="#5d7045">L3 · platform values</text></g>
+          <g transform="translate(562 126)"><rect width="256" height="96" rx="7" fill="#ffffff" stroke="#e3decf"/><text x="12" y="22" font-size="10.5" fill="#5d7045">OTP[ADDR] · RSA-N · sizes</text><text x="12" y="42" font-size="10.5" fill="#5d7045">branch names · commits</text><text x="12" y="62" font-size="10.5" fill="#5d7045">SoC-X / vendor SDK vN</text><text x="12" y="82" font-size="10" fill="#8a8779">swap platform = add one file</text></g>
+        </g>
+
+        <!-- pitfalls -->
+        <g filter="url(#skcard)">
+          <rect x="870" y="44" width="270" height="212" rx="12" fill="#ffffff" stroke="#cbb89a"/>
+          <rect x="870" y="44" width="4" height="212" rx="2" fill="#8a5a2a"/>
+        </g>
+        <text x="894" y="74" font-family="Poppins,sans-serif" font-size="13" font-weight="700" fill="#141413">pitfalls.md</text>
+        <g font-family="Poppins,sans-serif">
+          <g transform="translate(892 90)"><rect width="226" height="132" rx="7" fill="#ffffff" stroke="#e3decf"/><text x="12" y="24" font-size="10.5" fill="#8a5a2a">symptom</text><text x="12" y="48" font-size="10.5" fill="#4a7bab">→ Why (L2 lesson)</text><text x="12" y="72" font-size="10.5" fill="#5d7045">→ fact (L3)</text><text x="12" y="104" font-size="10" fill="#8a8779">each split L2 + L3,</text><text x="12" y="120" font-size="10" fill="#8a8779">with source + confidence</text></g>
+        </g>
+
+        <g font-family="Poppins,sans-serif" font-size="11" fill="#6b6a5f" transform="translate(40 288)">
+          <circle cx="6" cy="-3" r="4" fill="#d97757"/><text x="16" y="0">selection + method</text>
+          <circle cx="200" cy="-3" r="4" fill="#788c5d"/><text x="210" y="0">platform values (swap here)</text>
+          <circle cx="430" cy="-3" r="4" fill="#8a5a2a"/><text x="440" y="0">pitfalls</text>
+        </g>
+      </svg>
+      <figcaption><span class="lang-en">SKILL.md (name+description the runtime selects on, + L1/L2 body) · params/&lt;platform&gt;.md (L3 values) · pitfalls.md. New platform = one new params file.</span><span class="lang-zh">SKILL.md(runtime 据以选择的 name+description + L1/L2 正文）· params/&lt;platform&gt;.md(L3 值）· pitfalls.md。换平台 = 加一份 params。</span></figcaption>
+    </figure>
+  </div>
+
+  <div class="anth-container" style="max-width:820px; margin-top:var(--space-7);">
+    <div class="scene-card">
+      <table class="layer-table">
+        <thead><tr><th><span class="lang-en">Layer</span><span class="lang-zh">层</span></th><th><span class="lang-en">What</span><span class="lang-zh">是什么</span></th><th><span class="lang-en">Swap platform?</span><span class="lang-zh">换平台？</span></th></tr></thead>
+        <tbody>
+          <tr><td><span class="lyr lyr--l1">L1</span></td><td><span class="lang-en">principle / invariant (holds on any platform)</span><span class="lang-zh">原理 / 不变量（任何平台成立）</span></td><td><span class="lang-en">unchanged</span><span class="lang-zh">不动</span></td></tr>
+          <tr><td><span class="lyr lyr--l2">L2</span></td><td><span class="lang-en">method / SOP / transferable lesson</span><span class="lang-zh">方法 / SOP / 可迁移教训</span></td><td><span class="lang-en">unchanged</span><span class="lang-zh">不动</span></td></tr>
+          <tr><td><span class="lyr lyr--l3">L3</span></td><td><span class="lang-en">platform values: addresses / sizes / branch names</span><span class="lang-zh">平台值：地址 / 尺寸 / 分支名</span></td><td><strong><span class="lang-en">add one params file</span><span class="lang-zh">只加一份 params</span></strong></td></tr>
+          <tr><td><span class="lyr lyr--l4">L4</span></td><td><span class="lang-en">session-level state (changes next run)</span><span class="lang-zh">会话级状态（下次就变）</span></td><td><span class="lang-en">not stored</span><span class="lang-zh">不入库</span></td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</section>
+
+<!-- Archetypes -->
+<section class="anth-section" id="archetypes">
+  <div class="anth-container" style="max-width:820px; text-align:center; margin-bottom:var(--space-6);">
+    <span class="anth-badge"><span class="lang-en">Archetypes</span><span class="lang-zh">能蒸哪类</span></span>
+    <h2 style="margin-top:var(--space-3);"><span class="lang-en">The kinds of skills people distill.</span><span class="lang-zh">能蒸出哪些类型的 skill。</span></h2>
+    <p style="color:var(--anth-text-secondary); font-size:16px; margin-top:var(--space-3); line-height:1.7;"><span class="lang-en">Generic capability archetypes — your distilled versions carry real platform values in <code>params/</code>.</span><span class="lang-zh">通用能力原型 —— 你蒸出的版本把真实平台值放在 <code>params/</code> 里。</span></p>
+  </div>
+  <div class="anth-container anth-container--wide"><div class="mate-row">
+    <div class="mate-card">
+      <span class="opt"><span class="lang-en">Verification</span><span class="lang-zh">验证</span></span>
+      <h3><span class="dot" style="background:#d97757;"></span><span class="lang-en">Trust-chain verification</span><span class="lang-zh">信任链验签</span></h3>
+      <p><span class="lang-en">Secure-boot first-stage verify / AVB / download verify / OTA verify — who verifies whom, why each parameter is its value, irreversible-fuse caution.</span><span class="lang-zh">安全启动一级验签 / AVB / 下载验签 / OTA 验签 —— 谁验谁、每个参数为何这个值、不可逆熔丝的谨慎。</span></p>
+      <span class="l3">L3 · OTP[ADDR] · RSA-N · key modulus · SoC-X</span>
+    </div>
+    <div class="mate-card">
+      <span class="opt"><span class="lang-en">Diagnosis</span><span class="lang-zh">诊断</span></span>
+      <h3><span class="dot" style="background:#d97757;"></span><span class="lang-en">Boot-chain observability</span><span class="lang-zh">启动链可观测性</span></h3>
+      <p><span class="lang-en">Stage-tagged logging, dump-before-decision, write-then-readback, before/after byte snapshots — locate which stage a boot hangs in over UART, with no debugger.</span><span class="lang-zh">统一阶段标记、决策点退出前 dump、写后 readback、前后字节快照 —— 无调试器时靠 UART 定位卡在哪一级。</span></p>
+      <span class="l3">L3 · stage-prefix taxonomy · field addrs · file:line</span>
+    </div>
+    <div class="mate-card">
+      <span class="opt"><span class="lang-en">Migration</span><span class="lang-zh">迁移</span></span>
+      <h3><span class="dot" style="background:#4a7bab;"></span><span class="lang-en">Vendor SDK migration</span><span class="lang-zh">vendor SDK 迁移</span></h3>
+      <p><span class="lang-en">Three-way compare, conflict classes (bulk / manual / redesign), a reusable conflict-pattern library, and a compile-then-self-correct loop carried across versions.</span><span class="lang-zh">三方对比、冲突分类（批量 / 人工 / 重设计）、可迁移冲突模式库、编译后递归自纠错 —— 跨版本复用。</span></p>
+      <span class="l3">L3 · vendor SDK vN→vN+1 · branch names · conflict count</span>
+    </div>
+    <div class="mate-card">
+      <span class="opt"><span class="lang-en">Layout</span><span class="lang-zh">布局</span></span>
+      <h3><span class="dot" style="background:#5d7045;"></span><span class="lang-en">Partition / GPT layout</span><span class="lang-zh">分区 / GPT 布局</span></h3>
+      <p><span class="lang-en">Resize / add / remove partitions: auto-recompute offsets, both A/B slots, dynamic-partition container, OTA-incompatible "change it all at once before ship".</span><span class="lang-zh">扩 / 增 / 删分区：自动重算 offset、A/B 两槽、动态分区容器、OTA 不兼容的"出货前一次性改完"。</span></p>
+      <span class="l3">L3 · partition table · sizes · SoC-X · commit &lt;hash&gt;</span>
+    </div>
+  </div></div>
+</section>
+
+<!-- Usage -->
+<section class="anth-section anth-section--subtle" id="usage">
+  <div class="anth-container" style="max-width:820px; text-align:center; margin-bottom:var(--space-6);">
+    <span class="anth-badge"><span class="lang-en">Usage</span><span class="lang-zh">用法</span></span>
+    <h2 style="margin-top:var(--space-3);"><span class="lang-en">How to use a skill.</span><span class="lang-zh">怎么用一个 skill。</span></h2>
+  </div>
+  <div class="anth-container" style="max-width:820px;">
+    <div class="scene-card">
+      <ol style="margin:0; padding-left:1.3em; font-family:var(--font-body); font-size:16px; line-height:2; color:var(--anth-text);">
+        <li><strong><span class="lang-en">Trigger</span><span class="lang-zh">触发</span></strong>: <span class="lang-en">say the skill's trigger phrase; the runtime matches on the description and loads the body.</span><span class="lang-zh">说出该 skill 的触发词，runtime 按 description 匹配并加载正文。</span></li>
+        <li><strong><span class="lang-en">Swap platform</span><span class="lang-zh">换平台</span></strong>: <span class="lang-en">new chip / SDK version → add one <code>params/&lt;platform&gt;.md</code>; the L1/L2 body stays put.</span><span class="lang-zh">换芯片 / SDK 版本 → 加一份 <code>params/&lt;platform&gt;.md</code>，L1/L2 正文不动。</span></li>
+        <li><strong><span class="lang-en">Keep the index clean</span><span class="lang-zh">索引卫生</span></strong>: <span class="lang-en">after adding / editing a skill run <code>whetstone lint</code> (overlaps / collisions) and <code>whetstone index</code> (grouped catalog).</span><span class="lang-zh">新增 / 改 skill 后跑 <code>whetstone lint</code>（重叠 / 撞车）和 <code>whetstone index</code>（分族目录）。</span></li>
+        <li><strong><span class="lang-en">Move machines</span><span class="lang-zh">跨机部署</span></strong>: <span class="lang-en">keep your real skills in a private repo; <code>clone</code> + <code>deploy</code> into the runtime's skills folder.</span><span class="lang-zh">真实 skill 放私有仓；<code>clone</code> + <code>deploy</code> 进 runtime 的 skills 目录。</span></li>
+      </ol>
+    </div>
+    <p style="text-align:center; color:var(--anth-text-secondary); font-size:14px; margin-top:var(--space-5); font-family:var(--font-body);"><span class="lang-en">Real skills carry internal values, so keep them private — never on public Pages. This page is the generic, shareable view.</span><span class="lang-zh">真实 skill 带内部值，放私有仓、绝不上公开 Pages。本页是通用的可公开版。</span></p>
+  </div>
+</section>
+
+<!-- CTA -->
+<section class="anth-section">
+  <div class="anth-container anth-container--narrow" style="text-align:center;">
+    <h2><span class="lang-en">Distill your next feature into one.</span><span class="lang-zh">把你下一个功能蒸成一个。</span></h2>
+    <div style="display:flex; gap:var(--space-3); justify-content:center; flex-wrap:wrap; margin-top:var(--space-5);">
+      <a class="anth-button" href="https://github.com/TbusOS/whetstone"><span class="lang-en">Get Whetstone</span><span class="lang-zh">获取 Whetstone</span></a>
+      <a class="anth-button anth-button--ghost" href="index.html#flow"><span class="lang-en">See the distill flow</span><span class="lang-zh">看蒸馏流程</span></a>
+    </div>
+  </div>
+</section>
+
+<footer class="anth-footer">
+  <div class="anth-footer-legal" style="justify-content:center;">
+    <span><span class="lang-en">All examples on this page are generic (SoC-X / OTP[ADDR] / RSA-N). Real skills carry your platform values and stay in a private repo.</span><span class="lang-zh">本页例子全为通用占位（SoC-X / OTP[ADDR] / RSA-N)。真实 skill 带你的平台值，留在私有仓。</span></span>
+  </div>
+</footer>
+
+<script>
+(function () {
+  var html = document.documentElement;
+  var queryLang = new URLSearchParams(location.search).get('lang');
+  var saved;
+  if (queryLang === 'zh' || queryLang === 'en') { saved = queryLang; }
+  else {
+    try { saved = localStorage.getItem('whetstone-lang'); } catch (e) {}
+    if (!saved) { saved = (navigator.language || 'en').toLowerCase().indexOf('zh') === 0 ? 'zh' : 'en'; }
+  }
+  function apply(lang) {
+    html.setAttribute('data-lang', lang);
+    html.setAttribute('lang', lang === 'zh' ? 'zh-CN' : 'en');
+    try { localStorage.setItem('whetstone-lang', lang); } catch (e) {}
+    document.querySelectorAll('.lang-toggle').forEach(function (btn) { btn.textContent = lang === 'zh' ? 'EN / 中' : '中 / EN'; });
+  }
+  apply(saved);
+  document.addEventListener('DOMContentLoaded', function () {
+    document.querySelectorAll('.lang-toggle').forEach(function (btn) {
+      btn.addEventListener('click', function () { apply(html.getAttribute('data-lang') === 'zh' ? 'en' : 'zh'); });
+    });
+  });
+})();
+</script>
+
+<!-- design-review:self-diff v1
+Skill: anthropic
+Page-type: docs-home
+Created: 2026-06-18 · generic public companion to index.html (skills anatomy + archetypes + usage)
+
+Decisions (6):
+1. [generic-only] Every concrete value is a placeholder (SoC-X / OTP[ADDR] / RSA-N / vendor SDK vN→vN+1 / commit <hash>). This page is the PUBLIC, shareable view — the real skill library with internal platform values lives in a private repo, never here. Enforces the tool/data separation the project rests on.
+2. [anatomy-svg-3-files] hero diagram is a 3-file package mock (SKILL.md orange = selection+method / params olive = L3 swap point / pitfalls brown), ≥3 semantic hues, tinted cards not solid bands — shows the package shape and where platform-swap happens, the single most useful "what is a skill" proof.
+3. [archetypes-not-roster] showcases 4 capability ARCHETYPES (verification / observability / migration / layout) rather than naming a specific user's skill roster — keeps it generic + reusable and avoids leaking any one library's composition.
+4. [L1-L4-table-shared] reuses the L1-L4 layering table (hue-coded) from index.html so the "how far does it carry / swap params" model is consistent across pages.
+5. [usage-as-numbered-ol] usage is a 4-step ordered list (trigger / swap params / lint+index / move machines) in a scene-card — concrete and scannable, mirrors index.html's scenario card pattern.
+6. [bilingual-+-toggle] EN/zh with the same toggle script as index.html (§G), since the repo is open-sourced for an international + Chinese audience and this is a sibling page.
+
+Known trade-offs:
+- Overlaps index.html on the L1-L4 model and architecture framing; accepted because this page's distinct job is "anatomy of a skill package + archetypes + usage", a concrete companion to the tool-overview index.
+- The anatomy SVG is hand-maintained; if the package format changes the mock must be hand-updated.
+- Bilingual doubles copy maintenance; kept for parity with index.html.
+/design-review:self-diff -->
+
+</body>
+</html>
