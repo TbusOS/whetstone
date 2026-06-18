@@ -13,3 +13,11 @@ shots/
 .pack-stage/
 .deploy-stage/
 *.tar.gz
+
+# python 字节码(lint.py/index.py 运行时生成)
+__pycache__/
+*.pyc
+
+# lint/index 自测临时目录
+.capture-selftest/
+.promote-test-dest/
