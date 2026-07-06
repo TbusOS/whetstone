@@ -570,7 +570,7 @@
       <text x="518" y="66" font-family="Poppins,sans-serif" font-size="11.5" font-weight="700" letter-spacing="0.04em" fill="#4a7bab">机器 B · 任意 runtime(Claude Code / Codex / Cursor)</text>
       <g font-family="Poppins,sans-serif" filter="url(#mcard)">
         <g transform="translate(508 88)"><rect width="604" height="48" rx="9" fill="#ffffff" stroke="#d8d4c8"/><circle cx="20" cy="24" r="10" fill="#d97757"/><text x="20" y="28" text-anchor="middle" font-size="11" font-weight="700" fill="#ffffff">1</text><text x="42" y="29" font-size="12" fill="#141413">git clone 两个仓（工具 公开 + 数据 私有）</text></g>
-        <g transform="translate(508 148)"><rect width="604" height="48" rx="9" fill="#ffffff" stroke="#d8d4c8"/><circle cx="20" cy="24" r="10" fill="#d97757"/><text x="20" y="28" text-anchor="middle" font-size="11" font-weight="700" fill="#ffffff">2</text><text x="42" y="29" font-size="12" fill="#141413">deploy:bin/deploy.sh 包  或  cp skills/* → ~/.claude/skills/</text></g>
+        <g transform="translate(508 148)"><rect width="604" height="48" rx="9" fill="#ffffff" stroke="#d8d4c8"/><circle cx="20" cy="24" r="10" fill="#d97757"/><text x="20" y="28" text-anchor="middle" font-size="11" font-weight="700" fill="#ffffff">2</text><text x="42" y="29" font-size="12" fill="#141413">deploy.sh --link · --gen-claudemd · --add-import</text></g>
         <g transform="translate(508 208)"><rect width="604" height="48" rx="9" fill="#ffffff" stroke="#d8d4c8"/><circle cx="20" cy="24" r="10" fill="#788c5d"/><text x="20" y="28" text-anchor="middle" font-size="11" font-weight="700" fill="#ffffff">3</text><text x="42" y="29" font-size="12" fill="#141413">skill 库到位，整套能力即得</text></g>
       </g>
 
@@ -588,8 +588,9 @@
     <div class="scene-card">
       <ol style="margin:0; padding-left:1.2em; font-family:var(--font-body); font-size:16px; line-height:1.95; color:var(--anth-text);">
         <li><span class="lang-en">Clone both repos on the new machine</span><span class="lang-zh">新机上克隆两个仓</span> — <code>git clone …/whetstone</code> <span style="color:var(--anth-text-secondary);"><span class="lang-en">(tool, public)</span><span class="lang-zh">（工具，公开）</span></span> · <code>git clone …/whetstone-skills-private</code> <span style="color:var(--anth-text-secondary);"><span class="lang-en">(data, private)</span><span class="lang-zh">（数据，私有）</span></span></li>
-        <li><span class="lang-en">Deploy the library into your skills folder</span><span class="lang-zh">把库 deploy 进 skills 目录</span> — <code>cp -r whetstone-skills-private/skills/* ~/.claude/skills/</code> <span style="color:var(--anth-text-secondary);"><span class="lang-en">or </span><span class="lang-zh">或 </span><code>whetstone/bin/deploy.sh</code></span></li>
-        <li><span class="lang-en">Done — the whole skill library is back, on any runtime.</span><span class="lang-zh">完成 —— 整套 skill 库回来了，任何 runtime 都行。</span></li>
+        <li><span class="lang-en">Symlink the skills into your skills folder</span><span class="lang-zh">把 skills symlink 进 skills 目录</span> — <code>deploy.sh --link &lt;data-repo&gt;</code> <span style="color:var(--anth-text-secondary);"><span class="lang-en">(single source of truth, no drift)</span><span class="lang-zh">（单一真相，不漂移）</span></span></li>
+        <li><span class="lang-en">Regenerate your always-on rules + per-project imports</span><span class="lang-zh">装回常驻规则 + 每项目导入</span> — <code>deploy.sh --gen-claudemd &lt;data-repo&gt;</code> <span style="color:var(--anth-text-secondary);"><span class="lang-en">then per project </span><span class="lang-zh">每项目再 </span><code>--add-import &lt;project&gt;/CLAUDE.md --import &lt;data-repo&gt;/base/&lt;org&gt;-common.md</code></span></li>
+        <li><span class="lang-en">Done — skills + your CLAUDE.md layering are back, on any runtime.</span><span class="lang-zh">完成 —— skills + 你的 CLAUDE.md 分层都回来了，任何 runtime 都行。</span></li>
       </ol>
     </div>
   </div>
