@@ -2,9 +2,16 @@
 
 装了 [engram](https://github.com/TbusOS/engram) 才用。**不装 Whetstone 照样跑**——单机靠人审 + runtime 原生召回。
 
-engram 是通用本地记忆系统,已实现去重(Consistency Engine)/ 置信衰减 / supersede+archive / 召回
-(Relevance Gate)。Whetstone 产出的 skill 包同步进 engram 后,这些质量机器自动接管,
-**Whetstone 自己就不必再造一套**。
+engram 是通用本地记忆系统。Whetstone 产出的 skill 包同步进去后,由它的质量机器接管,
+**Whetstone 自己就不必再造一套**。但委托要按实测现状,不按文档想当然
+(2026-08-24 对照 engram 代码核过):
+
+- **召回**(Relevance Gate):已实现(BM25 + 可选向量 + RRF + rerank)。
+- **supersede + archive**:已实现(consistency 六动作,只出 proposal、绝不自动改文件)。
+- **去重**:只有**事后**扫描(`consistency scan`),且当前是启发式(hash + Jaccard + 反义词表),
+  写入时不去重,embedding 聚类未接线(engram T-41/T-48)→ **入库前去重仍是 whetstone Phase 3 的责任,推不掉**。
+- **置信度**:证据分级事件流已实现(人工确认 ±1.0 > fixture ±0.6 > LLM 自报 ±0.2);
+  但 memory 资产的时间衰减公式(engram SPEC §4.8)**代码里未实现**,真衰减的只有 Session 资产 TTL。
 
 ## 映射(Whetstone → engram 资产)
 
@@ -13,7 +20,7 @@ engram 是通用本地记忆系统,已实现去重(Consistency Engine)/ 置信�
 | skill 包(SKILL.md) | 一条 memory,`type: agent`(或新增 `type: skill`) |
 | L1/L2/L3/L4 层 | `extra.scope_layer: 1\|2\|3\|4`(与 engram 的 org/team/user/project scope 正交,放 extra) |
 | 来源会话/commit | `source: whetstone:<session-id>` |
-| 置信度 / 复现次数 | engram 的 `validated_count` / `confidence` 块 |
+| 置信度 / 复现记录 / 验证方式 | 目标位是 engram 的 confidence 事件流;**当前脚本不单独传**,随 SKILL.md body 整体灌入,engram 不自动解析 |
 | 平台 params | 各自一条,或挂在 skill 资产的 extra |
 
 ## 接法

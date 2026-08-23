@@ -57,3 +57,36 @@ distilled carry real values and stay in a private repo.
 - Tool/data separation: this public repo carries **0 internal data**; real skills + values live private.
 - A private repo's HTML is safe to push **only because Pages is never enabled** on it (a private repo's
   Pages site would still be public by default).
+
+## 2026-08 · autoupdate + evidence upgrade (§7)
+
+### autoupdate/ (new component)
+- Ported the multi-CLI update prompter from its sibling repo: session-hook check (read-only,
+  throttled fetch) + confirmed `git pull --ff-only`. Three adaptations: **join/own install modes**
+  (if a compatible `*-autoupdate` hook already exists on the machine, just register this clone in
+  its repos config — never double-hook), **union read** of all `~/.config/*-autoupdate/repos`
+  (whichever tool's hook is alive sees every watched repo), and two porting bugs fixed (macOS has
+  no `timeout` by default → fetch fallback; restart-detection regex missed root-level SKILL.md).
+- `autoupdate/selftest.sh` 22/22 against isolated fixtures (fake HOME + fake remote/clones).
+  CLI verb: `whetstone autoupdate check|update|install|upgrade|uninstall|selftest`.
+
+### Evidence upgrade: the library now metabolizes after entry (§7 rework)
+Research pass (4 parallel agents: this repo, engram internals, local paper notes, external
+systems/papers) concluded the design's one structural gap: **quality control was all at the
+entrance — nothing flowed back after a piece of knowledge entered the library.** Two cheap fixes,
+both spec-level, no new infrastructure:
+- **Executable verification slot** (absorbed from the kernel-learn discipline): every entry gets a
+  `验证方式` field — a command/script/minimal-repro that can confirm or falsify it. Confidence is
+  now decided by a **mechanical table** (high = verified + reproduced ≥2; no executable check caps
+  at med), not by feel. Rationale: an unverifiable "high" is how stale lore survives.
+- **Reproduction write-back** (ExpeL-style upvote): `复现次数` (a bare number) became `复现记录`
+  (an append-only list of `platform/project · date · pointer`). When a new distillation session
+  *uses* an existing entry and it holds, Phase 3 appends a confirmation line to that entry —
+  inside the proposal, so it still passes human review. Contradiction never appends; it goes the
+  supersede/conflict route. Human review stops being one-shot: every session accrues or overturns
+  evidence for old entries.
+- Touched: extraction-framework §7/§8/§9, SKILL.md Phase 2/3/4/5 + blacklist, both templates
+  (also fixed the template bug: its provenance section had dropped the reproduction field),
+  spec/skill-package.md. `adapters/sync/engram.md` corrected two overstated claims about engram
+  (its dedup is post-hoc heuristic only; memory-asset confidence decay is spec'd but unimplemented)
+  — delegation must match measured reality, not docs.
