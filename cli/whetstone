@@ -12,6 +12,7 @@
 # (or just call ./cli/whetstone). Paths are resolved relative to this file, so the
 # whole repo can be cloned anywhere.
 
+ORIG_PATH="$PATH"
 export PATH="/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
 export PYTHONNOUSERSITE=1
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -78,6 +79,9 @@ sync_cmd() {
 }
 
 autoupdate_cmd() {
+  # autoupdate 是「不锁 PATH」的可分发组件(要用使用者环境的 git/jq/timeout,
+  # 比如 homebrew 的 /opt/homebrew/bin)——恢复原始 PATH 再派发
+  export PATH="$ORIG_PATH"
   local sub="${1:-check}"; [ $# -gt 0 ] && shift
   case "$sub" in
     check)                     exec bash "$REPO_DIR/autoupdate/hooks/check-update.sh" --report "$@";;

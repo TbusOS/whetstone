@@ -38,8 +38,9 @@ FAMILY_T = 0.12         # trigger Jaccard >= this means "same family" (boundary 
 SEP = re.compile(r"[/、,，;；:：。.\s|·]+")
 TRIGGER_MARK = re.compile(r"触发词|TRIGGER", re.I)
 BOUNDARY_MARK = re.compile(r"DO NOT|不重复|同族|不触发|不适用|use .+-", re.I)
-# suffixes that denote an intentional companion skill (evaluator/checker of the base),
-# e.g. gated-dual-clone-audit audits gated-dual-clone. NOT a collision if the longer
+# suffixes that denote an intentional companion skill (evaluator/checker of, or deliberate
+# sidekick to, the base), e.g. gated-dual-clone-audit audits gated-dual-clone,
+# whetstone-curator curates across whetstone libraries. NOT a collision if the longer
 # skill's description references the base. Distinguishes good companions from accidental
 # prefix clashes (design-review-framework had "framework" — not a companion suffix).
 COMPANION_SUFFIX = {"audit", "validator", "review", "critic", "evaluator",
@@ -162,7 +163,7 @@ def lint(skills):
                 companion = (extra and all(s in COMPANION_SUFFIX for s in extra)
                              and re.search(r"\b" + re.escape(short) + r"\b", by_name[long]["desc"]))
                 if companion:
-                    add("I", f"{short} ◂ {long}", f"intentional companion (-{'-'.join(extra)}): {long} audits/evaluates {short} and references it — ok")
+                    add("I", f"{short} ◂ {long}", f"intentional companion (-{'-'.join(extra)}): {long} is a deliberate companion of {short} and references it — ok")
                 else:
                     add("W", f"{a} ~ {b}", "name near-collision (segment prefix) — model can pick the wrong one. Companion suffixes (-audit/-validator) that reference the base are fine; else rename")
 

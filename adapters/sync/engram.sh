@@ -4,8 +4,10 @@
 #   adapters/sync/engram.sh <skill> [--src <skills-dir>] [--scope <scope>] [--dry-run] [--force]
 #
 # Pushes one skill package into engram as a `type: agent` memory, per the mapping in
-# adapters/sync/engram.md. engram then owns dedup / confidence decay / recall — whetstone
-# does NOT reimplement those. Whetstone works fine WITHOUT engram; this is additive.
+# adapters/sync/engram.md. engram then serves recall / supersede on its side (its dedup is
+# post-hoc heuristic only and memory confidence decay is unimplemented as of 2026-08 — see
+# engram.md; pre-admission dedup/quality stays whetstone's job). Optional sink: whetstone
+# works fine WITHOUT engram; this is additive.
 #
 # Contract verified against engram `memory add` (cli/engram/commands/memory.py):
 #   engram memory add --type agent --name <n> --description <d> --scope <s>

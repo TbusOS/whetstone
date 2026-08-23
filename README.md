@@ -56,7 +56,8 @@ Whetstone 自身就是一个 Agent Skill(`SKILL.md`)+ 参考资料。把整个�
 
 | 搭档 | 作用 | 文档 |
 |---|---|---|
-| engram | 把产出的 skill 包同步进本地记忆库(去重 / 衰减 / 召回) | [`adapters/sync/engram.md`](adapters/sync/engram.md) |
+| [whetstone-curator](https://github.com/TbusOS/whetstone-curator) | 团队侧:从队友库帮你找经验(fetch)/ 收割全队进共享库(harvest) | 见其仓库 |
+| engram | 把产出的 skill 包同步进本地记忆库(召回 / supersede;委托范围按实测现状,见文档) | [`adapters/sync/engram.md`](adapters/sync/engram.md) |
 | llm-wiki | 把知识发成人看的 wiki 页 | [`adapters/sync/llm-wiki.md`](adapters/sync/llm-wiki.md) |
 | darwin-skill(第三方) | 给单个 skill 打分 / 进化 | 见其仓库 |
 

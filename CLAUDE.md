@@ -21,9 +21,10 @@ Whetstone 是一个**蒸馏工具**(不是单个 skill):开发完一个功能,�
    先例是 llm-wiki/engram(我们自己的独立工具),不是 nuwa/darwin(花叔的第三方 skill)。
 2. **Runtime 中立 + 零运行时依赖**。runtime 专属只隔离在 `adapters/capture/<runtime>`;产物是纯 markdown。
    不写「在 Claude Code 里」这类绑定措辞(否则别的 agent 拒装)。
-3. **engram / llm-wiki / darwin 都是可选 sink**,装了增强,不装照跑。
-   特别是:**engram 已实现去重/置信衰减/召回**,whetstone 不重造这套 —— 有 engram 就委托它,
-   单机靠人审 + runtime 原生召回。
+3. **engram / llm-wiki / darwin 都是可选 sink**,装了增强,不装照跑。委托 engram 按**实测现状**
+   (2026-08-24 核对其代码,详见 adapters/sync/engram.md):召回 / supersede / 证据分级事件流已实现,
+   可委托;**去重仅事后启发式扫描、memory 置信衰减未实现**——入库前去重与质量把关是 whetstone
+   Phase 3 自己的责任,推不掉。单机靠人审 + runtime 原生召回。
 4. **L1–L4 分层**:L1 原理(任何平台成立)/ L2 方法+坑(可迁移,你的做法)/ L3 平台参数(换平台就变的值)/
    L4 状态(下次会话就变)。坑必须拆成 L2 教训 + L3 事实。详见 extraction-framework.md。
 5. **作用域还决定 skill 边界**:共享 L1/L2 的领域合成一个 skill(如 verified-boot 家族),陌生的分开。
@@ -56,7 +57,8 @@ Whetstone 是一个**蒸馏工具**(不是单个 skill):开发完一个功能,�
 - `/distill` `/promote`:仍是 agent 流程定义;`/promote` 的语义 merge 靠对话,`bin/promote.sh` 只机械化了"装新 skill + 撞库不覆盖"那半。
 - `adapters/sync/llm-wiki`:仍是文档,未写脚本(没真需求)。
 - 跨 runtime(Codex/Cursor):采集契约中立可照搬,**仍未在真实 Codex/Cursor 上实测**(本机无该 runtime)。
-- **§7 证据升级(2026-08-24)**:调研(engram 内部 + ai-doc 论文 + 业界系统)确认设计的唯一结构性缺口是"质量控制全在入口,入库后无信号回流"。两个 spec 级修复,零新基础设施:① **验证方式字段**(吸收 kernel-learn"无可执行检查不准建"):每条带可执行检查位,置信度改**机械判定表**(实测验证 + 复现 ≥2 才 high,无验证封顶 med);② **复现回写**(ExpeL 式 upvote):复现次数(裸数字)改复现记录(append-only 列表),Phase 3 对账时本次印证过的旧条目在提案里 append 一行——人审不再一次性。改动:extraction-framework §7/§8/§9、SKILL.md Phase 2/3/4/5 + 黑名单 +9/+10、双模板(顺修模板漏"复现次数"字段的 bug)、spec/skill-package.md;`adapters/sync/engram.md` 修正两处对 engram 的过度声明(去重仅事后启发式、memory 置信衰减未实现——委托按实测不按文档)。
+- **§7 证据升级(2026-08-24)**:调研(engram 内部 + ai-doc 论文 + 业界系统)确认设计的唯一结构性缺口是"质量控制全在入口,入库后无信号回流"。两个 spec 级修复,零新基础设施:① **验证方式字段**(吸收 kernel-learn"无可执行检查不准建"):每条带可执行检查位,置信度改**机械判定表**(实测验证 + 复现 ≥2 才 high,无验证封顶 med);② **复现回写**(ExpeL 式 upvote):复现次数(裸数字)改复现记录(append-only 列表),Phase 3 对账时本次印证过的旧条目在提案里 append 一行——人审不再一次性。改动:extraction-framework §7/§8/§9、SKILL.md Phase 2/3/4/5 + 黑名单 +9/+10、双模板、spec/skill-package.md;engram 过度声明按实测修正(CLAUDE.md 定位决定 #3 / README / engram.md / engram.sh 四处)。
+- **评审加固轮(2026-08-24,3 个独立评审 agent 全查了一遍)**:§7 补齐——机械表加 L2 附加约束(单平台 L2 封顶 low,med 的"验证 1 次"条款只适用 L3)、验证方式加「实测:通过 <日期>/未实测」承载位、复现记录行唯一键 = 平台/项目(防同项目刷次数绕过升级 gate)、params 模板补齐复现/日期列、`/promote` 加回写落地步骤(也承认 curator fetch 提案)、新增 pitfalls-template。autoupdate 修 6 个必修(merge-only 提交炸算术、repos 缺末行换行丢仓、jq 失败假报成功、README 两条共存承诺改诚实、own 模式静默吞兄弟 hook→改为拒绝+--takeover、selftest 环境泄漏),selftest 22→**43 项**全过;另修 bash 坑:UTF-8 locale 下 `$var` 后紧跟全角字符会被当变量名(set -u 直接死)。
 - `autoupdate/`(2026-08-24 加):多 CLI 自动更新提示器,从 sky-skills-autoupdate 移植 + 三处适配:**join/own 双模式**(本机已有兼容 hook 就只登记 repos,不挂第二套,防双重提示)、**union 读取** `~/.config/*-autoupdate/repos`(谁的 hook 活着都能看到全部被监控仓)、修两处移植 bug(macOS 无 `timeout` 时 fetch 静默失效 → 加回退;重启检测正则 `/SKILL\.md$` 匹配不到仓库根布局 → `(^|/)`)。**已建+实测**(`autoupdate/selftest.sh` 22/22,隔离夹具;本机 install 实测走 join 模式)。CLI 加 `whetstone autoupdate check|update|install|upgrade|uninstall|selftest`。
 
 ## 判断:v1 算完成,先用起来

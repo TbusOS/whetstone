@@ -1,6 +1,6 @@
 ---
 name: whetstone
-description: "Distill a finished dev session into proposals for a self-growing local skill library. Mines the transcript + git diff + pitfalls, decomposes what was learned into 4 layers (L1 principle / L2 method+pitfall / L3 platform-params / L4 state) via references/extraction-framework.md, reconciles against existing skills (dedup / supersede / conflict), and writes a human-reviewed proposal into inbox/. Self-contained, zero runtime dependency. Trigger words: 蒸馏这次 / distill this session / 把这次经验做成 skill / 开发完记录经验 / capture what I learned. Use after finishing a feature or bugfix to capture the reusable part."
+description: "Distill a finished dev session into proposals for a self-growing local skill library. Mines the transcript + git diff + pitfalls, decomposes what was learned into 4 layers (L1 principle / L2 method+pitfall / L3 platform-params / L4 state) via references/extraction-framework.md, reconciles against existing skills (dedup+write-back / supersede / conflict), and writes a human-reviewed proposal into inbox/. Self-contained, zero runtime dependency. Trigger words: 蒸馏这次 / distill this session / 把这次经验做成 skill / 开发完记录经验 / capture what I learned. Use after finishing a feature or bugfix to capture the reusable part."
 ---
 
 # Whetstone · 磨刀石 — Distiller 提炼流程 (Session → Skill)
@@ -111,7 +111,7 @@ for 每条学习时刻:
 
 **L2 升级 gate(§7):** 一条教训复现记录只有 1 行 → 维持 low,先泊在对应 L3 旁注,**不进 skill L2 正文**;第 2 个平台/项目复现(回写到第 2 行)再升。
 
-**复现回写(§7,ExpeL 式 upvote):** 除对账判"已有、一样"之外,本次任务**直接靠库里某条成事且没翻车**的,同样在提案里给那条 append 一行复现记录。回写项随提案一起过人审,不直写库。反证(用了且翻车)不回写,走 supersede/冲突。这一步让人审不再是一次性的:每次蒸馏都在给旧条目积累或推翻证据。
+**复现回写(§7,ExpeL 式 upvote):** 除对账判"已有、一样"之外,本次任务**直接靠库里某条成事且没翻车**的,同样在提案里回写那条的复现记录——**新平台/项目才 append 新行,同平台/项目只刷新该行日期**(§7:行的唯一键 = 平台/项目,防同一项目反复用把 L2 gate 刷穿)。回写项随提案一起过人审,不直写库。反证(用了且翻车)不回写,走 supersede/冲突。这一步让人审不再是一次性的:每次蒸馏都在给旧条目积累或推翻证据。
 
 **★对账要 doc + git/code 双查(别只信挖来的文档):** 挖来的素材常是**某时点快照** —— 文档说"X 是缺口 / 没修 / 没生效"可能后来已改。判一条"现状 / 缺口 / 是否生效"之前,**核 git log + 追到当前代码的实际调用点**,以代码为准下结论,不照快照入库(否则把过期结论蒸进 skill)。提案里的"现状 / 缺口"必须带 commit / 代码行号佐证,**不写"应该 / 可能"**。
 
@@ -161,13 +161,13 @@ for 每条学习时刻:
 |---|---|---|---|
 | 1 | 跳过对账直接往库里加 | 重复 L1/L2 散进多个 skill = 库漂移 | Phase 3 强制对账去重 |
 | 2 | 自动覆盖库里的安全事实 | 拿二手 transcript 覆盖实测真值,可能写错 | Phase 3 冲突→人审+二次核实 |
-| 3 | 单次经验直接进 skill 正文 | 巧合当规律 | §7 复现 ≥2 才升 L2 |
+| 3 | 单次经验直接进 skill 正文 | 巧合当规律 | §7 复现记录 ≥2 行才升 L2 |
 | 4 | 同上下文自评提案 | "刚写的肯定好"偏差 | Phase 4 独立 agent |
 | 5 | 只读 git diff 不读 transcript | 抹掉了坑和决策(WHY) | Phase 1 镜头 B/C 必跑 |
 | 6 | 提案直写正式库 | 绕过人审 = 库不可控 | Phase 5 只写 inbox,promote 才进库 |
 | 7 | 溯源写"前面说过" | 不可追溯,日后无法判过时 | 必须 commit hash / transcript 定位 |
 | 8 | 把 AI 元对话/废话当工程知识 | 噪声入库 | Phase 1 只收真实工程学习 |
-| 9 | 置信度凭感觉标 high | 无验证的 high 会顶着高置信悄悄过期 | §7 机械表:实测验证 + 复现 ≥2 才 high |
+| 9 | 置信度凭感觉标 high | 无验证的 high 会顶着高置信悄悄过期 | §7 机械表:实测验证 + 复现记录 ≥2 行才 high |
 | 10 | 用了库里的经验却不回写复现 | 印证证据白丢,人审退化成一次性 | Phase 3 复现回写(随提案过人审) |
 
 **触发:Phase 3、Phase 5 各对照本表一次,任一命中 → 重做该步。**
@@ -191,7 +191,7 @@ for 每条学习时刻:
 ## 一句话流程
 
 ```
-圈范围 → 4 镜头挖掘 → 套框架分层 → [人审①] → 对账库存(去重/替代/冲突)
+圈范围 → 4 镜头挖掘 → 套框架分层 → [人审①] → 对账库存(去重+回写/替代/冲突)
        → 独立质检 → 写 inbox 提案 → [人审②] → promote 进库
 ```
 
