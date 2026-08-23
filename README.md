@@ -50,6 +50,7 @@ Whetstone 自身就是一个 Agent Skill(`SKILL.md`)+ 参考资料。把整个�
 
 - **零运行时依赖**:不装 engram、不装 darwin 也能跑。
 - **自动采集(可选)**:见 [`adapters/capture/README.md`](adapters/capture/README.md)——runtime 专属只在这一层。
+- **自动更新提示(可选)**:`bash autoupdate/install.sh`——远端有更新时 AI 在会话里主动提示,确认后 `git pull --ff-only`;支持 Claude Code / Codex / Gemini CLI,与 sky-skills-autoupdate 同协议共存。见 [`autoupdate/README.md`](autoupdate/README.md)。
 
 ## 可选搭档(装了才用)
 
@@ -71,6 +72,7 @@ bin/                              pack / deploy / promote / lint / index(搬运 
 cli/whetstone                     runtime-agnostic CLI(包 pack/deploy/promote/capture/sync/lint/index)
 adapters/capture/                 per-runtime 采集(claude-code.sh + selftest + 各 runtime 说明)
 adapters/sync/                    可选下游(engram.sh / llm-wiki)
+autoupdate/                       多 CLI 自动更新提示器(hook 检测 + 确认后 ff-only 更新 + selftest)
 inbox/                            提案暂存(运行时,不入库)
 journal/                          原材料(运行时,不入库)
 ```

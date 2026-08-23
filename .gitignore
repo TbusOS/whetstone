@@ -21,6 +21,7 @@ __pycache__/
 # lint/index 自测临时目录
 .capture-selftest/
 .promote-test-dest/
+.autoupdate-selftest/
 
 # macOS 目录元数据 —— 各级子目录都可能生成
 .DS_Store

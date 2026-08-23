@@ -1,0 +1,7 @@
+# whetstone-autoupdate 监控的 git 仓(每行一个仓库根路径;# 起头为注释)。
+# install.sh 会自动把检测到的 whetstone clone 写进这里。
+# 想监控别的仓库(如你的私有 skill 库),手动加一行它的仓库根路径即可。
+#
+# 例:
+# /path/to/whetstone
+# /path/to/your-private-skills-repo

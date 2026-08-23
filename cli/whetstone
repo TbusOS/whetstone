@@ -40,6 +40,13 @@ capture (optional, runtime-specific):
   selftest                                run the capture hook selftest
   journal                                 list captured sessions
 
+autoupdate (optional, multi-CLI update prompter — see autoupdate/README.md):
+  autoupdate check                        report which watched repos are behind their remote
+  autoupdate update                       pull --ff-only every behind repo (asks nothing, changes repos)
+  autoupdate install|upgrade|uninstall    wire/unwire the session hooks (joins a sibling
+                                          *-autoupdate install instead of double-hooking)
+  autoupdate selftest                     run the autoupdate selftest (isolated fixtures)
+
 agent-only:
   distill                                 (runs inside an agent runtime — see note below)
 
@@ -70,6 +77,17 @@ sync_cmd() {
   esac
 }
 
+autoupdate_cmd() {
+  local sub="${1:-check}"; [ $# -gt 0 ] && shift
+  case "$sub" in
+    check)                     exec bash "$REPO_DIR/autoupdate/hooks/check-update.sh" --report "$@";;
+    update)                    exec bash "$REPO_DIR/autoupdate/bin/do-update.sh" "$@";;
+    install|upgrade|uninstall) exec bash "$REPO_DIR/autoupdate/install.sh" "$sub" "$@";;
+    selftest)                  exec bash "$REPO_DIR/autoupdate/selftest.sh" "$@";;
+    *) echo "usage: whetstone autoupdate [check|update|install|upgrade|uninstall|selftest]" >&2; exit 2;;
+  esac
+}
+
 distill_msg() {
   cat >&2 <<EOF
 distill runs inside an agent runtime, not the CLI.
@@ -91,6 +109,7 @@ case "$cmd" in
   selftest)          exec bash "$REPO_DIR/adapters/capture/selftest.sh" "$@";;
   journal)           journal_cmd "$@";;
   sync)              sync_cmd "$@";;
+  autoupdate)        autoupdate_cmd "$@";;
   distill)           distill_msg;;
   -V|--version|version) echo "whetstone $WHETSTONE_VERSION";;
   -h|--help|help|"") usage;;

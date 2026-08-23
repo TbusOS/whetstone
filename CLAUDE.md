@@ -56,6 +56,7 @@ Whetstone 是一个**蒸馏工具**(不是单个 skill):开发完一个功能,�
 - `/distill` `/promote`:仍是 agent 流程定义;`/promote` 的语义 merge 靠对话,`bin/promote.sh` 只机械化了"装新 skill + 撞库不覆盖"那半。
 - `adapters/sync/llm-wiki`:仍是文档,未写脚本(没真需求)。
 - 跨 runtime(Codex/Cursor):采集契约中立可照搬,**仍未在真实 Codex/Cursor 上实测**(本机无该 runtime)。
+- `autoupdate/`(2026-08-24 加):多 CLI 自动更新提示器,从 sky-skills-autoupdate 移植 + 三处适配:**join/own 双模式**(本机已有兼容 hook 就只登记 repos,不挂第二套,防双重提示)、**union 读取** `~/.config/*-autoupdate/repos`(谁的 hook 活着都能看到全部被监控仓)、修两处移植 bug(macOS 无 `timeout` 时 fetch 静默失效 → 加回退;重启检测正则 `/SKILL\.md$` 匹配不到仓库根布局 → `(^|/)`)。**已建+实测**(`autoupdate/selftest.sh` 22/22,隔离夹具;本机 install 实测走 join 模式)。CLI 加 `whetstone autoupdate check|update|install|upgrade|uninstall|selftest`。
 
 ## 判断:v1 算完成,先用起来
 
