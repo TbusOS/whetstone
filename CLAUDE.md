@@ -63,6 +63,13 @@ Whetstone 是一个**蒸馏工具**(不是单个 skill):开发完一个功能,�
 
 工具本身基本到头了。**"越用越聪明"发生在长大的 skill 库里(产物),不是给工具加功能。** 管道层等真用着疼了再补对应那块:忘记蒸 → 挂 capture hook;有 engram 且想自动同步 → 写 sync;要上别的 runtime → 实测 + 修措辞。**真正该持续做的:继续蒸 skill 让库长大。**
 
+## 兄弟仓:whetstone-curator(团队侧,2026-08-24 建)
+
+github.com/TbusOS/whetstone-curator —— 「库 → 库」经验流动,fetch(按需帮个人从队友库筛经验)
+/ harvest(收割全队进 canonical 团队库)双模式,AI 筛人裁。规则全部引用本仓 extraction-framework,
+依赖本仓 ≥ 89a341d(§7 证据升级)。本仓配合改动:lint.py COMPANION_SUFFIX 加 `curator`。
+团队相关需求先去那边看 REQUIREMENTS/DESIGN/TASKS,别在本仓重复造。
+
 ## 待定 / 可选功能
 
 - **skill 库跨机迁移**:推荐把自己的 skill 放**私有** repo(clone 即部署);whetstone 可加 `bin/pack.sh` + `bin/deploy.sh`(generic tar + manifest)当补充。未建,按需。

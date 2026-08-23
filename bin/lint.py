@@ -43,7 +43,7 @@ BOUNDARY_MARK = re.compile(r"DO NOT|不重复|同族|不触发|不适用|use .+-
 # skill's description references the base. Distinguishes good companions from accidental
 # prefix clashes (design-review-framework had "framework" — not a companion suffix).
 COMPANION_SUFFIX = {"audit", "validator", "review", "critic", "evaluator",
-                    "lint", "test", "check", "verify", "checker"}
+                    "lint", "test", "check", "verify", "checker", "curator"}
 
 
 def parse_frontmatter(path):
