@@ -118,13 +118,19 @@ are Python standard library, and everything it produces is plain markdown.
 ```bash
 git clone https://github.com/TbusOS/whetstone.git
 cd whetstone
-bash bin/verify_selftest.sh                       # 97 assertions across 37 checks
+bash bin/verify_selftest.sh                       # 120 assertions across 37 checks
+bash bin/verify_mutation_test.sh                  # delete each check; the suite must go red
 ./cli/whetstone verify examples/demo-skill --brief
 ```
 
 The selftest asserts **both directions** for every check — a defective fixture makes it fire,
-a conforming one keeps it quiet — and a final coverage pass fails the run if any published
-check is missing either direction, so that claim cannot drift.
+a conforming one keeps it quiet — and a coverage pass fails the run if any published check is
+missing either direction, so that claim cannot drift. The mutation battery then deletes each
+piece of checking logic in turn and requires the suite to go red: a check whose removal changes
+nothing is not being tested, and a green suite over such a check reports safety that is not
+there. Three independent reviews found four ways to slip past the promotion gate — a dropped
+separator, a heading that merely mentioned "L3", a parenthesised platform suffix, a table
+without leading pipes — and every one of them is now a mutation entry.
 
 Optional, none required: session capture
 ([`adapters/capture/`](adapters/capture/README.md)), update prompting
@@ -161,7 +167,8 @@ references/extraction-framework.md  the L1-L4 schema — the actual core
 spec/skill-package.md               portable skill-package format (the deliverable)
 commands/                           /distill and /promote slash-command definitions
 bin/verify.py                       evidence discipline, executable
-bin/verify_selftest.sh              97 assertions, both directions, coverage-enforced
+bin/verify_selftest.sh              120 assertions, both directions, coverage-enforced
+bin/verify_mutation_test.sh         deletes each check in turn; the suite must go red
 bin/lint.py · bin/index.py          selection-menu hygiene
 bin/pack.sh · bin/deploy.sh · bin/promote.sh   move and install packages
 cli/whetstone                       runtime-agnostic CLI, pure bash

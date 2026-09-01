@@ -29,3 +29,4 @@ __pycache__/
 
 # selftest staging
 .verify-selftest/
+.verify-mutation.*/

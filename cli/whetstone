@@ -39,6 +39,7 @@ evidence discipline (the rules in extraction-framework, made executable):
                                           neutrality in a skill package
   verify --explain                        what each check is — and what is left to humans
   verify-selftest                         run the verify selftest (fixtures, both directions)
+  verify-mutation                         delete each check in turn; the selftest must go red
 
 index hygiene (keep the selection menu clean as the library grows):
   lint [--src D] [--strict] [--json]      flag empty/overlapping/colliding descriptions
@@ -117,6 +118,7 @@ case "$cmd" in
   promote)           exec bash "$REPO_DIR/bin/promote.sh" "$@";;
   verify)            command -v python3 >/dev/null 2>&1 || { echo "verify needs python3" >&2; exit 3; }; exec python3 "$REPO_DIR/bin/verify.py" "$@";;
   verify-selftest)   exec bash "$REPO_DIR/bin/verify_selftest.sh" "$@";;
+  verify-mutation)   exec bash "$REPO_DIR/bin/verify_mutation_test.sh" "$@";;
   lint)              command -v python3 >/dev/null 2>&1 || { echo "lint needs python3" >&2; exit 3; }; exec python3 "$REPO_DIR/bin/lint.py" "$@";;
   index)             command -v python3 >/dev/null 2>&1 || { echo "index needs python3" >&2; exit 3; }; exec python3 "$REPO_DIR/bin/index.py" "$@";;
   capture)           exec bash "$REPO_DIR/adapters/capture/claude-code.sh" "$@";;

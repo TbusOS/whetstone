@@ -40,7 +40,8 @@ RANK_NAME = {0: "low", 1: "med", 2: "high"}
 DATE = re.compile(r"\b\d{4}-\d{2}-\d{2}\b")
 VAGUE_DATE = re.compile(r"当前|最近|近期|上次|前几天|recently|currently", re.I)
 CONF_VAL = re.compile(r"\b(high|med|medium|low)\b", re.I)
-TESTED_OK = re.compile(r"实测[:：]?\s*通过\s*(\d{4}-\d{2}-\d{2})|tested[:：]?\s*pass\s*(\d{4}-\d{2}-\d{2})", re.I)
+TESTED_OK = re.compile(r"(?<!未)实测[:：]?\s*通过\s*\d{4}-\d{2}-\d{2}"
+                       r"|(?<!not )tested[:：]?\s*pass\s*\d{4}-\d{2}-\d{2}", re.I)
 TESTED_NO = re.compile(r"未实测|未验证|not\s+tested", re.I)
 BARE_COUNT = re.compile(r"^\s*\d+\s*(次|times?)?\s*$", re.I)
 UNTRACEABLE = re.compile(r"前面说过|上面提过|之前提到|as\s+mentioned|see\s+above", re.I)
@@ -55,9 +56,13 @@ FIELD_LAYER = re.compile(r"^\s*[-*]?\s*\**\s*(层|layer)\s*\**\s*[:：]\s*(L[1-4
 
 CONCRETE = [
     (re.compile(r"0x[0-9a-fA-F]{3,}"), "hex address/value"),
-    (re.compile(r"(?<!\d)\d{1,3}(?:\.\d{1,3}){3}(?!\d)"), "IP address"),
+    (re.compile(r"(?<![\d.\u00a7])(?:25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)"
+                r"(?:\.(?:25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)){3}(?![\d.])"), "IP address"),
     (re.compile(r"(?<![\w.-])/(?:dev|proc|sys|opt|srv|etc)/[\w./-]+"), "absolute system path"),
-    (re.compile(r"(?<![\w.-])v?\d+\.\d+\.\d+(?![\w.-])"), "pinned version"),
+    # a bare a.b.c is far more often a section number or a dotted date than a version
+    # pin, so only the v-prefixed form counts (audit: "\u00a71.2.3", "2026.09.02",
+    # "\u7b2c 10.1.1.1 \u6761" all misfired)
+    (re.compile(r"(?<![\w.-])v\d+\.\d+\.\d+(?![\w.-])"), "pinned version"),
     (re.compile(r"(?<!\w)\d+\s*(?:KB|MB|GB|kHz|MHz|GHz|ms|us|bps|baud)(?!\w)", re.I), "measured quantity"),
 ]
 USERPATH = re.compile(r"/home/[A-Za-z0-9_.-]+|/Users/[A-Za-z0-9_.-]+|[Cc]:\\Users\\")
@@ -67,7 +72,8 @@ EXEMPT_L3 = re.compile(r"<!--\s*l3-ok")
 EXEMPT_RT = re.compile(r"<!--\s*runtime-ok")
 # a block is a provenance RECORD only if it carries a field-shaped line; merely
 # mentioning 来源/置信 in prose is not a record (that is V09b's job instead).
-FIELD_LINE = re.compile(r"^\s*[-*]?\s*\**\s*(来源|溯源|source|provenance|置信度|复现记录|验证方式)\s*\**\s*[:：]")
+FIELD_LINE = re.compile(r"^\s*>?\s*(?:[-*+]|\d+[.)])?\s*\**\s*"
+                        r"(来源|溯源|source|provenance|置信度|复现记录|验证方式)\s*\**\s*[:：]", re.I)
 INLINE_CONF = re.compile(r"置信\s*度?\s*[:：]?\s*(high|med|medium|low)", re.I)
 
 # ---------------------------------------------------------------- parsing ---
@@ -135,8 +141,15 @@ def repro_key(line):
     """Unique key of a 复现记录 line = its platform/project field (§7).
     Line form: '<平台/项目> · <日期> · <指针>'. Returns (raw_key, normal_key)."""
     head = re.split(r"[·|]", line, maxsplit=1)[0].strip()
-    head = re.sub(r"^[-*\s]+", "", head).strip("`*　 ")
-    return head, re.sub(r"[\s_./\\-]+", "", head).lower()
+    head = re.sub(r"^[-*+\s]+", "", head).strip("`*　 ")
+    # normalise hard: a parenthetical suffix ("soc-x(第二次)") or an exotic dash
+    # (U+2011) used to produce a second key for the same platform, which is exactly
+    # the count inflation §7's unique key exists to stop (audit FN-3)
+    norm = re.sub(r"[(（\[【].*?[)）\]】]", "", head)
+    norm = norm.translate({0x2010: 45, 0x2011: 45, 0x2012: 45, 0x2013: 45,
+                           0x2014: 45, 0x2212: 45, 0xFF0D: 45, 0x00A0: 32})
+    norm = re.sub(r"[^0-9a-z\u4e00-\u9fff]+", "", norm.lower())
+    return head, norm
 
 
 def cell_fields(headers, cells):
@@ -162,6 +175,21 @@ def cell_fields(headers, cells):
     return f
 
 
+DELIM_ROW = re.compile(r"^\s*\|?\s*:?-{2,}:?\s*(\|\s*:?-{2,}:?\s*)+\|?\s*$")
+
+
+def is_table_head(lines, i):
+    """A header row is any line with a pipe followed by a delimiter row. GFM does
+    not require the leading pipe; requiring it hid whole params files from every
+    check, including the one meant to notice a missing 置信度 column (audit FN-4)."""
+    return ("|" in lines[i] and i + 1 < len(lines) and DELIM_ROW.match(lines[i + 1])
+            and not DELIM_ROW.match(lines[i]))
+
+
+def row_cells(ln):
+    return [c.strip() for c in ln.strip().strip("|").split("|")]
+
+
 def parse_tables(path, text, layer):
     """Markdown tables carrying a 置信度 column -> one record per data row."""
     recs = []
@@ -169,14 +197,14 @@ def parse_tables(path, text, layer):
     i = 0
     while i < len(lines):
         ln = lines[i]
-        if ln.strip().startswith("|") and i + 1 < len(lines) and re.match(r"^\s*\|[\s:|-]+\|\s*$", lines[i + 1]):
-            headers = [c.strip() for c in ln.strip().strip("|").split("|")]
+        if is_table_head(lines, i):
+            headers = row_cells(ln)
             if not any(FIELD_CONF.search(h) for h in headers):
                 i += 1
                 continue
             j = i + 2
-            while j < len(lines) and lines[j].strip().startswith("|"):
-                cells = [c.strip() for c in lines[j].strip().strip("|").split("|")]
+            while j < len(lines) and "|" in lines[j] and lines[j].strip():
+                cells = row_cells(lines[j])
                 if any(c for c in cells):
                     f = cell_fields(headers, cells)
                     recs.append({
@@ -207,6 +235,8 @@ def parse_blocks(path, text, default_layer):
         body = "\n".join(block)
         if not any(FIELD_LINE.match(t) for t in block):
             return
+        if re.search(r"替代记录|supersed", title or "", re.I):
+            return          # §11 change log, not a knowledge entry (audit FP-5)
         f = {"source": "", "date": "", "repro": "", "verify": "", "conf": "", "why": ""}
         repro_lines, layer = [], default_layer
         for off, t in enumerate(block):
@@ -280,7 +310,10 @@ def parse_blocks(path, text, default_layer):
             flush()
             block, cur_title = [], t.lstrip("# ").strip()
             continue
-        if not t.strip():
+        # a thematic break (--- / *** / ___) and a setext underline end a block
+        # just as a blank line does; treating them as ordinary text merged two
+        # records and let one borrow the other's 复现记录 (audit FN-1)
+        if not t.strip() or re.fullmatch(r"\s*([-*_=])\1{2,}\s*", t):
             flush()
             block = []
             continue
@@ -296,7 +329,11 @@ def layer_of_section(text, lineno):
     lines = text.splitlines()[:lineno]
     for t in reversed(lines):
         if t.startswith("#"):
-            m = re.search(r"\bL([1-4])\b", t)
+            # only the template's trailing "(L2)" marks a section's layer. Matching
+            # a bare "L3" anywhere in the heading meant a sentence such as
+            # "不要把 L3 值写进正文" silently raised the cap for everything under it
+            # (audit FN-2).
+            m = re.search(r"[(（]\s*L([1-4])\s*[)）]\s*$", t.strip())
             return "L" + m.group(1) if m else ""
     return ""
 
@@ -326,14 +363,25 @@ def cap_for(layer, verified, distinct):
     L1/L2 override: fewer than 2 distinct platforms/projects caps at low no matter
     what — 'verified once' rescues a value, never a method (§7)."""
     if layer in ("L1", "L2") and distinct < 2:
-        return 0
+        return 0          # §7: verifying a method once does not make it general
     if verified and distinct >= 2:
         return 2
     if distinct >= 2:
         return 1
-    if verified and layer == "L3":
-        return 1
+    if verified:
+        return 1          # only reachable for L3, because of the guard above
     return 0
+
+
+DOC_REF = re.compile(r"[\u00a7\u7b2c]\s*$|[\u6761\u8282\u7ae0\u9879]")
+
+
+def _is_doc_reference(line, m):
+    """A dotted number right after \u00a7 / \u7b2c, or right before \u6761 / \u8282 / \u7ae0, is a
+    document reference rather than a value (audit FP-1)."""
+    before = line[max(0, m.start() - 4):m.start()]
+    after = line[m.end():m.end() + 3]
+    return bool(re.search(r"[\u00a7\u7b2c]\s*$", before) or re.match(r"\s*[\u6761\u8282\u7ae0\u9879]", after))
 
 
 def check_record(rec, rep, pkg):
@@ -536,17 +584,26 @@ def check_package(pkg, rep):
 
     text = read(sk)
     params_dir = os.path.join(pkg, "params")
-    have_params = sorted(f for f in os.listdir(params_dir)) if os.path.isdir(params_dir) else []
+    try:
+        have_params = sorted(os.listdir(params_dir)) if os.path.isdir(params_dir) else []
+    except OSError as e:
+        rep.add("E", "V03", "params/", f"cannot read params/: {e.strerror}", "§10 where artefacts live")
+        have_params = []
     have_params = [f for f in have_params if f.endswith(".md")]
 
     # V03 pointers resolve
-    for m in re.finditer(r"`?(params/[\w.-]+\.md|pitfalls\.md)`?", text):
-        tgt = m.group(1)
-        if "<" in tgt or ">" in tgt:
+    # fenced blocks hold layout examples, not real pointers — V19/V09b already skip
+    # them and V03 must use the same ruler (audit FP-3)
+    for ln_no, t, in_fence in strip_fences(text.splitlines()):
+        if in_fence:
             continue
-        if not os.path.isfile(os.path.join(pkg, tgt)):
-            ln = text[:m.start()].count("\n") + 1
-            rep.add("E", "V03", f"SKILL.md:{ln}", f"pointer resolves to nothing: {tgt}", "§10 where artefacts live")
+        for m in re.finditer(r"`?(params/[\w.-]+\.md|pitfalls\.md)`?", t):
+            tgt = m.group(1)
+            if "<" in tgt or ">" in tgt:
+                continue
+            if not os.path.isfile(os.path.join(pkg, tgt)):
+                rep.add("E", "V03", f"SKILL.md:{ln_no}", f"pointer resolves to nothing: {tgt}",
+                        "§10 where artefacts live")
 
     # V04 declared platforms vs params/ files
     declared_pf = set()
@@ -589,7 +646,9 @@ def check_package(pkg, rep):
         for k in range(r["line"], r["line"] + r["raw"].count("\n") + 1):
             prov_lines.add(k)
     records += body_recs
-    records += parse_tables(sk, text, "L2")
+    for r in parse_tables(sk, text, ""):
+        r["layer"] = r["layer"] or layer_of_section(text, r["line"]) or "L2"
+        records.append(r)
 
     l3_section = False
     for n, t, in_fence in strip_fences(text.splitlines()):
@@ -600,7 +659,10 @@ def check_package(pkg, rep):
         if t.lstrip().startswith(">"):
             continue
         m = INLINE_CONF.search(t)
-        if m:
+        # a sentence that explains the grading ("置信度 high 要实测通过 + 复现 >=2")
+        # is not an entry claiming a level. Any package documenting this scheme —
+        # whetstone's own included — tripped V09b on it (audit FP-2).
+        if m and not re.search(r"§|机械表|要求|必须|才(算|能|是)|table|requires|means", t):
             lvl = m.group(1).lower()
             sev = "E" if RANK[lvl] >= 2 else "W"
             rep.add(sev, "V09b", f"SKILL.md:{n}",
@@ -609,7 +671,7 @@ def check_package(pkg, rep):
             continue
         for rx, what in CONCRETE:
             m = rx.search(t)
-            if m:
+            if m and not _is_doc_reference(t, m):
                 rep.add("W", "V19", f"SKILL.md:{n}", f"concrete value in the body ({what}): {m.group(0)!r}",
                         "§9#1 — push it down to params/ (L3); if it really is general, mark <!-- l3-ok: reason -->")
                 break
@@ -627,7 +689,7 @@ def check_package(pkg, rep):
                 continue
             for rx, whatv in CONCRETE:
                 m = rx.search(t)
-                if m:
+                if m and not _is_doc_reference(t, m):
                     rep.add("W", "V19", f"pitfalls.md:{n}", f"concrete value in the body ({whatv}): {m.group(0)!r}",
                             "§9#1 — push it down to params/ (L3); if it really is general, mark <!-- l3-ok: reason -->")
                     break
@@ -650,11 +712,21 @@ def check_package(pkg, rep):
             # §7 "每条必带,缺了不收" is per ENTRY. A pitfall section is an entry, so a
             # section with no provenance line at all must fail here — otherwise the
             # sloppiest packages are exactly the ones the checker cannot see.
+            # only sections shaped like a pitfall are entries; a "how to use this
+            # file" section is prose and must not be told it lacks provenance (FP-6)
+            # an entry uses those words as FIELD LABELS; a "how to use this file"
+            # paragraph merely mentions them in prose. Matching anywhere in the body
+            # made the note itself look like an entry (audit FP-6).
+            if not re.search(r"^\s*>?\s*(?:[-*+]|\d+[.)])?\s*\**\s*"
+                             r"(症状|真因|修法|涉及事实|溯源|symptom|root cause|fix)\s*\**\s*[:：]",
+                             body, re.M):
+                continue
             if not any(FIELD_LINE.match(t) for t in body.splitlines()):
                 rep.add("E", "V06d", f"pitfalls.md [{title[:32]}]",
                         "pitfall entry carries no provenance at all",
                         "§7 — every entry carries 来源/日期/复现记录/验证方式/置信度")
-            m = re.search(r"涉及事实[^\n]*", body)
+            prose = "\n".join(t for _, t, inf in strip_fences(body.splitlines()) if not inf)
+            m = re.search(r"涉及事实[^\n]*", prose)
             if not m:
                 rep.add("E", "V20", f"pitfalls.md [{title[:32]}]",
                         "pitfall has no 涉及事实 line — cannot tell whether it was split into L2 + L3",
@@ -664,6 +736,7 @@ def check_package(pkg, rep):
             if re.search(r"无|none|纯方法", val):
                 continue
             tgts = re.findall(r"params/[\w.-]+\.md", val)
+            del prose
             if not tgts:
                 rep.add("E", "V20b", f"pitfalls.md [{title[:32]}]",
                         "涉及事实 neither points at params/ nor declares 无", "§4 — split into an L2 lesson and an L3 fact")
@@ -683,8 +756,8 @@ def check_package(pkg, rep):
         # means an entire params file can be unchecked while reporting 0 findings
         plines = ptext.splitlines()
         for i in range(len(plines) - 1):
-            if plines[i].strip().startswith("|") and re.match(r"^\s*\|[\s:|-]+\|\s*$", plines[i + 1]):
-                hdrs = [c.strip() for c in plines[i].strip().strip("|").split("|")]
+            if is_table_head(plines, i):
+                hdrs = row_cells(plines[i])
                 if len(hdrs) >= 3 and not any(FIELD_CONF.search(h) for h in hdrs):
                     rep.add("E", "V06e", f"params/{fn}:{i + 1}",
                             "fact table has no 置信度 column — nothing in it can be checked",
@@ -706,7 +779,9 @@ def check_package(pkg, rep):
     # ---- V23/V24 runtime neutrality ----
     for rel in _all_text(pkg):
         p = os.path.join(pkg, rel)
-        for n, t, in_fence in strip_fences(read(p).splitlines()):
+        file_text = read(p)
+        file_runtimes = set(x.lower() for x in RUNTIME_NAME.findall(file_text))
+        for n, t, in_fence in strip_fences(file_text.splitlines()):
             if EXEMPT_RT.search(t):
                 continue
             m = USERPATH.search(t)
@@ -717,7 +792,9 @@ def check_package(pkg, rep):
                 rep.add("E", "V23", f"{rel}:{n}", f"runtime-specific install path: {m.group(0)!r}",
                         "spec — other runtimes refuse such a package; use a relative path")
             names = set(x.lower() for x in RUNTIME_NAME.findall(t))
-            if len(names) == 1 and not in_fence:
+            # a file that names several runtimes is a compatibility list, not a
+            # package bound to one of them (audit FP-7)
+            if len(names) == 1 and not in_fence and len(file_runtimes) < 2:
                 rep.add("W", "V23b", f"{rel}:{n}", f"names a single runtime: {list(names)[0]!r}",
                         "spec — avoid \"inside X\" phrasing; if the example is needed, mark <!-- runtime-ok: reason -->")
 

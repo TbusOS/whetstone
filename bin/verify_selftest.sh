@@ -343,6 +343,177 @@ n=$(python3 "$VERIFY" --src "$STAGE" --json 2>/dev/null | python3 -c 'import jso
 [ "${n:-0}" -gt 10 ] && ok "--src walks a whole library ($n packages)" || bad "--src found only ${n:-0} packages"
 
 echo
+echo "[audit] regressions for every bypass and false positive the reviews found"
+
+# FN-1 a thematic break must end a record, or one entry borrows another's evidence
+d=$(mut a1); cat >> "$d/pitfalls.md" <<'EOF'
+
+## 第二个坑
+
+- 症状:随便什么。
+- 涉及事实:无(纯方法层)
+- 溯源:
+  - 来源:commit 9999999
+  - 复现记录:无
+  - 验证方式:bash x.sh · 实测:通过 2026-09-02
+  - 置信度:high
+---
+- 上一条的补充
+- 复现记录:
+  - soc-x · 2026-08-01 · commit 1a2b3c4d
+  - proj-a · 2026-09-01 · commit 5e6f7a8b
+EOF
+                                                                  fires "$d" V12 "a --- rule ends the record; the next block's evidence is not borrowed"
+
+# FN-2 a heading that merely mentions L3 must not raise the cap
+d=$(mut a2); python3 - "$d" <<'PY'
+import sys
+p = sys.argv[1] + "/SKILL.md"; s = open(p).read()
+s = s.replace("## 溯源", "## 不要把 L3 值写进正文")
+s = s.replace("  - proj-a · 2026-09-01 · commit 5e6f7a8b\n", "")
+s = s.replace("- 置信度:high", "- 置信度:med")
+open(p, "w").write(s)
+PY
+                                                                  fires "$d" V12 "'L3' inside a heading sentence must not reclassify the entries below it"
+
+# FN-3 a parenthetical suffix or an exotic dash must not mint a second platform
+d=$(mut a3); sed -i.bak 's#  - proj-a · 2026-09-01#  - soc-x(第二次) · 2026-09-01#' "$d/SKILL.md"; rm -f "$d"/*.bak
+                                                                  fires "$d" V17 "soc-x(第二次) normalises to the same key as soc-x"
+                                                                  fires "$d" V12 "and therefore does not buy a second platform"
+
+# FN-4 a GFM table without leading pipes must still be seen
+d=$(mut a4); cat > "$d/params/soc-x.md" <<'EOF'
+# params/soc-x.md
+
+参数 | 值 | 来源 · 日期 | 验证方式 · 实测 | 复现记录 | 置信度
+---|---|---|---|---|---
+存储起始位置 | `SLOT_A` | commit 1a2b3c4d · 2026-08-01 | 读回比对 · 未实测 | 2026-08-01 · commit 1a2b3c4d | high
+
+## 替代记录
+- 2026-09-01 原 SLOT_0 → 改为 SLOT_A(commit 5e6f7a8b)
+EOF
+                                                                  fires "$d" V10 "a pipe-less table is parsed, not skipped"
+d=$(mut a4b); cat > "$d/params/soc-x.md" <<'EOF'
+# params/soc-x.md
+
+参数 | 值 | 来源
+---|---|---
+存储起始位置 | `SLOT_A` | 道听途说
+
+## 替代记录
+- 2026-09-01 原 SLOT_0 → 改为 SLOT_A
+EOF
+                                                                  fires "$d" V06e "a pipe-less table with no 置信度 column is reported, not silently skipped"
+
+# FN-5 provenance written with +, 1. or capitals is still a record.
+# Every provenance bullet becomes '+', so whether a record exists AT ALL depends
+# only on the prefix pattern — otherwise the assertion passes for another reason.
+d=$(mut a5); rm -f "$d/pitfalls.md" "$d/params/soc-x.md"
+python3 - "$d" <<'PYX'
+import sys, re
+p = sys.argv[1] + "/SKILL.md"; s = open(p).read()
+s = s.replace("见 `pitfalls.md`。", "无。").replace("> 具体值见 `params/soc-x.md`。", "> 无。")
+s = re.sub(r"- 复现记录:\n(  - .*\n)+", "", s)
+s = re.sub(r"^- (来源|提炼日期|验证方式|置信度):", r"+ \1:", s, flags=re.M)
+open(p, "w").write(s)
+PYX
+                                                                  fires "$d" V06 "a '+' bullet is still a provenance line"
+                                                              not_fires "$d" V06c "the block is recognised as a record, not missed entirely"
+
+# FN-6 涉及事实 shown inside a fenced example is not a real split
+d=$(mut a6); python3 - "$d" <<'PY'
+import sys
+p = sys.argv[1] + "/pitfalls.md"; s = open(p).read()
+s = s.replace("- 涉及事实:见 `params/soc-x.md`",
+              "写法示例:\n\n```\n- 涉及事实:见 params/soc-x.md\n```\n")
+open(p, "w").write(s)
+PY
+                                                                  fires "$d" V20 "涉及事实 inside a code fence does not count as split"
+
+# FN-7 "未实测通过 <date>" is not a passing test. Declared med with one reproduction
+# line, so the ONLY thing between quiet and error is whether 未实测通过 counts as a
+# pass — declaring high would fire V10 either way (mutation test caught this).
+d=$(mut a7); sed -i.bak 's#读回比对 · 实测:通过 2026-09-01#读回比对 · 未实测通过 2026-09-01#' "$d/params/soc-x.md"
+              sed -i.bak 's#; 2026-09-01 · commit 5e6f7a8b##' "$d/params/soc-x.md"
+              sed -i.bak 's#| high |#| med |#' "$d/params/soc-x.md"; rm -f "$d/params"/*.bak
+                                                                  fires "$d" V10 "未实测通过 is not 实测:通过"
+
+# the §7 L1/L2 constraint is now the only thing stopping a verified single-platform
+# method from reaching med — a test must break if that guard is removed
+d=$(mut a8); python3 - "$d" <<'PY'
+import sys
+p = sys.argv[1] + "/pitfalls.md"; s = open(p).read()
+s = s.replace("    - proj-a · 2026-09-01 · commit 5e6f7a8b\n", "").replace("置信度:high", "置信度:med")
+open(p, "w").write(s)
+PY
+                                                                  fires "$d" V12 "verified once on one platform still cannot reach med for an L2 method"
+
+echo
+echo "[audit] false positives the reviews found must stay quiet"
+d=$(mut c1); python3 - "$d" <<'PY'
+import sys
+p = sys.argv[1] + "/SKILL.md"; s = open(p).read()
+s = s.replace("- 先读回再比对,不从上层现象反推底层状态。",
+              "- 详见框架 §1.2.3 的拆分规则,第 10.1.1.1 条列出了例外;本条 2026.09.02 起生效。")
+open(p, "w").write(s)
+PY
+                                                              not_fires "$d" V19 "section numbers and dotted dates are not values"
+d=$(mut c2); printf '\n- 机械表:置信度 high 要实测通过 + 复现记录 ≥2 行。\n' >> "$d/SKILL.md"
+                                                              not_fires "$d" V09b "a sentence explaining the grading is not a claim under it"
+d=$(mut c3); printf '\n目录布局示例:\n\n```\nmy-skill/\n  params/soc-q.md\n```\n' >> "$d/SKILL.md"
+                                                              not_fires "$d" V03 "a pointer inside a fenced example is not a broken link"
+d=$(mut c4); python3 - "$d" <<'PY'
+import sys
+p = sys.argv[1] + "/SKILL.md"; s = open(p).read()
+s = s.replace("> 具体值见 `params/soc-x.md`。", """> 具体值见 `params/soc-x.md`。
+
+| 参数 | 值 | 来源 · 日期 | 验证方式 · 实测 | 复现记录 | 置信度 |
+|---|---|---|---|---|---|
+| 槽位 | `SLOT_B` | commit 1a2b3c4d · 2026-08-01 | 读回比对 · 实测:通过 2026-09-01 | 2026-08-01 · commit 1a2b3c4d | med |
+""")
+open(p, "w").write(s)
+PY
+                                                              not_fires "$d" V12 "an L3 fact table under a (L3) heading is judged as L3, not L2"
+not_fires "$STAGE/c4" V10 "verified once is a legitimate med for an L3 fact"
+# and the mirror: a table under an (L2) heading must be judged L2, or the layer is
+# hardcoded and the (L3) case above proves nothing
+d=$(mut c4b); python3 - "$d" <<'PYX'
+import sys
+p = sys.argv[1] + "/SKILL.md"; s = open(p).read()
+tbl = ("| 做法 | 说明 | 来源 · 日期 | 验证方式 · 实测 | 复现记录 | 置信度 |\n"
+       "|---|---|---|---|---|---|\n"
+       "| 先读回再比对 | 不从上层现象反推 | commit 1a2b3c4d · 2026-08-01 "
+       "| bash check.sh · 实测:通过 2026-09-01 | soc-x · 2026-08-01 · commit 1a2b3c4d | med |")
+s = s.replace("- 先读回再比对,不从上层现象反推底层状态。", tbl)
+open(p, "w").write(s)
+PYX
+                                                                  fires "$d" V12 "a table under an (L2) heading is judged L2, not L3"
+d=$(mut c5); printf -- '- 来源:commit 5e6f7a8b,命名统一\n' >> "$d/params/soc-x.md"
+                                                              not_fires "$d" V06 "a 替代记录 entry is a change log, not a knowledge entry"
+d=$(mut c6); python3 - "$d" <<'PY'
+import sys
+p = sys.argv[1] + "/pitfalls.md"; s = open(p).read()
+open(p, "w").write(s.replace("## 从上层状态反推底层状态会看错",
+    "## 怎么用这个文件\n\n每条坑一节,按「症状 / 真因 / 修法」写。\n\n## 从上层状态反推底层状态会看错"))
+PY
+                                                              not_fires "$d" V06d "an explanatory section is not an entry missing provenance"
+not_fires "$STAGE/c6" V20 "an explanatory section is not an unsplit pitfall"
+d=$(mut c7); printf '\n支持 Claude Code。\n也支持 Codex。\n也支持 Cursor。\n' >> "$d/SKILL.md"
+                                                              not_fires "$d" V23b "a compatibility list is not a single-runtime binding"
+d=$(mut c8); printf '\n> 引用里的地址 0x1A40 只是举例。\n' >> "$d/SKILL.md"
+                                                              not_fires "$d" V19 "a blockquote is quoted material, not the body"
+
+echo
+echo "[audit] unreadable input must not traceback"
+d=$(mut c9); chmod 000 "$d/params" 2>/dev/null
+out="$(python3 "$VERIFY" "$d" 2>&1)"; rc=$?
+chmod 755 "$d/params" 2>/dev/null
+case "$out" in
+  *Traceback*) bad "unreadable params/ produced a traceback" ;;
+  *) [ "$rc" -le 2 ] && ok "unreadable params/ is reported, not crashed" || bad "unreadable params/ exited $rc" ;;
+esac
+
+echo
 echo "[coverage] every published check code must have BOTH directions"
 python3 - "$0" "$VERIFY" > "$STAGE/coverage.txt" <<'PY'
 import re, subprocess, sys
