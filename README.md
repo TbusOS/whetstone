@@ -1,85 +1,188 @@
 # Whetstone · 磨刀石
 
-> 把开发经验蒸馏成可移植的 Agent Skill。
-> Distill engineering work into portable, runtime-neutral Agent Skills.
+**Every "distill your sessions into skills" tool writes knowledge in. This one also refuses it.**
 
-Whetstone 是一个**蒸馏工具**,不是单个 skill。做完一个功能后,它挖掘会话
-(transcript + git diff + 踩坑),按作用域拆成 4 层,产出一个**自包含、跨 runtime 的 skill 包**——
-你或别人(用 Claude Code / Codex / Cursor / 任何 skills-compatible runtime)把它拖进 skills 目录,
-立刻具备这套能力。**越用,你的本地 skill 库越大、越准;换平台只换 L3 参数表,L1/L2 一起复用。**
+Whetstone turns a finished dev session into a portable Agent Skill — and then holds that
+skill to an evidence standard you can run as a command. Confidence levels come from a
+mechanical table, not from a model's mood. A lesson seen on one platform cannot enter the
+skill body. A fact is appended and marked superseded, never quietly replaced. None of that
+is a paragraph of documentation — it is `whetstone verify`, exit code and all.
 
-## 三层边界
+```console
+$ whetstone verify examples/demo-skill --brief
 
+whetstone verify — examples/demo-skill
+
+ERROR (5)
+  ✗ SKILL.md:31  [V16] [溯源] 复现记录 has two lines for the same platform/project: 'soc-x'
+  ✗ SKILL.md:31  [V12] [溯源] L2 claims 置信度 high, the table allows only low — 复现记录 has 1 line(s), needs 2 (single-platform L1/L2 is capped at low — the §7 constraint outranks the table)
+  ✗ pitfalls.md:5  [V14] [从上层状态反推底层状态会看错] 复现记录 is a bare count 「2 次」
+  ✗ pitfalls.md:5  [V12] [从上层状态反推底层状态会看错] L2 claims 置信度 high, the table allows only low — 复现记录 has 0 line(s), needs 2 (single-platform L1/L2 is capped at low — the §7 constraint outranks the table)
+  ✗ params/soc-x.md:6  [V10] [存储起始位置] L3 claims 置信度 high, the table allows only low — 验证方式 never passed a test; 复现记录 has 1 line(s), needs 2
+
+WARN (2)
+  ! SKILL.md:18  [V19] concrete value in the body (hex address/value): '0x1A40'
+  ! params/soc-x.md  [V22] no 替代记录 section
+
+summary: 5 error(s), 2 warning(s), 0 info
 ```
-层1 · Whetstone 蒸馏器(本仓库,runtime 中立)
-   extraction-framework(L1-L4 方法) · distiller 流程
-   + adapters/capture/<runtime>   ← runtime 专属只隔离在这薄一层
-   + adapters/sync/{engram,llm-wiki}  ← 可选下游,装了才用
-        │ 产出
-层2 · 可移植 skill 包(★给别人的交付物,见 spec/skill-package.md)
-   SKILL.md(L1/L2) + params/<platform>.md(L3) + pitfalls.md
-   纯 markdown · runtime 中立 · 自包含
-        │ 可选
-层3 · 下游 sink:engram(同步进记忆库) / llm-wiki(发成人看的页)
-```
 
-## 它产出什么(给别人的东西)
+Five refusals, in order: the same platform counted twice to fake cross-platform evidence ·
+a method claiming `high` on one platform · a reproduction count written as a number instead
+of a record · the same again · a platform value claiming `high` that was never actually
+tested. Drop `--brief` and every line gains the rule it came from.
 
-一个 skill 包目录,符合 Agent Skills 标准、runtime 中立、自包含。规范见
-[`spec/skill-package.md`](spec/skill-package.md)。别人拖进自己 runtime 的 skills 目录就能用。
+That transcript is copied from a real run. `examples/demo-skill` ships in this repo,
+deliberately flawed, so you can reproduce it in one command. Field names stay in Chinese
+because that is what they are called inside the files you would be editing.
 
-## 用法
+> 中文说明:把开发经验蒸馏成可移植 Agent Skill,并用一条能跑的命令守住证据纪律 ——
+> 置信度按机械表判、单平台经验进不了正文、事实不许被悄悄改掉。规矩不是散文,是退出码。
+> 详见 [`references/extraction-framework.md`](references/extraction-framework.md)。
 
-1. 做完功能 → 触发蒸馏(把本仓库作为 Agent Skill 装进你的 runtime,说「蒸馏这次」/ `/distill`)。
-2. 审提案(两道人审关:挖得对吗 / 入不入库)→ 入库。
-3. (可选)自动采集 / 同步 engram / 发布 llm-wiki。
+---
 
-为什么必须人审:LLM 自评 skill 质量准确率仅约 46%(SkillLens),自动覆盖会让库越用越乱。
+## Why another one of these
 
-蒸馏(挖会话 + 分层)是 agent 活,在 runtime 里触发;**它周围的机械步骤**(入库 / 打包 / 部署 / 同步)
-走 CLI:`whetstone promote|pack|deploy|sync`(见 [`cli/README.md`](cli/README.md))。
+A skill library does not fail loudly. It fills up with plausible, unfalsifiable, once-true
+advice that still wears a confident label. Six months later you cannot tell which entries
+are load-bearing and which are folklore — and neither can the model reading them.
 
-## 安装(任何 runtime)
+So the interesting question is not "can an agent write a skill file". It is
+**what the pipeline refuses to do**:
 
-Whetstone 自身就是一个 Agent Skill(`SKILL.md`)+ 参考资料。把整个目录放进你 runtime 的 skills 目录:
-
-| Runtime | 放哪 |
+| Whetstone will not | Why |
 |---|---|
-| Claude Code | `~/.claude/skills/whetstone/` |
-| Codex / Cursor / 其他 | 对应的 skills / rules 目录 |
+| Auto-write the library | Proposals land in `inbox/`. Two human gates: *is the mining right*, then *does it go in*. |
+| Mark anything `high` without an executable check that actually passed | An unfalsifiable claim wearing a high-confidence badge is the exact shape of a rule that quietly expires. |
+| Promote a lesson seen on one platform | One data point is a coincidence. A second distinct platform, or it stays out of the skill body. |
+| Count the same project twice | A reproduction line is keyed by platform/project. Ten runs on one project is one line — otherwise write-back becomes a back door around the gate. |
+| Silently overwrite a fact | Append and mark superseded, especially for safety and irreversible values. |
+| Grade its own homework | Quality review runs in a separate context. An unguided LLM judge picks the better of two skills 46.4% of the time — indistinguishable from a coin ([SkillLens, Microsoft](https://microsoft.github.io/SkillLens/)). Self-review is the bias this design assumes, not one it hopes to avoid. |
+| Pretend prose is enforcement | The mechanically decidable part of every rule above is a check in `whetstone verify`. |
 
-- **零运行时依赖**:不装 engram、不装 darwin 也能跑。
-- **自动采集(可选)**:见 [`adapters/capture/README.md`](adapters/capture/README.md)——runtime 专属只在这一层。
-- **自动更新提示(可选)**:`bash autoupdate/install.sh`——远端有更新时 AI 在会话里主动提示,确认后 `git pull --ff-only`;支持 Claude Code / Codex / Gemini CLI,与 sky-skills-autoupdate 同协议共存。见 [`autoupdate/README.md`](autoupdate/README.md)。
+## The confidence table is a table, not a vibe
 
-## 可选搭档(装了才用)
+| Level | Condition |
+|---|---|
+| `high` | executable check **passed** *and* reproduced on ≥2 distinct platforms/projects |
+| `med` | reproduced on ≥2 distinct platforms/projects; **or** verified once, but that second route is open to L3 facts only |
+| `low` | everything else |
 
-| 搭档 | 作用 | 文档 |
+Verifying a method once does not make it general, so an L1/L2 entry on a single platform is
+capped at `low` even when its check passes. A human reviewer may downgrade any entry and may
+**never** upgrade past the conditions — `verify` implements that asymmetry: above the cap is
+an ERROR, below it is only an INFO.
+
+## What it deliberately does not decide
+
+Mechanising a judgement that is not mechanical only manufactures false positives. These stay
+with the human reviewer, and `whetstone verify --explain` prints the boundary in full:
+
+- is an L1 entry really exception-free
+- does an L2 lesson survive deleting every platform-specific value
+- was a contradiction preserved rather than averaged away
+- were this session's reproduction write-backs applied (needs the session, not the package)
+- when in doubt, was the entry placed lower rather than higher (only the outcome is visible)
+
+`--explain` also states where each check is narrower than the rule it serves — for instance
+that provenance is checked per declared record, so a bare bullet in a `SKILL.md` body with no
+provenance at all is not something `verify` can see.
+
+## The four layers
+
+One ruler: **how far does this travel?** Full schema in
+[`references/extraction-framework.md`](references/extraction-framework.md).
+
+| Layer | Scope | Lives in |
 |---|---|---|
-| [whetstone-curator](https://github.com/TbusOS/whetstone-curator) | 团队侧:从队友库帮你找经验(fetch)/ 收割全队进共享库(harvest) | 见其仓库 |
-| engram | 把产出的 skill 包同步进本地记忆库(召回 / supersede;委托范围按实测现状,见文档) | [`adapters/sync/engram.md`](adapters/sync/engram.md) |
-| llm-wiki | 把知识发成人看的 wiki 页 | [`adapters/sync/llm-wiki.md`](adapters/sync/llm-wiki.md) |
-| darwin-skill(第三方) | 给单个 skill 打分 / 进化 | 见其仓库 |
+| **L1** principle | true on any platform, any vendor — an objective constraint, not your choice | `SKILL.md` |
+| **L2** method / pitfall | still true after a platform change, but it is *your* approach | `SKILL.md` · `pitfalls.md` |
+| **L3** platform fact | changes when the platform changes: addresses, lengths, tool names | `params/<platform>.md` |
+| **L4** state | changes by the next session: current key, current HEAD, which board | memory, timestamped |
 
-## 目录
+A pitfall is never one layer. It is a transferable lesson (L2) **plus** a one-platform fact
+(L3), and not splitting it is a hard error — bind the lesson to the platform and you paid for
+the pain twice.
+
+New platform → add one `params/` file. Better method → edit one L2 line and every platform
+benefits. That asymmetry is what "gets smarter with use" means here.
+
+## Install
+
+Whetstone is itself an Agent Skill (`SKILL.md`) plus references. Drop the directory into your
+runtime's skills directory — Claude Code, Codex, Cursor, or anything that reads the Agent
+Skills layout. No agent-runtime lock-in and nothing to install: the CLI is bash, the checks
+are Python standard library, and everything it produces is plain markdown.
+
+```bash
+git clone https://github.com/TbusOS/whetstone.git
+cd whetstone
+bash bin/verify_selftest.sh                       # 97 assertions across 37 checks
+./cli/whetstone verify examples/demo-skill --brief
+```
+
+The selftest asserts **both directions** for every check — a defective fixture makes it fire,
+a conforming one keeps it quiet — and a final coverage pass fails the run if any published
+check is missing either direction, so that claim cannot drift.
+
+Optional, none required: session capture
+([`adapters/capture/`](adapters/capture/README.md)), update prompting
+(`bash autoupdate/install.sh`), downstream sinks ([`adapters/sync/`](adapters/sync)).
+
+## Use
+
+1. Finish a feature → trigger distillation (`/distill`, or "distill this session").
+2. Review the proposal — two gates: *mined correctly?* then *does it go in?*
+3. `whetstone verify` the package, `whetstone promote` it into your library.
+
+Mining a transcript is agent work and runs in your runtime. Everything deterministic around
+it is CLI:
+
+```bash
+whetstone verify <pkg> --strict     # evidence discipline — this is the one that says no
+whetstone verify --explain          # all 37 checks, their limits, and what is left to humans
+whetstone lint --src ~/skills       # selection-menu hygiene: overlaps, collisions, vague descriptions
+whetstone index --src ~/skills      # grouped catalog
+whetstone promote <proposal>        # install a proposal, refusing to overwrite an existing skill
+whetstone pack | deploy             # move a library between machines
+whetstone sync engram <skill>       # optional: push one skill into a local engram memory store
+```
+
+`lint` and `verify` guard different failures. `lint` guards **retrieval** — a library whose
+descriptions overlap makes the model pick the wrong skill. `verify` guards **content** — a
+library whose entries carry unearned confidence makes the model believe the wrong thing.
+
+## Layout
 
 ```
-SKILL.md                          蒸馏器入口(Agent Skill,Phase 0-5)
-references/extraction-framework.md  L1-L4 分层 schema(灵魂)
-spec/skill-package.md             ★ 可移植 skill 包格式规范(交付物)
-templates/                        产物骨架(skill-template / params-template)
-commands/                         /distill · /promote(Claude Code 便捷别名)
-bin/                              pack / deploy / promote / lint / index(搬运 + 入库 + 索引卫生)
-cli/whetstone                     runtime-agnostic CLI(包 pack/deploy/promote/capture/sync/lint/index)
-adapters/capture/                 per-runtime 采集(claude-code.sh + selftest + 各 runtime 说明)
-adapters/sync/                    可选下游(engram.sh / llm-wiki)
-autoupdate/                       多 CLI 自动更新提示器(hook 检测 + 确认后 ff-only 更新 + selftest)
-inbox/                            提案暂存(运行时,不入库)
-journal/                          原材料(运行时,不入库)
+SKILL.md                            distiller entry point (Phase 0-5)
+references/extraction-framework.md  the L1-L4 schema — the actual core
+spec/skill-package.md               portable skill-package format (the deliverable)
+commands/                           /distill and /promote slash-command definitions
+bin/verify.py                       evidence discipline, executable
+bin/verify_selftest.sh              97 assertions, both directions, coverage-enforced
+bin/lint.py · bin/index.py          selection-menu hygiene
+bin/pack.sh · bin/deploy.sh · bin/promote.sh   move and install packages
+cli/whetstone                       runtime-agnostic CLI, pure bash
+templates/                          skeletons for a distilled skill / params / pitfalls
+examples/demo-skill/                deliberately flawed package behind the demo above
+inbox/ · journal/                   proposals awaiting review; mined source material
+adapters/capture · adapters/sync    optional: session capture, optional sinks
+autoupdate/                         optional: multi-CLI update prompter
+docs/                               the project page at doc.tbusos.com/whetstone
 ```
 
-## 致谢 / 灵感
+## Companions
 
-- 蒸馏流程架构借鉴 `nuwa-skill`、独立评判 + 棘轮纪律借鉴 `darwin-skill`(均为第三方开源)。
-- 理论依据:EvolveR(轨迹蒸馏为策略)、AgentFactory(技能库生命周期)、
-  MemoryBank(遗忘曲线)、SkillLens(skill 质量评估)。
+| Project | What it adds |
+|---|---|
+| [whetstone-curator](https://github.com/TbusOS/whetstone-curator) | team side: pull good entries from a teammate's library, or harvest a shared one |
+| engram | sync a package into a local memory store ([notes](adapters/sync/engram.md); scope checked against its code, not its README) |
+| llm-wiki | publish knowledge as human-readable pages ([notes](adapters/sync/llm-wiki.md); documentation only, no script yet) |
+
+More background on the project page: **https://doc.tbusos.com/whetstone/**
+
+## License
+
+MIT — see [LICENSE](LICENSE).

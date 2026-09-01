@@ -46,13 +46,35 @@ description: "做什么 + 何时用 + 触发词。一行,≤1024 字符,runtime 
 - ❌ 不写"在 Claude Code 里""Claude Code skill"等绑定单 runtime 的措辞(nuwa 曾因此被别的 agent 拒装)。
 - ❌ 不写绝对用户路径(`/home/<user>/…`);引用一律仓库内相对路径。
 - ❌ 不内嵌具体值进 SKILL.md 正文(降 L3)。
-- ✅ 纯 markdown;自包含;复制目录即用。
+- ✅ 自包含;复制目录即用;链接不指向包外。
+- ✅ 知识本体是 markdown。**`scripts/` 里的可执行检查是欢迎的、且对硬性 checklist 是必需的**
+  —— 一条"做 X 时必须同时做 A/B/C"的规矩,只有散文没有能跑的检查,等于没固化。
+  用 stdlib / POSIX shell,别硬编码平台名与绝对路径,换机 clone 就能跑。
+- ❌ 不打包编译产物与编辑器/系统残留(`.pyc` / `.DS_Store` / 归档包)。
 
 ## 可移植性保证
 
 - 单元 = 这一个目录。打包(zip / git)给别人,别人拖进自己 runtime 的 skills 目录即用。
 - 换平台:只新增/改 `params/<platform>.md`,SKILL.md(L1/L2)不动。
 - 方法变好:改 SKILL.md 的 L2,所有平台一起受益。
+
+## 机械检查(别只靠人记)
+
+上面**大部分**机械可判的规则由 `whetstone verify` 执行,不靠"提交前再看一眼"
+(哪些没覆盖、哪些故意不判,`--explain` 末尾原样列着):
+
+```bash
+whetstone verify <skill-pkg>          # 单个包
+whetstone verify --src ~/skills --strict   # 整库,warn 也算失败
+whetstone verify --explain            # 每条检查是什么 + 明确不判什么
+```
+
+它查:溯源五字段齐不齐 · 置信度是否越过 §7 机械表允许的上限 · 复现记录是不是列表、
+有没有同一平台重复计数 · 坑拆没拆 · 正文有没有混进具体值 · 有没有 runtime 绑定措辞与绝对用户路径。
+
+它**不查**(机械判不了,硬判只会制造假阳,留给 Phase 4 人审):L1 举不举得出反例 ·
+删掉平台值后 L2 还成不成立 · 矛盾有没有被保留 · 本次印证的回写做了没有。
+`--explain` 会把这份边界原样打印出来。
 
 ## 发布脱敏(公开分享前必查)
 

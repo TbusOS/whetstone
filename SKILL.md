@@ -21,7 +21,7 @@ description: "Distill a finished dev session into proposals for a self-growing l
 1. **挖掘,不创造** —— 只提炼会话里真实发生的工程学习,不脑补、不把 AI 自己的元对话当知识。
 2. **diff 说 WHAT,transcript 说 WHY + 什么失败了** —— 最终 diff 抹掉了试错过程,坑和决策只在 transcript 里,两个都要挖。
 3. **对账库存是命门** —— 大多数会话对应的 skill 已经存在,提炼的真正难点不是"写新的",是"和已有的合并/去重/替代",这也是库漂移的发生地。
-4. **提案,不直写** —— 产物是对库的 diff,落 inbox 暂存;**人审 gate 后**才进正式库(SkillLens:LLM 判 skill 质量仅 46% 准,不许自动覆盖)。
+4. **提案,不直写** —— 产物是对库的 diff,落 inbox 暂存;**人审 gate 后**才进正式库(SkillLens(Microsoft,https://microsoft.github.io/SkillLens/):无引导的 LLM 评委在两个 skill 里挑更好的那个,准确率 46.4%,与掷硬币无异,所以不许自动覆盖)。
 
 ---
 
@@ -123,7 +123,11 @@ for 每条学习时刻:
 
 ```
 对 Phase 3 的提案跑:
-  - extraction-framework §8 自检清单
+  0. 先跑机械检查(判得了的不交给模型判):
+       whetstone verify <提案里的 skill 包> --strict
+     ERROR 全清掉再往下 —— 五字段、置信度机械表、复现唯一键、坑拆没拆、
+     正文混进具体值、runtime 绑定措辞,这些不需要 LLM 判断。
+  - extraction-framework §8 自检清单(剩下的语义项)
   - §9 反例黑名单
 关键:用独立子 agent / 新上下文评判,避免"我刚写的肯定对"偏差(darwin 教训)
   独立 agent 专查:
@@ -131,8 +135,12 @@ for 每条学习时刻:
     - 有没有坑没拆
     - skill 正文里有没有混进具体值
     - 有没有没去重的重复项
-    - 有没有标 high 但拿不出实测通过的验证方式的条目(§7 机械表)
     - 本次印证过的旧条目,复现回写进提案了吗
+    - 矛盾有没有被和稀泥掉(§6)
+  (verify 已机械挡掉的:五字段缺失、置信度越权上调、复现记录裸数字/同键重复、
+   坑条目无溯源、params 表无置信度列。**但它按"已声明的溯源记录"判,不是按"每条知识"判**
+   —— SKILL.md 正文里那些没写溯源的裸条目它看不见,那部分仍要独立 agent 看。
+   跑 `whetstone verify --explain`,末尾原样列着它不判什么。)
 子 agent 不可用 → 退化干跑,提案上标 dry_run
 ```
 
