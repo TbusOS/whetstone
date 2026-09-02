@@ -42,6 +42,9 @@ because that is what they are called inside the files you would be editing.
 
 ---
 
+> What this looked like when it was first run against a real library:
+> [**I marked 61 entries "high confidence." Not one could name a test.**](https://doc.tbusos.com/whetstone/why-verify.html)
+
 ## Why another one of these
 
 A skill library does not fail loudly. It fills up with plausible, unfalsifiable, once-true

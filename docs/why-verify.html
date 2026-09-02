@@ -1,0 +1,403 @@
+<!doctype html>
+<html lang="en" data-lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>I marked 61 entries “high confidence.” Not one could name a test. — Whetstone</title>
+<meta name="description" content="A rule that only a model enforces is one context window away from not existing. What happened when I finally ran a checker against my own skill library.">
+<meta property="og:title" content="I marked 61 entries “high confidence.” Not one could name a test.">
+<meta property="og:description" content="A rule that only a model enforces is one context window away from not existing. What happened when I finally ran a checker against my own skill library.">
+<meta property="og:type" content="article">
+<link rel="stylesheet" href="assets/fonts.css">
+<link rel="stylesheet" href="assets/anthropic.css">
+<style>
+  html[data-lang="en"] .lang-zh { display: none !important; }
+  html[data-lang="zh"] .lang-en { display: none !important; }
+  .lang-toggle {
+    background: transparent; border: 1px solid var(--anth-light-gray); color: var(--anth-text);
+    font-family: var(--font-heading); font-size: 13px; font-weight: 500;
+    padding: 6px 12px; border-radius: var(--radius-pill); cursor: pointer; letter-spacing: 0.05em;
+  }
+  .lang-toggle:hover { background: var(--anth-light-gray); }
+  html[data-lang="zh"] body, html[data-lang="zh"] p, html[data-lang="zh"] li,
+  html[data-lang="zh"] .feat-card__body, html[data-lang="zh"] td, html[data-lang="zh"] th {
+    font-family: "Noto Sans SC", "Source Han Sans SC", "PingFang SC", sans-serif;
+  }
+  html[data-lang="zh"] h1, html[data-lang="zh"] h2, html[data-lang="zh"] h3,
+  html[data-lang="zh"] .feat-card__title, html[data-lang="zh"] .anth-badge,
+  html[data-lang="zh"] .feat-card__kicker, html[data-lang="zh"] .stat-strip .num,
+  html[data-lang="zh"] .stat-strip .lbl {
+    font-family: "Noto Sans SC", "PingFang SC", sans-serif;
+  }
+  html[data-lang="zh"] .test-card blockquote {
+    font-family: "Noto Serif SC", "Source Han Serif SC", "PingFang SC", serif; font-style: normal;
+  }
+
+  .feat-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:var(--space-5); }
+  .feat-card { background:#ffffff; border:1px solid var(--anth-light-gray); border-radius:var(--radius-lg); padding:var(--space-7); }
+  .feat-card__kicker { font-family:var(--font-heading); font-size:11.5px; letter-spacing:0.14em; text-transform:uppercase; color:var(--anth-orange-ink); font-weight:700; }
+  html[data-lang="zh"] .feat-card__kicker { text-transform:none; letter-spacing:0.04em; }
+  .feat-card__title { font-family:var(--font-heading); font-size:22px; font-weight:600; letter-spacing:-0.01em; color:var(--anth-text); margin:var(--space-2) 0 var(--space-3); }
+  .feat-card__body { font-family:var(--font-body); font-size:16px; line-height:1.65; color:var(--anth-text); margin:0; }
+  .feat-card__icon { width:56px; height:56px; border-radius:var(--radius-md); display:grid; place-items:center; margin-bottom:var(--space-4); }
+
+  .stat-strip { display:grid; grid-template-columns:repeat(4, 1fr); gap:var(--space-5); padding:var(--space-7) var(--space-6); background:#ffffff; border:1px solid var(--anth-light-gray); border-radius:var(--radius-md); }
+  .stat-strip > div { text-align:center; }
+  .stat-strip .num { display:block; font-family:var(--font-heading); font-size:44px; font-weight:600; color:var(--anth-text); letter-spacing:-0.02em; line-height:1; }
+  .stat-strip .lbl { display:block; margin-top:var(--space-2); font-family:var(--font-heading); font-size:13px; color:var(--anth-text-secondary); letter-spacing:0.02em; }
+
+  figure { margin:0; }
+  figcaption { font-family:var(--font-heading); font-size:13px; color:var(--anth-text-secondary); text-align:center; margin-top:var(--space-3); }
+
+  .layer-table { width:100%; border-collapse:collapse; font-family:var(--font-body); font-size:15.5px; }
+  .layer-table th, .layer-table td { text-align:left; padding:var(--space-4) var(--space-4); border-bottom:1px solid var(--anth-light-gray); vertical-align:top; }
+  .layer-table th { font-family:var(--font-heading); font-size:13px; font-weight:600; color:var(--anth-text-secondary); letter-spacing:0.02em; }
+  .layer-table tbody tr:last-child td { border-bottom:none; }
+  .layer-table .lyr { font-family:var(--font-heading); font-weight:700; white-space:nowrap; }
+  .layer-table .lyr--l1 { color:var(--anth-orange-ink); }
+  .layer-table .lyr--l2 { color:#3f6796; }
+  .layer-table .lyr--l3 { color:#5d7045; }
+  .layer-table .lyr--l4 { color:#8a5a2a; }
+  .layer-table .lyr--hi { color:var(--anth-orange-ink); }
+  .layer-table .lyr--md { color:#3f6796; }
+  .layer-table .lyr--lo { color:#65645a; }
+  .ref-grid { display:grid; grid-template-columns:repeat(2,1fr); gap:var(--space-5); }
+  .ref-card { background:#ffffff; border:1px solid var(--anth-light-gray); border-radius:var(--radius-md); padding:var(--space-5) var(--space-6); }
+  .ref-card h3 { font-family:var(--font-heading); font-size:16px; font-weight:600; margin:0 0 var(--space-2); color:var(--anth-text); }
+  .ref-card p { font-family:var(--font-body); font-size:14.5px; line-height:1.6; color:var(--anth-text-secondary); margin:0; }
+  .ref-card .no { font-family:var(--font-heading); font-size:11px; font-weight:700; letter-spacing:0.1em; text-transform:uppercase; color:var(--anth-orange-ink); }
+  @media (max-width:860px) { .ref-grid { grid-template-columns:1fr; } }
+
+  .feat-grid--two { grid-template-columns:repeat(2,1fr); }
+  .mate-row { display:grid; grid-template-columns:repeat(3,1fr); gap:var(--space-5); }
+  .mate-card { background:#ffffff; border:1px solid var(--anth-light-gray); border-radius:var(--radius-md); padding:var(--space-6); }
+  .mate-card h3 { font-family:var(--font-heading); font-size:18px; font-weight:600; margin:0 0 var(--space-2); color:var(--anth-text); }
+  .mate-card .opt { font-family:var(--font-heading); font-size:11px; font-weight:700; letter-spacing:0.1em; text-transform:uppercase; color:#4a6a3a; }
+  .mate-card p { font-family:var(--font-body); font-size:15px; line-height:1.6; color:var(--anth-text-secondary); margin:var(--space-2) 0 0; }
+
+  .install-table { width:100%; border-collapse:collapse; font-family:var(--font-body); font-size:15.5px; background:#ffffff; border:1px solid var(--anth-light-gray); border-radius:var(--radius-md); overflow:hidden; }
+  .install-table th, .install-table td { text-align:left; padding:var(--space-4); border-bottom:1px solid var(--anth-light-gray); }
+  .install-table th { font-family:var(--font-heading); font-size:13px; font-weight:600; color:var(--anth-text-secondary); }
+  .install-table tbody tr:last-child td { border-bottom:none; }
+  .install-table code { font-family:var(--font-mono); font-size:13.5px; }
+
+  .scene-card { background:#ffffff; border:1px solid var(--anth-light-gray); border-radius:var(--radius-lg); padding:var(--space-7); }
+
+  .art-lede { font-family:var(--font-body); font-size:20px; line-height:1.65; color:var(--anth-text-secondary); margin:var(--space-5) 0 var(--space-6); }
+  article p { font-family:var(--font-body); font-size:17px; line-height:1.75; margin:0 0 var(--space-5); }
+  article h2 { font-family:var(--font-heading); font-size:27px; font-weight:600; margin:var(--space-7) 0 var(--space-4); }
+  article ul, article ol { font-family:var(--font-body); font-size:17px; line-height:1.7; padding-left:1.3em; margin:0 0 var(--space-5); }
+  article li { margin-bottom:var(--space-3); }
+  .art-quote { border-left:3px solid var(--anth-orange); background:var(--anth-bg-subtle); margin:0 0 var(--space-5); padding:var(--space-4) var(--space-5); font-family:var(--font-body); font-size:18px; line-height:1.6; }
+  .art-punch { font-family:var(--font-heading); font-size:19px; font-weight:600; line-height:1.5; color:var(--anth-text); border-top:1px solid var(--anth-light-gray); border-bottom:1px solid var(--anth-light-gray); padding:var(--space-4) 0; margin:var(--space-6) 0; }
+  .art-note { font-size:14.5px !important; color:var(--anth-text-secondary); margin-top:calc(-1 * var(--space-3)) !important; }
+  .art-stats { display:grid; grid-template-columns:repeat(4,1fr); gap:var(--space-4); margin:var(--space-6) 0; }
+  .art-stats > div { background:#ffffff; border:1px solid var(--anth-light-gray); border-radius:var(--radius-md); padding:var(--space-4); text-align:center; }
+  .art-stats strong { display:block; font-family:var(--font-heading); font-size:34px; font-weight:700; color:var(--anth-orange-ink); line-height:1.1; }
+  .art-stats span { display:block; font-family:var(--font-body); font-size:13px; line-height:1.45; color:var(--anth-text-secondary); margin-top:6px; }
+  .art-term { background:#1f1e1b; color:#e9e6dd; border-radius:var(--radius-md); padding:var(--space-5); overflow-x:auto; font-size:13px; line-height:1.6; margin:0 0 var(--space-4); }
+  .art-term code { font-family:ui-monospace,SFMono-Regular,Menlo,monospace; background:none; color:inherit; padding:0; }
+  .art-attacks { list-style:none; padding-left:0; counter-reset:atk; }
+  .art-attacks > li { counter-increment:atk; position:relative; padding-left:52px; margin-bottom:var(--space-5); }
+  .art-attacks > li::before { content:counter(atk); position:absolute; left:0; top:2px; width:32px; height:32px; border-radius:50%; background:var(--anth-orange-ink); color:#ffffff; font-family:var(--font-heading); font-weight:700; font-size:15px; display:flex; align-items:center; justify-content:center; }
+  .art-attacks h3 { font-family:var(--font-heading); font-size:18px; font-weight:600; margin:2px 0 var(--space-2); }
+  .art-attacks p { font-size:16px; margin-bottom:0; }
+  .art-table { width:100%; border-collapse:collapse; font-family:var(--font-body); font-size:16px; }
+  .art-table th, .art-table td { text-align:left; padding:var(--space-4); border-bottom:1px solid var(--anth-light-gray); vertical-align:top; }
+  .art-table th { font-family:var(--font-heading); font-size:13px; font-weight:600; color:var(--anth-text-secondary); }
+  .art-table tbody tr:last-child td { border-bottom:none; }
+  .art-table .lv { font-family:var(--font-heading); font-weight:700; white-space:nowrap; }
+  .art-table .lv--hi { color:var(--anth-orange-ink); }
+  .art-table .lv--md { color:#3f6796; }
+  .art-table .lv--lo { color:#65645a; }
+  .art-cta { background:var(--anth-bg-subtle); border-radius:var(--radius-lg); padding:var(--space-6); margin-top:var(--space-7); }
+  .art-cta p { font-size:16px; }
+  .art-cta .anth-button { margin-right:var(--space-3); }
+  @media (max-width:760px) { .art-stats { grid-template-columns:repeat(2,1fr); } article h2 { font-size:23px; } }
+</style>
+</head>
+<body>
+
+<!-- Nav -->
+<nav class="anth-nav"><div class="anth-nav-inner">
+  <a href="index.html" style="font-family:var(--font-heading); font-weight:600; font-size:18px; text-decoration:none; color:var(--anth-text);">Whetstone · 磨刀石</a>
+  <div>
+    <a href="index.html#why"><span class="lang-en">Why</span><span class="lang-zh">为什么</span></a>
+    <a href="index.html#evidence"><span class="lang-en">Evidence</span><span class="lang-zh">证据</span></a>
+    <a href="index.html#architecture"><span class="lang-en">Architecture</span><span class="lang-zh">架构</span></a>
+    <a href="index.html#flow"><span class="lang-en">How it works</span><span class="lang-zh">流程</span></a>
+    <a href="skills.html"><span class="lang-en">Skills</span><span class="lang-zh">技能</span></a>
+    <a href="index.html#install"><span class="lang-en">Install</span><span class="lang-zh">安装</span></a>
+    <a href="index.html#migrate"><span class="lang-en">Move</span><span class="lang-zh">迁移</span></a>
+    <a href="index.html#index-hygiene"><span class="lang-en">Index</span><span class="lang-zh">索引</span></a>
+  </div>
+  <div style="display:flex; gap:var(--space-3); align-items:center;">
+    <button type="button" class="lang-toggle" aria-label="Switch language">中 / EN</button>
+    <a class="anth-button" href="https://github.com/TbusOS/whetstone">GitHub</a>
+  </div>
+</div></nav>
+
+<article class="anth-section" style="padding-top:var(--space-7);">
+  <div class="anth-container" style="max-width:720px;">
+
+    <span class="anth-badge"><span class="lang-en">Field note · 2026-09-02</span><span class="lang-zh">实践记录 · 2026-09-02</span></span>
+
+    <h1 style="margin-top:var(--space-4); font-size:44px; line-height:1.15;">
+      <span class="lang-en">I marked 61 entries “high confidence.”<br>Not one could name a test.</span>
+      <span class="lang-zh">我给 61 条经验标了「高置信度」<br>没有一条说得出验证方式</span>
+    </h1>
+
+    <p class="art-lede">
+      <span class="lang-en">I keep a skill library — markdown files my coding agent loads when a task matches. Secure boot, SDK migration, partition layouts. Real work, distilled after the fact so the next project starts where the last one ended.</span>
+      <span class="lang-zh">我维护一个 skill 库 —— 一堆 markdown，任务匹配上了编程 agent 就加载。安全启动、SDK 升级、分区布局。都是真干过的活，事后蒸馏下来，好让下个项目从上个项目结束的地方开始。</span>
+    </p>
+
+    <p>
+      <span class="lang-en">Months ago I wrote the rule that governs it, in my own framework document, in bold:</span>
+      <span class="lang-zh">几个月前我在自己的框架文档里写下了管这件事的规矩，加粗的：</span>
+    </p>
+
+    <blockquote class="art-quote">
+      <span class="lang-en">No entry may be marked <code>high</code> confidence without an executable check that actually passed.</span>
+      <span class="lang-zh">没有一条实测通过的可执行检查，不许标 <code>high</code>。</span>
+    </blockquote>
+
+    <p>
+      <span class="lang-en">Last week I finally wrote the checker. I pointed it at the two packages that framework had produced.</span>
+      <span class="lang-zh">上周我终于把检查脚本写了出来。拿它对准这套框架自己产出的两个包。</span>
+    </p>
+
+    <div class="art-stats">
+      <div><strong>61</strong><span class="lang-en">entries marked <code>high</code></span><span class="lang-zh">条标着 <code>high</code></span></div>
+      <div><strong>0</strong><span class="lang-en">could point to a passing test</span><span class="lang-zh">条能指出实测通过</span></div>
+      <div><strong>54</strong><span class="lang-en">graded above what the table allows</span><span class="lang-zh">条置信度越权上调</span></div>
+      <div><strong>180</strong><span class="lang-en">errors across two files I shipped</span><span class="lang-zh">个错，在两个我已上线的文件里</span></div>
+    </div>
+
+    <p class="art-punch">
+      <span class="lang-en">The rule was never broken by anyone. It was just never enforced by anything.</span>
+      <span class="lang-zh">规矩没有被任何人违反。它只是从来没有被任何东西执行过。</span>
+    </p>
+
+    <h2><span class="lang-en">Prose rules rot</span><span class="lang-zh">散文写的规矩会烂掉</span></h2>
+
+    <p>
+      <span class="lang-en">Here is the failure mode, and I don’t think it is specific to me. You write a discipline into a document. The model reads it at the top of a session and follows it. Forty messages later the document has been summarised, the context has turned over, and the model is producing entries that look exactly like the compliant ones — same fields, same shape, same confident label — because the <em>shape</em> is what survived and the <em>reason</em> did not.</span>
+      <span class="lang-zh">失效的过程是这样的，我不认为只有我会踩。你把一条纪律写进文档。模型在会话开头读到它，照做。四十条消息之后，文档被摘要压缩了，上下文已经换了一轮，模型继续产出的条目看起来跟合规的一模一样 —— 字段一样、形状一样、标签一样自信 —— 因为活下来的是<em>形状</em>，死掉的是<em>理由</em>。</span>
+    </p>
+
+    <p>
+      <span class="lang-en">Nobody notices, because the failure is silent. A wrong <code>high</code> does not crash. It sits there looking authoritative until, six months later, someone acts on advice that was true once, on one board, and is now quietly false.</span>
+      <span class="lang-zh">没人发现，因为这种失效是无声的。一个标错的 <code>high</code> 不会崩。它就那么摆着，一副权威样子，直到半年后有人照着一条「曾经在某一块板上成立、现在已经悄悄不成立」的建议动手。</span>
+    </p>
+
+    <p class="art-punch">
+      <span class="lang-en">A rule that only a model enforces is one context window away from not existing.</span>
+      <span class="lang-zh">一条只靠模型自觉遵守的规矩，离「不存在」只差一个上下文窗口。</span>
+    </p>
+
+    <h2><span class="lang-en">So the decidable part became a command</span><span class="lang-zh">所以我把机械可判的那部分做成了命令</span></h2>
+
+    <p>
+      <span class="lang-en">Not all of it. Some of the discipline genuinely needs judgement — <em>is this principle really exception-free?</em>, <em>was that contradiction preserved or averaged away?</em> Mechanising a judgement that is not mechanical only manufactures false positives, and a checker that cries wolf gets muted, which is worse than no checker.</span>
+      <span class="lang-zh">不是全部。有些纪律真的需要判断力 —— <em>这条原理是不是真的举不出反例？</em>、<em>那个矛盾是被保留了还是被和成了平均值？</em> 把本来不机械的判断硬做成机械的，只会制造假阳性；而一个总在狼来了的检查器会被静音，那比没有检查器更糟。</span>
+    </p>
+
+    <p><span class="lang-en">But a lot of it is just decidable:</span><span class="lang-zh">但相当一部分，就是可判的：</span></p>
+
+    <ul>
+      <li><span class="lang-en">Does this entry carry a source, a date, a reproduction record, a verification method, a confidence level?</span><span class="lang-zh">这条带没带来源、日期、复现记录、验证方式、置信度？</span></li>
+      <li><span class="lang-en">Is the date absolute, or does it say “recently”?</span><span class="lang-zh">日期是绝对日期，还是写着「最近」？</span></li>
+      <li><span class="lang-en">Does the declared confidence exceed what the table allows, given the evidence actually present?</span><span class="lang-zh">按现有证据，标的置信度有没有超过表允许的上限？</span></li>
+      <li><span class="lang-en">Is the reproduction record a list of platforms, or someone typing “3 times”?</span><span class="lang-zh">复现记录是一张平台列表，还是有人打了个「3 次」？</span></li>
+      <li><span class="lang-en">Was this pitfall split into a transferable lesson and a platform fact, or is the lesson welded to the one chip where you learned it?</span><span class="lang-zh">这条坑拆成「可迁移的教训 + 平台专属的事实」了吗，还是教训被焊死在你学到它的那一颗芯片上？</span></li>
+    </ul>
+
+    <p><span class="lang-en">Thirty-seven checks. It reports, and exits non-zero:</span><span class="lang-zh">37 条检查。报错，退出码非零：</span></p>
+
+    <pre class="art-term"><code>$ whetstone verify examples/demo-skill --brief
+
+ERROR (5)
+  ✗ SKILL.md:31        [V16] 复现记录 has two lines for the same platform
+  ✗ SKILL.md:31        [V12] L2 claims 置信度 high, the table allows only low
+  ✗ pitfalls.md:5      [V14] 复现记录 is a bare count 「2 次」
+  ✗ params/soc-x.md:6  [V10] L3 claims high — 验证方式 never passed a test
+
+summary: 5 error(s), 2 warning(s), 0 info</code></pre>
+
+    <p class="art-note">
+      <span class="lang-en">Trimmed for width; the real lines also carry the entry name. <code>examples/demo-skill</code> ships in the repo, deliberately flawed — run it and see the untrimmed version.</span>
+      <span class="lang-zh">为宽度做了截短，真实的行还带条目名。<code>examples/demo-skill</code> 就在仓库里，故意写坏的 —— 跑一遍就能看到未截短的版本。</span>
+    </p>
+
+    <p>
+      <span class="lang-en">The one design decision I would defend hardest: <strong>a reviewer may downgrade any entry, and may never upgrade past the conditions.</strong> Above the cap is an error; below it is only a note. Because the failure mode is not people being too harsh on their own notes.</span>
+      <span class="lang-zh">最想为之辩护的一个设计决定：<strong>人审可以把任何一条下调，永远不能越过条件上调。</strong> 高过上限报错，低于上限只是提示。因为真正会发生的失效，从来不是人对自己的笔记太苛刻。</span>
+    </p>
+
+    <figure style="margin:var(--space-6) 0;">
+      <table class="art-table">
+        <thead><tr>
+          <th><span class="lang-en">Level</span><span class="lang-zh">等级</span></th>
+          <th><span class="lang-en">What the evidence has to show</span><span class="lang-zh">证据必须能拿出什么</span></th>
+        </tr></thead>
+        <tbody>
+          <tr><td class="lv lv--hi">high</td><td><span class="lang-en">An executable check that <strong>passed</strong>, <em>and</em> reproduction on ≥2 distinct platforms or projects.</span><span class="lang-zh">一条可执行检查<strong>实测通过</strong>，<em>并且</em>在 ≥2 个不同平台或项目上复现过。</span></td></tr>
+          <tr><td class="lv lv--md">med</td><td><span class="lang-en">Reproduction on ≥2 — or verified once, and that second route is open to platform facts only.</span><span class="lang-zh">在 ≥2 个平台复现过 —— 或者实测通过一次，而后一条路只对平台事实开放。</span></td></tr>
+          <tr><td class="lv lv--lo">low</td><td><span class="lang-en">Everything else — including a method that passed its check on the single platform where you first met it.</span><span class="lang-zh">其余全部 —— 包括那种在你第一次遇到它的那个平台上验证通过了的做法。</span></td></tr>
+        </tbody>
+      </table>
+      <figcaption><span class="lang-en">The whole table. Verifying a method once does not make it general — that is why a single-platform lesson is capped at <code>low</code> even when its check passes.</span><span class="lang-zh">整张表就这么大。一个做法只验过一次不等于它通用 —— 所以单平台的经验即使验证通过，也封顶 <code>low</code>。</span></figcaption>
+    </figure>
+
+    <h2><span class="lang-en">Then three reviewers took it apart</span><span class="lang-zh">然后三个评审把它拆了</span></h2>
+
+    <p>
+      <span class="lang-en">I asked three independent reviews to attack it, in separate contexts so none inherited my assumptions. The third came back “blocking” and listed four ways to get a single-platform lesson graded <code>high</code> with zero warnings.</span>
+      <span class="lang-zh">我请了三份独立评审来攻击它，各自在独立的上下文里跑，谁也不继承我的预设。第三份回来判定<strong>阻塞</strong>，列出四条能让「单平台的经验」在零告警下拿到 <code>high</code> 的路。</span>
+    </p>
+
+    <ol class="art-attacks">
+      <li>
+        <h3><span class="lang-en">Delete one separator</span><span class="lang-zh">删掉一个分隔符</span></h3>
+        <p><span class="lang-en">Reproduction lines are <code>platform · date · pointer</code>, keyed by platform. Drop the <code>·</code> and the whole line becomes the key — so two entries for the same board read as two different platforms. The gate that exists to stop one project counting twice was defeated by removing a dot.</span><span class="lang-zh">复现记录的格式是 <code>平台 · 日期 · 指针</code>，按平台做唯一键。把 <code>·</code> 去掉，整行就成了键 —— 于是同一块板的两条记录读成了两个不同的平台。那道专门防止「同一个项目算两次」的关口，被删掉一个点破掉了。</span></p>
+      </li>
+      <li>
+        <h3><span class="lang-en">Mention “L3” in a heading</span><span class="lang-zh">在标题里提一句「L3」</span></h3>
+        <p><span class="lang-en">Layer was inferred from the nearest heading containing L1–L4. A section titled <em>“Don’t put L3 values in the body”</em> — an instruction <em>against</em> the thing — reclassified everything under it and raised the cap.</span><span class="lang-zh">层级是从最近的、含 L1–L4 的标题推断的。一个叫<em>「不要把 L3 的值写进正文」</em>的小节 —— 一句<em>反对</em>这件事的告诫 —— 把它底下所有条目重新分了类，还把置信度上限抬高了一档。</span></p>
+      </li>
+      <li>
+        <h3><span class="lang-en">Add a suffix</span><span class="lang-zh">加个后缀</span></h3>
+        <p><span class="lang-en"><code>soc-x</code> and <code>soc-x(second run)</code> normalised to different keys. Same platform, two lines, gate cleared.</span><span class="lang-zh"><code>soc-x</code> 和 <code>soc-x(第二次)</code> 归一化出两个不同的键。同一个平台，两行，关口通过。</span></p>
+      </li>
+      <li>
+        <h3><span class="lang-en">Omit the leading pipe</span><span class="lang-zh">不写前导竖线</span></h3>
+        <p><span class="lang-en">GFM tables do not require <code>|</code> at line start. Mine did. A whole platform-parameter file could be invisible to every check while reporting zero problems — <em>including the check whose entire job was to notice that a table had no confidence column.</em> The hole and its patch used the same broken ruler.</span><span class="lang-zh">GFM 表格不要求行首有 <code>|</code>，我的解析器要求。于是一整份平台参数文件可以对所有检查隐形，同时报告零问题 —— <em>包括那条专门用来发现「这张表没有置信度列」的检查</em>。补漏的和被补的洞，用的是同一把坏掉的尺子。</span></p>
+      </li>
+    </ol>
+
+    <p>
+      <span class="lang-en">All four are fixed, and each is now a mutation-test entry: delete the fix, the suite must fail.</span>
+      <span class="lang-zh">四条全修了，而且每一条现在都是一个变异测试：把修法删掉，整套测试必须报错。</span>
+    </p>
+
+    <h2><span class="lang-en">The part I would rather not write</span><span class="lang-zh">不太想写的那部分</span></h2>
+
+    <p>
+      <span class="lang-en">While making the tests prove the fixes, I found two of my own tests were fake. One watched the wrong error code — it passed because a <em>different</em> rule fired. The other declared <code>high</code> in its own fixture data, so it errored whether or not the bug was present; it proved nothing, and had been green the whole time.</span>
+      <span class="lang-zh">在给这些修法补测试的时候，我发现自己写的两条测试是假的。一条盯的是错误的检查码 —— 它能通过，是因为<em>另一条</em>规则响了。另一条在测试数据里就写了 <code>high</code>，于是不管 bug 在不在都会报错；它什么都没证明，而且一直是通过的。</span>
+    </p>
+
+    <p>
+      <span class="lang-en">And the coverage check I had added to catch exactly this? Its failures ran inside a pipeline, so the counter incremented in a subshell and vanished. It printed <code>FAIL</code> and reported <code>0 failed</code>.</span>
+      <span class="lang-zh">那我为了抓这种事专门加的覆盖率检查呢？它的失败跑在管道里，计数在子 shell 里加，加完就没了。它打印 <code>FAIL</code>，然后报告 <code>0 failed</code>。</span>
+    </p>
+
+    <p class="art-punch">
+      <span class="lang-en">A test that passes is not the same as a test that would fail. The only way to tell them apart is to break the thing on purpose and watch.</span>
+      <span class="lang-zh">「测试通过了」和「这条测试真的测住了」是两回事。区分它们的唯一办法，是故意把东西弄坏，然后看。</span>
+    </p>
+
+    <p>
+      <span class="lang-en">Which is the same lesson as the 61 entries, one level up. I had written the rule. I had written the test. Neither was doing anything.</span>
+      <span class="lang-zh">这跟那 61 条是同一个教训，只是高了一层。规矩我写了。测试我也写了。两个都没在干活。</span>
+    </p>
+
+    <h2><span class="lang-en">The transferable part</span><span class="lang-zh">能带走的那部分</span></h2>
+
+    <p>
+      <span class="lang-en">If you keep any kind of agent memory — a skill library, a rules file, a CLAUDE.md, a corpus you curate by hand — the question worth asking is not <em>what does it contain</em>. It is:</span>
+      <span class="lang-zh">如果你也维护任何形式的 agent 记忆 —— skill 库、规则文件、CLAUDE.md、手工整理的语料 —— 值得问的不是<em>里面有什么</em>，而是：</span>
+    </p>
+
+    <p class="art-punch">
+      <span class="lang-en">Which of my rules would still be true if I stopped believing in them?</span>
+      <span class="lang-zh">我这些规矩里，哪几条在我不再相信它们之后还成立？</span>
+    </p>
+
+    <p>
+      <span class="lang-en">For every discipline you have written down, one of three things is true: a command enforces it, a person checks it on a schedule, or it is decoration. There is no fourth category, and decoration is the default.</span>
+      <span class="lang-zh">对每一条你写下来的纪律，三件事里必有其一：有命令在执行它、有人按周期检查它、或者它是装饰。没有第四种，而且装饰是默认值。</span>
+    </p>
+
+    <div class="art-cta">
+      <p>
+        <span class="lang-en">The tool is <strong>whetstone</strong> — MIT, standard library only, works with any runtime that reads the Agent Skills layout. It ships a deliberately broken example package so <code>verify</code> has something to catch, and <code>--explain</code> prints not just what it checks but where each check is narrower than the rule it serves, and what it refuses to judge at all.</span>
+        <span class="lang-zh">工具是 <strong>whetstone</strong> —— MIT，只用标准库，任何读 Agent Skills 布局的 runtime 都能装。它自带一个故意写坏的示例包，好让 <code>verify</code> 有东西可抓；<code>--explain</code> 不只打印它查什么，还打印每条检查比它服务的规则窄在哪、以及它压根不判什么。</span>
+      </p>
+      <p>
+        <span class="lang-en">I would rather it be honest about its blind spots than pretend it has none. That was the whole problem in the first place.</span>
+        <span class="lang-zh">我宁愿它诚实地说出自己的盲区，也不要它假装没有。当初的问题就出在这儿。</span>
+      </p>
+      <a class="anth-button" href="https://github.com/TbusOS/whetstone"><span class="lang-en">whetstone on GitHub</span><span class="lang-zh">在 GitHub 上看 whetstone</span></a>
+      <a class="anth-button anth-button--ghost" href="index.html"><span class="lang-en">What the tool does</span><span class="lang-zh">这个工具是干嘛的</span></a>
+    </div>
+
+  </div>
+</article>
+
+
+<footer class="anth-footer">
+  <div class="anth-footer-grid">
+    <div class="anth-footer-group"><h5>Whetstone</h5><a href="index.html#why"><span class="lang-en">Why</span><span class="lang-zh">为什么</span></a><a href="index.html#architecture"><span class="lang-en">Architecture</span><span class="lang-zh">架构</span></a><a href="index.html#flow"><span class="lang-en">How it works</span><span class="lang-zh">流程</span></a><a href="index.html#install"><span class="lang-en">Install</span><span class="lang-zh">安装</span></a></div>
+    <div class="anth-footer-group"><h5><span class="lang-en">Output</span><span class="lang-zh">产物</span></h5><a href="index.html#architecture"><span class="lang-en">Skill package</span><span class="lang-zh">Skill 包</span></a><a href="index.html#flow">L1–L4</a><a href="index.html#scenario"><span class="lang-en">Scenario</span><span class="lang-zh">场景</span></a></div>
+    <div class="anth-footer-group"><h5><span class="lang-en">Companions</span><span class="lang-zh">搭档</span></h5><a href="https://github.com/TbusOS">engram</a><a href="https://github.com/TbusOS">llm-wiki</a><a href="https://github.com/alchaincyf/darwin-skill">darwin</a></div>
+    <div class="anth-footer-group"><h5><span class="lang-en">Credits</span><span class="lang-zh">致谢</span></h5><a href="https://github.com/alchaincyf/nuwa-skill">nuwa-skill</a><a href="https://github.com/alchaincyf/darwin-skill">darwin-skill</a><a href="https://github.com/TbusOS">TbusOS</a></div>
+  </div>
+  <div class="anth-footer-legal">
+    <span>© 2026 Whetstone · 磨刀石 · MIT</span>
+    <span><span class="lang-en">Distillation architecture inspired by nuwa-skill · ratchet discipline by darwin-skill (3rd-party). Theory: EvolveR · AgentFactory · MemoryBank · SkillLens.</span><span class="lang-zh">蒸馏架构借鉴 nuwa-skill · 棘轮纪律借鉴 darwin-skill（第三方）。理论：EvolveR · AgentFactory · MemoryBank · SkillLens。</span></span>
+  </div>
+</footer>
+
+<script>
+(function () {
+  var html = document.documentElement;
+  var queryLang = new URLSearchParams(location.search).get('lang');
+  var saved;
+  if (queryLang === 'zh' || queryLang === 'en') { saved = queryLang; }
+  else {
+    try { saved = localStorage.getItem('whetstone-lang'); } catch (e) {}
+    if (!saved) { saved = (navigator.language || 'en').toLowerCase().indexOf('zh') === 0 ? 'zh' : 'en'; }
+  }
+  function apply(lang) {
+    html.setAttribute('data-lang', lang);
+    html.setAttribute('lang', lang === 'zh' ? 'zh-CN' : 'en');
+    try { localStorage.setItem('whetstone-lang', lang); } catch (e) {}
+    document.querySelectorAll('.lang-toggle').forEach(function (btn) { btn.textContent = lang === 'zh' ? 'EN / 中' : '中 / EN'; });
+  }
+  apply(saved);
+  document.addEventListener('DOMContentLoaded', function () {
+    document.querySelectorAll('.lang-toggle').forEach(function (btn) {
+      btn.addEventListener('click', function () { apply(html.getAttribute('data-lang') === 'zh' ? 'en' : 'zh'); });
+    });
+  });
+})();
+</script>
+
+<!-- design-review:self-diff v1
+Skill: anthropic
+Page-type: landing
+Created: 2026-06-17 · original (tool intro for Whetstone)
+Revised: 2026-09-02 · repositioned around evidence discipline; added #evidence section
+
+Decisions (8):
+1. [hero-three-line-stack] Three-line noun-phrase headline per canonical signature. Revised 2026-09-02 from "Distill once. / Reuse forever. / Hand it to anyone." to "Distill the session. / Then refuse what / it cannot prove." — the old line was indistinguishable from every competing distillation tool's first sentence; the new one names the differentiator (refusal) in the same cadence.
+2. [hero-svg-as-product] hero SVG is a realistic split mock (left: a terminal showing a finished session + `whetstone distill` log; right: the generated verified-boot/ package tree + SKILL.md snippet) over abstract shapes — Whetstone's "product" is the distillation act, so the mock shows session→package, the strongest "here's what it does" proof.
+3. [testimonials→scenario] replaced the canonical's 3 testimonials with a single honest 5-step scenario card (secure-boot done once → handed to a Cursor teammate). Because: the tool is brand-new with no real users; fabricating attributed quotes would be dishonest. The scenario carries the same "make it concrete" job without inventing people.
+4. [two-engineering-diagrams] two SVG figures — a 3-layer architecture (orange distiller / blue portable package / olive optional sinks, ≥3 semantic hues, tinted zones not solid bands) and a 6-phase flow with two orange human-gate pills — satisfy the diagram-density contract for "system structure" and "≥3-step process".
+5. [L1-L4-table] the layering ruler is a 4-row table with per-layer hue-coded labels (orange/blue/olive/gold) rather than prose, so "how far does this carry" is scannable.
+6. [optional-everywhere] engram/llm-wiki/darwin are presented as "Optional" badged cards and the olive bottom zone of the architecture, never as requirements — encoding the zero-runtime-dependency, runtime-neutral positioning the whole tool rests on.
+7. [evidence-section-as-terminal-cards] the new #evidence section shows `whetstone verify` output as a window mock whose findings are structured cards (code badge / file:line / one-line message) rather than raw monospace lines. Because: the real messages run ~190 chars and SVG text cannot wrap, so a faithful transcript would be illegible at any usable font size — and a shortened fake transcript would be a fabricated screenshot on a page whose whole argument is "we do not fake evidence". The cards are honestly an illustration, and the figcaption says four of five plus "run it yourself".
+8. [refusal-cards-over-feature-cards] the section closes with four cards titled by what the tool REFUSES (double-counting, silent overwrite, self-grading) and one titled by what it will not pretend to judge. A feature list would read like every competitor's; a refusal list is falsifiable and is the actual design.
+
+Known trade-offs:
+- The hero and architecture SVGs are hand-maintained; if the package layout or phase names change, the mocks must be hand-updated or they drift. Accepted for the scalable hand-drawn anthropic feel over screenshot PNGs.
+- Single scenario instead of three testimonials means less "social proof" surface; chosen deliberately over fabricated quotes for a pre-release tool (honesty > pitch-deck density).
+- Bilingual EN/zh doubles copy maintenance; kept because the repo is open-sourced for an international + Chinese audience and §G expects a language toggle.
+- The #evidence terminal mock names four checks by id (V16/V12/V14/V10); if those ids are renumbered the figure drifts silently. Accepted — ids are part of the published `--explain` contract and are meant to be stable.
+- The 46.4% self-judgement figure is the only external number on the page; it is now attributed to SkillLens (Microsoft) inline in the flow section, since an unsourced number would violate the very standard this section argues for.
+/design-review:self-diff -->
+
+</body>
+</html>
