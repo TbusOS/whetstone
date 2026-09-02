@@ -3,16 +3,16 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>I marked 61 entries “high confidence.” Not one could name a test. — Whetstone</title>
+<title>I marked 61 entries “high confidence.” Not one named a test. — Whetstone</title>
 <meta name="description" content="A rule that only a model enforces is one context window away from not existing. What happened when I finally ran a checker against my own skill library.">
-<meta property="og:title" content="I marked 61 entries “high confidence.” Not one could name a test.">
+<meta property="og:title" content="I marked 61 entries “high confidence.” Not one named a test.">
 <meta property="og:description" content="A rule that only a model enforces is one context window away from not existing. What happened when I finally ran a checker against my own skill library.">
-<meta property="og:url" content="https://doc.tbusos.com/whetstone/why-verify.html">
-<meta property="og:image" content="https://doc.tbusos.com/whetstone/assets/og-article.png">
+<meta property="og:url" content="https://doc.tbusos.com/whetstone/">
+<meta property="og:image" content="https://doc.tbusos.com/whetstone/assets/og-home.png">
 <meta property="og:image:width" content="2400">
 <meta property="og:image:height" content="1260">
 <meta name="twitter:card" content="summary_large_image">
-<meta name="twitter:image" content="https://doc.tbusos.com/whetstone/assets/og-article.png">
+<meta name="twitter:image" content="https://doc.tbusos.com/whetstone/assets/og-home.png">
 <meta property="og:type" content="article">
 <link rel="stylesheet" href="assets/fonts.css">
 <link rel="stylesheet" href="assets/anthropic.css">
@@ -95,7 +95,6 @@
   article ul, article ol { font-family:var(--font-body); font-size:17px; line-height:1.7; padding-left:1.3em; margin:0 0 var(--space-5); }
   article li { margin-bottom:var(--space-3); }
   .art-quote { border-left:3px solid var(--anth-orange); background:var(--anth-bg-subtle); margin:0 0 var(--space-5); padding:var(--space-4) var(--space-5); font-family:var(--font-body); font-size:18px; line-height:1.6; }
-  .art-punch { font-family:var(--font-heading); font-size:19px; font-weight:600; line-height:1.5; color:var(--anth-text); border-top:1px solid var(--anth-light-gray); border-bottom:1px solid var(--anth-light-gray); padding:var(--space-4) 0; margin:var(--space-6) 0; }
   .art-note { font-size:14.5px !important; color:var(--anth-text-secondary); margin-top:calc(-1 * var(--space-3)) !important; }
   .art-stats { display:grid; grid-template-columns:repeat(4,1fr); gap:var(--space-4); margin:var(--space-6) 0; }
   .art-stats > div { background:#ffffff; border:1px solid var(--anth-light-gray); border-radius:var(--radius-md); padding:var(--space-4); text-align:center; }
@@ -149,18 +148,18 @@
     <span class="anth-badge"><span class="lang-en">Field note · 2026-09-02</span><span class="lang-zh">实践记录 · 2026-09-02</span></span>
 
     <h1 style="margin-top:var(--space-4); font-size:44px; line-height:1.15;">
-      <span class="lang-en">I marked 61 entries “high confidence.”<br>Not one could name a test.</span>
+      <span class="lang-en">I marked 61 entries “high confidence.”<br>Not one of them named a test.</span>
       <span class="lang-zh">我给 61 条经验标了「高置信度」<br>没有一条说得出验证方式</span>
     </h1>
 
     <p class="art-lede">
-      <span class="lang-en">I keep a skill library — markdown files my coding agent loads when a task matches. Secure boot, SDK migration, partition layouts. Real work, distilled after the fact so the next project starts where the last one ended.</span>
-      <span class="lang-zh">我维护一个 skill 库 —— 一堆 markdown，任务匹配上了编程 agent 就加载。安全启动、SDK 升级、分区布局。都是真干过的活，事后蒸馏下来，好让下个项目从上个项目结束的地方开始。</span>
+      <span class="lang-en">I keep a skill library. It is a folder of markdown files my coding agent loads when a task matches: secure boot, SDK migration, partition layouts. After I finish something I write down what I learned, so the next project does not start from zero.</span>
+      <span class="lang-zh">我维护一个 skill 库。就是一个 markdown 文件夹，任务匹配上了编程 agent 就加载：安全启动、SDK 升级、分区布局。每做完一件事我把学到的写下来，下个项目就不用从零开始。</span>
     </p>
 
     <p>
-      <span class="lang-en">Months ago I wrote the rule that governs it, in my own framework document, in bold:</span>
-      <span class="lang-zh">几个月前我在自己的框架文档里写下了管这件事的规矩，加粗的：</span>
+      <span class="lang-en">Months ago I put a rule at the top of the framework document that governs those files:</span>
+      <span class="lang-zh">几个月前，我在管着这些文件的框架文档开头写下一条规矩：</span>
     </p>
 
     <blockquote class="art-quote">
@@ -169,57 +168,55 @@
     </blockquote>
 
     <p>
-      <span class="lang-en">Last week I finally wrote the checker. I pointed it at the two packages that framework had produced.</span>
-      <span class="lang-zh">上周我终于把检查脚本写了出来。拿它对准这套框架自己产出的两个包。</span>
+      <span class="lang-en">Last week I wrote the checker that enforces it, and pointed it at the two packages the framework had produced.</span>
+      <span class="lang-zh">上周我把执行这条规矩的检查器写了出来，拿它对准这套框架自己产出的两个包。</span>
     </p>
 
     <div class="art-stats">
       <div><strong>61</strong><span class="lang-en">entries marked <code>high</code></span><span class="lang-zh">条标着 <code>high</code></span></div>
-      <div><strong>0</strong><span class="lang-en">could point to a passing test</span><span class="lang-zh">条能指出实测通过</span></div>
-      <div><strong>54</strong><span class="lang-en">graded above what the table allows</span><span class="lang-zh">条置信度越权上调</span></div>
-      <div><strong>180</strong><span class="lang-en">errors across two files I shipped</span><span class="lang-zh">个错，在两个我已上线的文件里</span></div>
+      <div><strong>0</strong><span class="lang-en">of them named a test</span><span class="lang-zh">条说得出验证方式</span></div>
+      <div><strong>54</strong><span class="lang-en">graded above what my own table permits</span><span class="lang-zh">条高过我自己那张表的上限</span></div>
+      <div><strong>180</strong><span class="lang-en">errors in two files I had been using</span><span class="lang-zh">个错，在两个我一直在用的文件里</span></div>
     </div>
 
-    <p class="art-punch">
-      <span class="lang-en">The rule was never broken by anyone. It was just never enforced by anything.</span>
-      <span class="lang-zh">规矩没有被任何人违反。它只是从来没有被任何东西执行过。</span>
+    <p>
+      <span class="lang-en">Nobody had broken the rule. Nothing had ever enforced it.</span>
+      <span class="lang-zh">没有人违反过这条规矩。只是从来没有任何东西执行过它。</span>
     </p>
 
-    <h2><span class="lang-en">Prose rules rot</span><span class="lang-zh">散文写的规矩会烂掉</span></h2>
+    <h2><span class="lang-en">Why written rules stop working</span><span class="lang-zh">写下来的规矩为什么会失效</span></h2>
 
     <p>
-      <span class="lang-en">Here is the failure mode, and I don’t think it is specific to me. You write a discipline into a document. The model reads it at the top of a session and follows it. Forty messages later the document has been summarised, the context has turned over, and the model is producing entries that look exactly like the compliant ones — same fields, same shape, same confident label — because the <em>shape</em> is what survived and the <em>reason</em> did not.</span>
-      <span class="lang-zh">失效的过程是这样的，我不认为只有我会踩。你把一条纪律写进文档。模型在会话开头读到它，照做。四十条消息之后，文档被摘要压缩了，上下文已经换了一轮，模型继续产出的条目看起来跟合规的一模一样 —— 字段一样、形状一样、标签一样自信 —— 因为活下来的是<em>形状</em>，死掉的是<em>理由</em>。</span>
+      <span class="lang-en">I do not think this is specific to me. You put a discipline in a document. The model reads it at the start of a session and follows it. Forty messages later the document has been summarised, the context has rolled over, and the entries coming out still have the right fields and the same confident label. The format is what carries across a summarisation. The reason the format exists does not, and nothing in the output tells you which of the two you are looking at.</span>
+      <span class="lang-zh">我不认为这只发生在我身上。你把一条纪律写进文档。模型在会话开头读到它，照做。四十条消息之后，文档被摘要压缩了，上下文已经滚过一轮，产出的条目仍然带着对的字段和一样自信的标签。能扛过一次摘要压缩的是格式，格式存在的那个理由扛不过去，而输出里没有任何东西告诉你眼前这条是哪一种。</span>
     </p>
 
     <p>
-      <span class="lang-en">Nobody notices, because the failure is silent. A wrong <code>high</code> does not crash. It sits there looking authoritative until, six months later, someone acts on advice that was true once, on one board, and is now quietly false.</span>
-      <span class="lang-zh">没人发现，因为这种失效是无声的。一个标错的 <code>high</code> 不会崩。它就那么摆着，一副权威样子，直到半年后有人照着一条「曾经在某一块板上成立、现在已经悄悄不成立」的建议动手。</span>
+      <span class="lang-en">You do not notice, because nothing breaks. A wrong <code>high</code> just sits there looking authoritative. Six months later someone acts on advice that was true once, on one board, and is not any more.</span>
+      <span class="lang-zh">你不会发现，因为什么都没坏。一个标错的 <code>high</code> 就那么摆着，一副权威的样子。半年后有人照着一条曾经在某一块板上成立、现在已经不成立的建议动手。</span>
     </p>
-
-    <p class="art-punch">
-      <span class="lang-en">A rule that only a model enforces is one context window away from not existing.</span>
-      <span class="lang-zh">一条只靠模型自觉遵守的规矩，离「不存在」只差一个上下文窗口。</span>
-    </p>
-
-    <h2><span class="lang-en">So the decidable part became a command</span><span class="lang-zh">所以我把机械可判的那部分做成了命令</span></h2>
 
     <p>
-      <span class="lang-en">Not all of it. Some of the discipline genuinely needs judgement — <em>is this principle really exception-free?</em>, <em>was that contradiction preserved or averaged away?</em> Mechanising a judgement that is not mechanical only manufactures false positives, and a checker that cries wolf gets muted, which is worse than no checker.</span>
-      <span class="lang-zh">不是全部。有些纪律真的需要判断力 —— <em>这条原理是不是真的举不出反例？</em>、<em>那个矛盾是被保留了还是被和成了平均值？</em> 把本来不机械的判断硬做成机械的，只会制造假阳性；而一个总在狼来了的检查器会被静音，那比没有检查器更糟。</span>
+      <span class="lang-en">That is the argument for making rules executable, and it is why I had stopped trusting the document version of mine.</span>
+      <span class="lang-zh">这就是把规矩做成能跑的东西的理由，也是我后来不再相信自己那份文档版规矩的原因。</span>
     </p>
 
-    <p><span class="lang-en">But a lot of it is just decidable:</span><span class="lang-zh">但相当一部分，就是可判的：</span></p>
+    <h2><span class="lang-en">What I could and could not turn into a check</span><span class="lang-zh">哪些能变成检查，哪些不能</span></h2>
 
-    <ul>
-      <li><span class="lang-en">Does this entry carry a source, a date, a reproduction record, a verification method, a confidence level?</span><span class="lang-zh">这条带没带来源、日期、复现记录、验证方式、置信度？</span></li>
-      <li><span class="lang-en">Is the date absolute, or does it say “recently”?</span><span class="lang-zh">日期是绝对日期，还是写着「最近」？</span></li>
-      <li><span class="lang-en">Does the declared confidence exceed what the table allows, given the evidence actually present?</span><span class="lang-zh">按现有证据，标的置信度有没有超过表允许的上限？</span></li>
-      <li><span class="lang-en">Is the reproduction record a list of platforms, or someone typing “3 times”?</span><span class="lang-zh">复现记录是一张平台列表，还是有人打了个「3 次」？</span></li>
-      <li><span class="lang-en">Was this pitfall split into a transferable lesson and a platform fact, or is the lesson welded to the one chip where you learned it?</span><span class="lang-zh">这条坑拆成「可迁移的教训 + 平台专属的事实」了吗，还是教训被焊死在你学到它的那一颗芯片上？</span></li>
-    </ul>
+    <p>
+      <span class="lang-en">Some of the discipline needs judgement. Is this principle really exception-free? Was that contradiction preserved, or averaged away? Mechanising those would just produce false positives, and a checker that fires on good input gets ignored, which leaves you worse off than before.</span>
+      <span class="lang-zh">有些纪律需要判断力。这条原理是不是真的举不出反例？那个矛盾是被保留了，还是被和成了平均值？把这些硬做成机械判断只会制造假阳性，而一个在好输入上乱报的检查器会被人忽略，那比原来还糟。</span>
+    </p>
 
-    <p><span class="lang-en">Thirty-seven checks. It reports, and exits non-zero:</span><span class="lang-zh">37 条检查。报错，退出码非零：</span></p>
+    <p>
+      <span class="lang-en">Plenty of it is decidable, though. Does the entry have a source, a date, a reproduction record, a verification method? Is the date absolute, or does it say “recently”? Given the evidence actually present, is the declared confidence higher than the table permits? Is the reproduction record a list of platforms, or did someone just type “3 times”? Was the pitfall split into a transferable lesson and a platform-specific fact, or is the lesson still welded to the one chip where I learned it?</span>
+      <span class="lang-zh">但相当一部分是可判的。这条有没有来源、日期、复现记录、验证方式？日期是绝对日期，还是写着「最近」？按实际拿得出的证据，标的置信度有没有高过表允许的上限？复现记录是一张平台列表，还是有人随手打了个「3 次」？这条坑拆成了可迁移的教训和平台专属的事实，还是教训仍然焊死在我学到它的那一颗芯片上？</span>
+    </p>
+
+    <p>
+      <span class="lang-en">That came to 37 checks. It prints findings and exits non-zero.</span>
+      <span class="lang-zh">数下来 37 条检查。它打印问题，退出码非零。</span>
+    </p>
 
     <pre class="art-term"><code>$ whetstone verify examples/demo-skill --brief
 
@@ -227,18 +224,18 @@ ERROR (5)
   ✗ SKILL.md:31        [V16] 复现记录 has two lines for the same platform
   ✗ SKILL.md:31        [V12] L2 claims 置信度 high, the table allows only low
   ✗ pitfalls.md:5      [V14] 复现记录 is a bare count 「2 次」
-  ✗ params/soc-x.md:6  [V10] L3 claims high — 验证方式 never passed a test
+  ✗ params/soc-x.md:6  [V10] L3 claims high, 验证方式 never passed a test
 
 summary: 5 error(s), 2 warning(s), 0 info</code></pre>
 
     <p class="art-note">
-      <span class="lang-en">Trimmed for width; the real lines also carry the entry name. <code>examples/demo-skill</code> ships in the repo, deliberately flawed — run it and see the untrimmed version.</span>
-      <span class="lang-zh">为宽度做了截短，真实的行还带条目名。<code>examples/demo-skill</code> 就在仓库里，故意写坏的 —— 跑一遍就能看到未截短的版本。</span>
+      <span class="lang-en">Trimmed for width; the real lines also carry the entry name. <code>examples/demo-skill</code> ships in the repo, deliberately flawed, so you can run it and see the untrimmed version.</span>
+      <span class="lang-zh">为宽度做了截短，真实的行还带条目名。<code>examples/demo-skill</code> 就在仓库里，故意写坏的，跑一遍就能看到未截短的版本。</span>
     </p>
 
     <p>
-      <span class="lang-en">The one design decision I would defend hardest: <strong>a reviewer may downgrade any entry, and may never upgrade past the conditions.</strong> Above the cap is an error; below it is only a note. Because the failure mode is not people being too harsh on their own notes.</span>
-      <span class="lang-zh">最想为之辩护的一个设计决定：<strong>人审可以把任何一条下调，永远不能越过条件上调。</strong> 高过上限报错，低于上限只是提示。因为真正会发生的失效，从来不是人对自己的笔记太苛刻。</span>
+      <span class="lang-en">The grading is asymmetric on purpose: a reviewer can downgrade any entry but cannot upgrade past the conditions, so going above the cap is an error while going below it is only a note. I have never once caught myself being too harsh on my own notes, and the checker is built around that.</span>
+      <span class="lang-zh">这个评级是故意做成不对称的：人审可以把任何一条下调，但不能越过条件上调，所以高过上限报错，低于上限只是提示。我从来没有一次抓到自己把笔记标得太严，检查器就是照着这一点造的。</span>
     </p>
 
     <figure style="margin:var(--space-6) 0;">
@@ -248,92 +245,73 @@ summary: 5 error(s), 2 warning(s), 0 info</code></pre>
           <th><span class="lang-en">What the evidence has to show</span><span class="lang-zh">证据必须能拿出什么</span></th>
         </tr></thead>
         <tbody>
-          <tr><td class="lv lv--hi">high</td><td><span class="lang-en">An executable check that <strong>passed</strong>, <em>and</em> reproduction on ≥2 distinct platforms or projects.</span><span class="lang-zh">一条可执行检查<strong>实测通过</strong>，<em>并且</em>在 ≥2 个不同平台或项目上复现过。</span></td></tr>
-          <tr><td class="lv lv--md">med</td><td><span class="lang-en">Reproduction on ≥2 — or verified once, and that second route is open to platform facts only.</span><span class="lang-zh">在 ≥2 个平台复现过 —— 或者实测通过一次，而后一条路只对平台事实开放。</span></td></tr>
-          <tr><td class="lv lv--lo">low</td><td><span class="lang-en">Everything else — including a method that passed its check on the single platform where you first met it.</span><span class="lang-zh">其余全部 —— 包括那种在你第一次遇到它的那个平台上验证通过了的做法。</span></td></tr>
+          <tr><td class="lv lv--hi">high</td><td><span class="lang-en">An executable check that passed, plus reproduction on at least two distinct platforms or projects.</span><span class="lang-zh">一条可执行检查实测通过，加上在至少两个不同平台或项目上复现过。</span></td></tr>
+          <tr><td class="lv lv--md">med</td><td><span class="lang-en">Reproduction on two or more. Or verified once, and that second route is open to platform facts only.</span><span class="lang-zh">在两个以上平台复现过。或者实测通过一次，而后一条路只对平台事实开放。</span></td></tr>
+          <tr><td class="lv lv--lo">low</td><td><span class="lang-en">Everything else, including a method that passed its check on the single platform where you first met it.</span><span class="lang-zh">其余全部，包括那种在你第一次遇到它的那个平台上验证通过了的做法。</span></td></tr>
         </tbody>
       </table>
-      <figcaption><span class="lang-en">The whole table. Verifying a method once does not make it general — that is why a single-platform lesson is capped at <code>low</code> even when its check passes.</span><span class="lang-zh">整张表就这么大。一个做法只验过一次不等于它通用 —— 所以单平台的经验即使验证通过，也封顶 <code>low</code>。</span></figcaption>
+      <figcaption><span class="lang-en">The whole table. Verifying a method once does not make it general, which is why a single-platform lesson is capped at <code>low</code> even when its check passes.</span><span class="lang-zh">整张表就这么大。一个做法只验过一次不等于它通用，所以单平台的经验即使验证通过也封顶 <code>low</code>。</span></figcaption>
     </figure>
 
-    <h2><span class="lang-en">Then three reviewers took it apart</span><span class="lang-zh">然后三个评审把它拆了</span></h2>
+    <h2><span class="lang-en">Four ways past it</span><span class="lang-zh">四条绕过去的路</span></h2>
 
     <p>
-      <span class="lang-en">I asked three independent reviews to attack it, in separate contexts so none inherited my assumptions. The third came back “blocking” and listed four ways to get a single-platform lesson graded <code>high</code> with zero warnings.</span>
-      <span class="lang-zh">我请了三份独立评审来攻击它，各自在独立的上下文里跑，谁也不继承我的预设。第三份回来判定<strong>阻塞</strong>，列出四条能让「单平台的经验」在零告警下拿到 <code>high</code> 的路。</span>
+      <span class="lang-en">I asked three reviews to attack the checker, each in a separate context so none of them started from my assumptions. The third came back blocking, with four ways to get a single-platform lesson graded <code>high</code> without a single warning.</span>
+      <span class="lang-zh">我请三份评审去攻击这个检查器，各自在独立的上下文里跑，谁都不从我的预设出发。第三份回来判定阻塞，给出四条能让单平台的经验拿到 <code>high</code> 而且一个告警都不出的路。</span>
     </p>
 
     <ol class="art-attacks">
       <li>
-        <h3><span class="lang-en">Delete one separator</span><span class="lang-zh">删掉一个分隔符</span></h3>
-        <p><span class="lang-en">Reproduction lines are <code>platform · date · pointer</code>, keyed by platform. Drop the <code>·</code> and the whole line becomes the key — so two entries for the same board read as two different platforms. The gate that exists to stop one project counting twice was defeated by removing a dot.</span><span class="lang-zh">复现记录的格式是 <code>平台 · 日期 · 指针</code>，按平台做唯一键。把 <code>·</code> 去掉，整行就成了键 —— 于是同一块板的两条记录读成了两个不同的平台。那道专门防止「同一个项目算两次」的关口，被删掉一个点破掉了。</span></p>
+        <h3><span class="lang-en">Delete a separator</span><span class="lang-zh">删掉一个分隔符</span></h3>
+        <p><span class="lang-en">Reproduction lines read <code>platform · date · pointer</code> and are keyed on the platform field. Take out the <code>·</code> and the whole line becomes the key, so two records from the same board count as two platforms. The gate against double-counting one project came apart when someone removed a dot.</span><span class="lang-zh">复现记录的格式是 <code>平台 · 日期 · 指针</code>，按平台字段做键。把 <code>·</code> 去掉，整行就成了键，于是同一块板的两条记录算成两个平台。那道防止一个项目被算两次的关口，被人删掉一个点就散了。</span></p>
       </li>
       <li>
-        <h3><span class="lang-en">Mention “L3” in a heading</span><span class="lang-zh">在标题里提一句「L3」</span></h3>
-        <p><span class="lang-en">Layer was inferred from the nearest heading containing L1–L4. A section titled <em>“Don’t put L3 values in the body”</em> — an instruction <em>against</em> the thing — reclassified everything under it and raised the cap.</span><span class="lang-zh">层级是从最近的、含 L1–L4 的标题推断的。一个叫<em>「不要把 L3 的值写进正文」</em>的小节 —— 一句<em>反对</em>这件事的告诫 —— 把它底下所有条目重新分了类，还把置信度上限抬高了一档。</span></p>
+        <h3><span class="lang-en">Put “L3” in a heading</span><span class="lang-zh">在标题里写「L3」</span></h3>
+        <p><span class="lang-en">Layer was inferred from the nearest heading containing L1 to L4. A section called “Don’t put L3 values in the body”, an instruction against doing the thing, reclassified everything beneath it and raised the ceiling.</span><span class="lang-zh">层级是从最近的、含 L1 到 L4 的标题推断的。一个叫「不要把 L3 的值写进正文」的小节，一句反对这么做的告诫，把它底下所有条目重新分了类，还把上限抬高了。</span></p>
       </li>
       <li>
         <h3><span class="lang-en">Add a suffix</span><span class="lang-zh">加个后缀</span></h3>
-        <p><span class="lang-en"><code>soc-x</code> and <code>soc-x(second run)</code> normalised to different keys. Same platform, two lines, gate cleared.</span><span class="lang-zh"><code>soc-x</code> 和 <code>soc-x(第二次)</code> 归一化出两个不同的键。同一个平台，两行，关口通过。</span></p>
+        <p><span class="lang-en"><code>soc-x</code> and <code>soc-x(second run)</code> normalised to two different keys, which got the same board counted as two and cleared the gate.</span><span class="lang-zh"><code>soc-x</code> 和 <code>soc-x(第二次)</code> 归一化成两个不同的键，同一块板因此被算成两个，关口就过了。</span></p>
       </li>
       <li>
-        <h3><span class="lang-en">Omit the leading pipe</span><span class="lang-zh">不写前导竖线</span></h3>
-        <p><span class="lang-en">GFM tables do not require <code>|</code> at line start. Mine did. A whole platform-parameter file could be invisible to every check while reporting zero problems — <em>including the check whose entire job was to notice that a table had no confidence column.</em> The hole and its patch used the same broken ruler.</span><span class="lang-zh">GFM 表格不要求行首有 <code>|</code>，我的解析器要求。于是一整份平台参数文件可以对所有检查隐形，同时报告零问题 —— <em>包括那条专门用来发现「这张表没有置信度列」的检查</em>。补漏的和被补的洞，用的是同一把坏掉的尺子。</span></p>
+        <h3><span class="lang-en">Drop the leading pipe</span><span class="lang-zh">不写前导竖线</span></h3>
+        <p><span class="lang-en">GFM tables do not require <code>|</code> at the start of a line. My parser did. An entire platform-parameter file could be invisible to every check while the run reported no problems, and that included the check whose only job was to notice a table with no confidence column. The hole and the patch for it were using the same broken ruler.</span><span class="lang-zh">GFM 表格不要求行首有 <code>|</code>，我的解析器要求。于是一整份平台参数文件可以对所有检查隐形，而那一次运行报告零问题，其中还包括那条唯一职责就是发现「这张表没有置信度列」的检查。洞和补洞的那块补丁，用的是同一把坏掉的尺子。</span></p>
       </li>
     </ol>
 
     <p>
-      <span class="lang-en">All four are fixed, and each is now a mutation-test entry: delete the fix, the suite must fail.</span>
-      <span class="lang-zh">四条全修了，而且每一条现在都是一个变异测试：把修法删掉，整套测试必须报错。</span>
+      <span class="lang-en">All four are fixed. Each one is now a mutation-test entry: remove the fix and the suite has to fail.</span>
+      <span class="lang-zh">四条都修了。每一条现在都是一个变异测试条目：把修法拿掉，整套测试必须失败。</span>
     </p>
 
-    <h2><span class="lang-en">The part I would rather not write</span><span class="lang-zh">不太想写的那部分</span></h2>
+    <h2><span class="lang-en">Two of my tests were fake</span><span class="lang-zh">我有两条测试是假的</span></h2>
 
     <p>
-      <span class="lang-en">While making the tests prove the fixes, I found two of my own tests were fake. One watched the wrong error code — it passed because a <em>different</em> rule fired. The other declared <code>high</code> in its own fixture data, so it errored whether or not the bug was present; it proved nothing, and had been green the whole time.</span>
-      <span class="lang-zh">在给这些修法补测试的时候，我发现自己写的两条测试是假的。一条盯的是错误的检查码 —— 它能通过，是因为<em>另一条</em>规则响了。另一条在测试数据里就写了 <code>high</code>，于是不管 bug 在不在都会报错；它什么都没证明，而且一直是通过的。</span>
-    </p>
-
-    <p>
-      <span class="lang-en">And the coverage check I had added to catch exactly this? Its failures ran inside a pipeline, so the counter incremented in a subshell and vanished. It printed <code>FAIL</code> and reported <code>0 failed</code>.</span>
-      <span class="lang-zh">那我为了抓这种事专门加的覆盖率检查呢？它的失败跑在管道里，计数在子 shell 里加，加完就没了。它打印 <code>FAIL</code>，然后报告 <code>0 failed</code>。</span>
-    </p>
-
-    <p class="art-punch">
-      <span class="lang-en">A test that passes is not the same as a test that would fail. The only way to tell them apart is to break the thing on purpose and watch.</span>
-      <span class="lang-zh">「测试通过了」和「这条测试真的测住了」是两回事。区分它们的唯一办法，是故意把东西弄坏，然后看。</span>
+      <span class="lang-en">Making the tests prove the fixes turned up something worse. One test was watching the wrong error code, so it passed because a different rule fired. Another declared <code>high</code> in its own fixture data, which meant it errored whether or not the bug existed. It had been green the entire time and proving nothing.</span>
+      <span class="lang-zh">让测试去证明那些修法的时候，翻出了更难看的东西。一条测试盯的是错误的检查码，它能通过是因为另一条规则响了。另一条在自己的测试数据里就写了 <code>high</code>，于是不管 bug 在不在都会报错。它一直是绿的，什么也没证明。</span>
     </p>
 
     <p>
-      <span class="lang-en">Which is the same lesson as the 61 entries, one level up. I had written the rule. I had written the test. Neither was doing anything.</span>
-      <span class="lang-zh">这跟那 61 条是同一个教训，只是高了一层。规矩我写了。测试我也写了。两个都没在干活。</span>
-    </p>
-
-    <h2><span class="lang-en">The transferable part</span><span class="lang-zh">能带走的那部分</span></h2>
-
-    <p>
-      <span class="lang-en">If you keep any kind of agent memory — a skill library, a rules file, a CLAUDE.md, a corpus you curate by hand — the question worth asking is not <em>what does it contain</em>. It is:</span>
-      <span class="lang-zh">如果你也维护任何形式的 agent 记忆 —— skill 库、规则文件、CLAUDE.md、手工整理的语料 —— 值得问的不是<em>里面有什么</em>，而是：</span>
-    </p>
-
-    <p class="art-punch">
-      <span class="lang-en">Which of my rules would still be true if I stopped believing in them?</span>
-      <span class="lang-zh">我这些规矩里，哪几条在我不再相信它们之后还成立？</span>
+      <span class="lang-en">The coverage check I had added specifically to catch this had its own problem. Its failures ran inside a pipeline, so the counter incremented in a subshell and disappeared. It printed FAIL and reported 0 failed.</span>
+      <span class="lang-zh">我专门为了抓这种事加的覆盖率检查，自己也有毛病。它的失败跑在管道里，计数在子 shell 里加，加完就没了。它打印 FAIL，然后报告 0 failed。</span>
     </p>
 
     <p>
-      <span class="lang-en">For every discipline you have written down, one of three things is true: a command enforces it, a person checks it on a schedule, or it is decoration. There is no fourth category, and decoration is the default.</span>
-      <span class="lang-zh">对每一条你写下来的纪律，三件事里必有其一：有命令在执行它、有人按周期检查它、或者它是装饰。没有第四种，而且装饰是默认值。</span>
+      <span class="lang-en">I found all three the same way, by deleting checking logic and requiring the suite to go red. A test that passes and a test that would fail are different things, and breaking the code on purpose is the only way I know to tell them apart. This is the 61 entries again with one more layer on it, since I had written both the rule and the test that was supposed to hold me to it, and neither was doing any work.</span>
+      <span class="lang-zh">这三个我都是用同一个办法找出来的：删掉检查逻辑，要求整套测试变成失败。「测试通过了」和「这条测试真的会失败」是两回事，而故意把代码弄坏是我知道的唯一区分办法。这就是那 61 条又来了一遍，只是上面多压了一层：规矩是我写的，本该管住我的那条测试也是我写的，两个都没在干活。</span>
+    </p>
+
+    <h2><span class="lang-en">If you keep this kind of thing</span><span class="lang-zh">如果你也维护这类东西</span></h2>
+
+    <p>
+      <span class="lang-en">If you keep a skill library, a rules file, a CLAUDE.md, or any corpus you curate by hand, the question worth asking is which of your rules would still be obeyed after you stopped believing in them. A rule is either run by a command, or checked by a person on some schedule, or it is decoration, and decoration is what you get when nobody chooses. All three look the same from outside the file, which is why mine sat there for months without anyone noticing, me included.</span>
+      <span class="lang-zh">如果你也维护 skill 库、规则文件、CLAUDE.md，或者任何手工整理的语料，值得问的问题是：你那些规矩里，哪几条在你不再相信它们之后还会被遵守。一条规矩要么有命令在执行它，要么有人按某个周期检查它，要么就是装饰，而没人去选的时候，得到的就是装饰。从文件外面看，这三种长得一模一样，所以我那条在那儿摆了几个月都没人发现，包括我自己。</span>
     </p>
 
     <div class="art-cta">
       <p>
-        <span class="lang-en">The tool is <strong>whetstone</strong> — MIT, standard library only, works with any runtime that reads the Agent Skills layout. It ships a deliberately broken example package so <code>verify</code> has something to catch, and <code>--explain</code> prints not just what it checks but where each check is narrower than the rule it serves, and what it refuses to judge at all.</span>
-        <span class="lang-zh">工具是 <strong>whetstone</strong> —— MIT，只用标准库，任何读 Agent Skills 布局的 runtime 都能装。它自带一个故意写坏的示例包，好让 <code>verify</code> 有东西可抓；<code>--explain</code> 不只打印它查什么，还打印每条检查比它服务的规则窄在哪、以及它压根不判什么。</span>
-      </p>
-      <p>
-        <span class="lang-en">I would rather it be honest about its blind spots than pretend it has none. That was the whole problem in the first place.</span>
-        <span class="lang-zh">我宁愿它诚实地说出自己的盲区，也不要它假装没有。当初的问题就出在这儿。</span>
+        <span class="lang-en">The tool is whetstone. MIT, standard library only, works with any runtime that reads the Agent Skills layout. There is a deliberately broken example package in the repo so the checker has something to catch, and <code>--explain</code> prints what it checks, where each check is narrower than the rule behind it, and what it will not judge at all.</span>
+        <span class="lang-zh">工具叫 whetstone。MIT，只用标准库，任何读 Agent Skills 布局的 runtime 都能装。仓库里有一个故意写坏的示例包，好让检查器有东西可抓；<code>--explain</code> 会打印它查什么、每条检查比背后那条规则窄在哪、以及它压根不判什么。</span>
       </p>
       <a class="anth-button" href="https://github.com/TbusOS/whetstone"><span class="lang-en">whetstone on GitHub</span><span class="lang-zh">在 GitHub 上看 whetstone</span></a>
       <a class="anth-button anth-button--ghost" href="index.html"><span class="lang-en">What the tool does</span><span class="lang-zh">这个工具是干嘛的</span></a>
