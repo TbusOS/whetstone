@@ -275,7 +275,7 @@ summary: 5 error(s), 2 warning(s), 0 info</code></pre>
       </li>
       <li>
         <h3><span class="lang-en">Drop the leading pipe</span><span class="lang-zh">不写前导竖线</span></h3>
-        <p><span class="lang-en">GFM tables do not require <code>|</code> at the start of a line. My parser did. An entire platform-parameter file could be invisible to every check while the run reported no problems, and that included the check whose only job was to notice a table with no confidence column. The hole and the patch for it were using the same broken ruler.</span><span class="lang-zh">GFM 表格不要求行首有 <code>|</code>，我的解析器要求。于是一整份平台参数文件可以对所有检查隐形，而那一次运行报告零问题，其中还包括那条唯一职责就是发现「这张表没有置信度列」的检查。洞和补洞的那块补丁，用的是同一把坏掉的尺子。</span></p>
+        <p><span class="lang-en">GFM tables do not require <code>|</code> at the start of a line. My parser did. An entire platform-parameter file could be invisible to every check while the run reported no problems. That included the check whose only job was to notice a table with no confidence column, because it tested for the leading pipe the same way the parser did, so it could not see the table either.</span><span class="lang-zh">GFM 表格不要求行首有 <code>|</code>，我的解析器要求。于是一整份平台参数文件可以对所有检查隐形，而那一次运行报告零问题。这里面还包括那条唯一职责就是发现「这张表没有置信度列」的检查：它判前导竖线的方式跟解析器一模一样，所以它也看不见这张表。</span></p>
       </li>
     </ol>
 
