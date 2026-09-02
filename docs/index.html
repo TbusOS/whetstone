@@ -35,7 +35,7 @@
 
   .feat-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:var(--space-5); }
   .feat-card { background:#ffffff; border:1px solid var(--anth-light-gray); border-radius:var(--radius-lg); padding:var(--space-7); }
-  .feat-card__kicker { font-family:var(--font-heading); font-size:11.5px; letter-spacing:0.14em; text-transform:uppercase; color:var(--anth-orange); font-weight:700; }
+  .feat-card__kicker { font-family:var(--font-heading); font-size:11.5px; letter-spacing:0.14em; text-transform:uppercase; color:var(--anth-orange-ink); font-weight:700; }
   html[data-lang="zh"] .feat-card__kicker { text-transform:none; letter-spacing:0.04em; }
   .feat-card__title { font-family:var(--font-heading); font-size:22px; font-weight:600; letter-spacing:-0.01em; color:var(--anth-text); margin:var(--space-2) 0 var(--space-3); }
   .feat-card__body { font-family:var(--font-body); font-size:16px; line-height:1.65; color:var(--anth-text); margin:0; }
@@ -54,16 +54,25 @@
   .layer-table th { font-family:var(--font-heading); font-size:13px; font-weight:600; color:var(--anth-text-secondary); letter-spacing:0.02em; }
   .layer-table tbody tr:last-child td { border-bottom:none; }
   .layer-table .lyr { font-family:var(--font-heading); font-weight:700; white-space:nowrap; }
-  .layer-table .lyr--l1 { color:var(--anth-orange); }
-  .layer-table .lyr--l2 { color:#4a7bab; }
+  .layer-table .lyr--l1 { color:var(--anth-orange-ink); }
+  .layer-table .lyr--l2 { color:#3f6796; }
   .layer-table .lyr--l3 { color:#5d7045; }
   .layer-table .lyr--l4 { color:#8a5a2a; }
+  .layer-table .lyr--hi { color:var(--anth-orange-ink); }
+  .layer-table .lyr--md { color:#3f6796; }
+  .layer-table .lyr--lo { color:#65645a; }
+  .ref-grid { display:grid; grid-template-columns:repeat(2,1fr); gap:var(--space-5); }
+  .ref-card { background:#ffffff; border:1px solid var(--anth-light-gray); border-radius:var(--radius-md); padding:var(--space-5) var(--space-6); }
+  .ref-card h3 { font-family:var(--font-heading); font-size:16px; font-weight:600; margin:0 0 var(--space-2); color:var(--anth-text); }
+  .ref-card p { font-family:var(--font-body); font-size:14.5px; line-height:1.6; color:var(--anth-text-secondary); margin:0; }
+  .ref-card .no { font-family:var(--font-heading); font-size:11px; font-weight:700; letter-spacing:0.1em; text-transform:uppercase; color:var(--anth-orange-ink); }
+  @media (max-width:860px) { .ref-grid { grid-template-columns:1fr; } }
 
   .feat-grid--two { grid-template-columns:repeat(2,1fr); }
   .mate-row { display:grid; grid-template-columns:repeat(3,1fr); gap:var(--space-5); }
   .mate-card { background:#ffffff; border:1px solid var(--anth-light-gray); border-radius:var(--radius-md); padding:var(--space-6); }
   .mate-card h3 { font-family:var(--font-heading); font-size:18px; font-weight:600; margin:0 0 var(--space-2); color:var(--anth-text); }
-  .mate-card .opt { font-family:var(--font-heading); font-size:11px; font-weight:700; letter-spacing:0.1em; text-transform:uppercase; color:var(--anth-green); }
+  .mate-card .opt { font-family:var(--font-heading); font-size:11px; font-weight:700; letter-spacing:0.1em; text-transform:uppercase; color:#4a6a3a; }
   .mate-card p { font-family:var(--font-body); font-size:15px; line-height:1.6; color:var(--anth-text-secondary); margin:var(--space-2) 0 0; }
 
   .install-table { width:100%; border-collapse:collapse; font-family:var(--font-body); font-size:15.5px; background:#ffffff; border:1px solid var(--anth-light-gray); border-radius:var(--radius-md); overflow:hidden; }
@@ -82,6 +91,7 @@
   <a href="#" style="font-family:var(--font-heading); font-weight:600; font-size:18px; text-decoration:none; color:var(--anth-text);">Whetstone · 磨刀石</a>
   <div>
     <a href="#why"><span class="lang-en">Why</span><span class="lang-zh">为什么</span></a>
+    <a href="#evidence"><span class="lang-en">Evidence</span><span class="lang-zh">证据</span></a>
     <a href="#architecture"><span class="lang-en">Architecture</span><span class="lang-zh">架构</span></a>
     <a href="#flow"><span class="lang-en">How it works</span><span class="lang-zh">流程</span></a>
     <a href="skills.html"><span class="lang-en">Skills</span><span class="lang-zh">技能</span></a>
@@ -99,9 +109,9 @@
 <section style="padding:var(--space-5) var(--space-5) 0;">
   <div class="anth-container">
     <div class="anth-banner">
-      <span class="anth-badge" style="background:var(--anth-orange); color:#ffffff; font-weight:600;"><span class="lang-en">New</span><span class="lang-zh">新</span></span>
-      <span><span class="lang-en">Runtime-neutral skill packages — distilled on Claude Code, used on Codex, Cursor, anywhere.</span><span class="lang-zh">runtime 中立的 skill 包 —— 在 Claude Code 蒸馏，拿到 Codex、Cursor、任何地方都能用。</span></span>
-      <a class="anth-link" href="#scenario" style="margin-left:auto;"><span class="lang-en">See the scenario</span><span class="lang-zh">看场景示例</span></a>
+      <span class="anth-badge" style="background:var(--anth-orange-ink); color:#ffffff; font-weight:600;"><span class="lang-en">New</span><span class="lang-zh">新</span></span>
+      <span><span class="lang-en"><strong>whetstone verify</strong> — the evidence rules are now a command that exits non-zero, not a paragraph of documentation.</span><span class="lang-zh"><strong>whetstone verify</strong> —— 证据规则现在是一条会返回非零退出码的命令，不再只是文档里的一段话。</span></span>
+      <a class="anth-link" href="#evidence" style="margin-left:auto;"><span class="lang-en">See what it refuses</span><span class="lang-zh">看它拒绝什么</span></a>
     </div>
   </div>
 </section>
@@ -111,16 +121,16 @@
   <div class="anth-container" style="max-width:880px;">
     <span class="anth-badge"><span aria-hidden="true" style="display:inline-block; width:8px; height:8px; border-radius:50%; background:#788c5d; margin-right:6px; vertical-align:middle;"></span><span class="lang-en">Self-contained · Zero runtime dependency · Any runtime</span><span class="lang-zh">自包含 · 零运行时依赖 · 任何 runtime</span></span>
     <h1 style="margin-top:var(--space-4);">
-      <span class="lang-en">Distill once.<br>Reuse forever.<br>Hand it to anyone.</span>
-      <span class="lang-zh">蒸馏一次。<br>永久复用。<br>打包给任何人。</span>
+      <span class="lang-en">Distill the session.<br>Then refuse what<br>it cannot prove.</span>
+      <span class="lang-zh">把会话蒸馏成 skill。<br>再把证不出来的<br>挡在门外。</span>
     </h1>
     <p style="font-size:20px; color:var(--anth-text-secondary); margin:var(--space-5) auto var(--space-6); line-height:1.6; max-width:700px; font-family:var(--font-body);">
-      <span class="lang-en">Whetstone mines a finished dev session — transcript, git diff, the pitfalls you hit — and distills it into a portable Agent Skill package. The reusable design and method live in the skill; only the platform-specific values live in a swappable table. Next platform, next teammate, next runtime: load it and the capability is there.</span>
-      <span class="lang-zh">Whetstone 挖掘你做完的一次开发 —— transcript、git diff、踩过的坑 —— 蒸馏成一个可移植的 Agent Skill 包。可复用的设计和方法留在 skill 里，只有平台专属的值放进一张可替换的表。换平台、换同事、换 runtime：装上，能力就在。</span>
+      <span class="lang-en">Whetstone mines a finished dev session — transcript, git diff, the pitfalls you hit — into a portable Agent Skill package. Then it holds that package to an evidence standard you can run: confidence comes from a mechanical table, a lesson seen on one platform stays out of the skill body, and a fact is appended and marked superseded rather than quietly replaced. Every other tool here writes knowledge in. This one also refuses it.</span>
+      <span class="lang-zh">Whetstone 挖掘你做完的一次开发 —— transcript、git diff、踩过的坑 —— 蒸馏成一个可移植的 Agent Skill 包。然后用一条能跑的命令守住证据纪律：置信度按机械表判、只在一个平台见过的经验进不了正文、事实只能追加并标注替代、不许被悄悄改掉。别的工具都在往里写知识，这个还会把不合格的挡回去。</span>
     </p>
     <div style="display:flex; gap:var(--space-3); justify-content:center; flex-wrap:wrap;">
       <a class="anth-button" href="https://github.com/TbusOS/whetstone"><span class="lang-en">Get Whetstone on GitHub</span><span class="lang-zh">在 GitHub 获取</span></a>
-      <a class="anth-button anth-button--ghost" href="#flow"><span class="lang-en">How it works</span><span class="lang-zh">看它怎么工作</span></a>
+      <a class="anth-button anth-button--ghost" href="#evidence"><span class="lang-en">See what it refuses</span><span class="lang-zh">看它拒绝什么</span></a>
     </div>
     <p style="margin-top:var(--space-5); color:var(--anth-text-secondary); font-family:var(--font-heading); font-size:13px; letter-spacing:0.02em;">
       <span class="lang-en">Claude Code · Codex · Cursor · any skills-compatible runtime &nbsp;·&nbsp; no engram, no lock-in required</span>
@@ -131,7 +141,10 @@
 
 <!-- Hero illustration: distill a session into a portable skill package -->
 <section class="anth-section" style="padding-top:0;">
-  <div class="anth-container anth-container--wide">
+  <!-- widened past the standard --wide tier: this figure carries 28 labels and at
+       1200px its smallest text rendered at 9.1px, below the ~9.96px floor the
+       canonical library holds (design-review known-bugs 1.49) -->
+  <div class="anth-container anth-container--wide" style="max-width:1340px;">
     <figure>
     <svg role="img" aria-label="Whetstone distills a dev session on the left into a portable skill package on the right" viewBox="0 0 1200 470" style="display:block; width:100%; max-width:1200px; height:auto; border-radius:var(--radius-lg); background:linear-gradient(135deg, #faf9f5 0%, #f0ede3 100%);">
       <defs>
@@ -269,8 +282,120 @@
   </div>
 </section>
 
+<!-- Evidence discipline -->
+<section class="anth-section anth-section--subtle" id="evidence">
+  <div class="anth-container" style="max-width:760px; margin:0 auto var(--space-7); text-align:center;">
+    <span class="anth-badge"><span class="lang-en">Evidence discipline</span><span class="lang-zh">证据纪律</span></span>
+    <h2 style="margin-top:var(--space-3);"><span class="lang-en">A rule only a model obeys is one context window from gone.</span><span class="lang-zh">只靠模型自觉遵守的规则，离"不存在"只差一个上下文窗口。</span></h2>
+    <p style="color:var(--anth-text-secondary); font-size:17px; margin-top:var(--space-3); font-family:var(--font-body);">
+      <span class="lang-en">A skill library does not fail loudly. It fills with plausible, unfalsifiable, once-true advice that still wears a confident label — and six months on, neither you nor the model can tell which entries are load-bearing. So every mechanically decidable rule became a check: <strong>37 of them</strong>, with an exit code.</span>
+      <span class="lang-zh">skill 库不会大声地坏掉。它是慢慢填满那种听着有理、无法证伪、只在当时成立、却仍顶着高置信标签的条目 —— 半年后，你和模型都分不清哪条还撑得住。所以每一条机械可判的规则都变成了检查：<strong>37 条</strong>，带退出码。</span>
+    </p>
+  </div>
+
+  <div class="anth-container anth-container--wide">
+    <figure>
+      <svg role="img" aria-label="Terminal window showing whetstone verify reporting five errors on a deliberately flawed example package: a reproduction record listing the same platform twice, two entries claiming high confidence that the mechanical table caps at low, a reproduction count written as a bare number, and a platform value claiming high that was never tested" viewBox="0 0 1180 372" style="display:block; width:100%; max-width:1180px; height:auto;">
+        <defs>
+          <filter id="evsh" x="-6%" y="-12%" width="112%" height="130%"><feDropShadow dx="0" dy="2" stdDeviation="5" flood-opacity="0.10"/></filter>
+        </defs>
+        <rect x="20" y="10" width="1140" height="352" rx="14" fill="#ffffff" stroke="#e3decf" filter="url(#evsh)"/>
+        <rect x="20" y="10" width="1140" height="40" rx="14" fill="#f3f2ec"/>
+        <rect x="20" y="40" width="1140" height="10" fill="#f3f2ec"/>
+        <circle cx="46" cy="30" r="5" fill="#d97757"/><circle cx="64" cy="30" r="5" fill="#d8c48a"/><circle cx="82" cy="30" r="5" fill="#a8b894"/>
+        <text x="104" y="34" font-family="Poppins,sans-serif" font-size="12" fill="#6b6a5f">whetstone verify examples/demo-skill --brief</text>
+
+        <text x="48" y="80" font-family="Poppins,sans-serif" font-size="13" font-weight="700" fill="#c2613f">ERROR (5)</text>
+
+        <g font-family="Poppins,sans-serif">
+          <g transform="translate(48 96)">
+            <rect width="1084" height="46" rx="8" fill="#fdf3ee" stroke="#e8bba8"/>
+            <rect width="4" height="46" rx="2" fill="#d97757"/>
+            <text x="20" y="20" font-size="11.5" font-weight="700" fill="#c2613f">V16</text>
+            <text x="60" y="20" font-size="11.5" font-weight="600" fill="#141413">SKILL.md:31</text>
+            <text x="20" y="37" font-size="12" fill="#3d3d38">复现记录 lists the same platform twice — one project counted as two</text>
+          </g>
+          <g transform="translate(48 150)">
+            <rect width="1084" height="46" rx="8" fill="#fdf3ee" stroke="#e8bba8"/>
+            <rect width="4" height="46" rx="2" fill="#d97757"/>
+            <text x="20" y="20" font-size="11.5" font-weight="700" fill="#c2613f">V12</text>
+            <text x="60" y="20" font-size="11.5" font-weight="600" fill="#141413">SKILL.md:31</text>
+            <text x="20" y="37" font-size="12" fill="#3d3d38">L2 claims 置信度 high — one platform, so the table allows only low</text>
+          </g>
+          <g transform="translate(48 204)">
+            <rect width="1084" height="46" rx="8" fill="#fdf3ee" stroke="#e8bba8"/>
+            <rect width="4" height="46" rx="2" fill="#d97757"/>
+            <text x="20" y="20" font-size="11.5" font-weight="700" fill="#c2613f">V14</text>
+            <text x="60" y="20" font-size="11.5" font-weight="600" fill="#141413">pitfalls.md:5</text>
+            <text x="20" y="37" font-size="12" fill="#3d3d38">复现记录 written as a bare count 「2 次」 instead of a record per platform</text>
+          </g>
+          <g transform="translate(48 258)">
+            <rect width="1084" height="46" rx="8" fill="#fdf3ee" stroke="#e8bba8"/>
+            <rect width="4" height="46" rx="2" fill="#d97757"/>
+            <text x="20" y="20" font-size="11.5" font-weight="700" fill="#c2613f">V10</text>
+            <text x="60" y="20" font-size="11.5" font-weight="600" fill="#141413">params/soc-x.md:6</text>
+            <text x="20" y="37" font-size="12" fill="#3d3d38">L3 value claims high — 验证方式 never passed a test</text>
+          </g>
+        </g>
+
+        <text x="48" y="330" font-family="Poppins,sans-serif" font-size="12" fill="#8a8779">+ 1 more error · 2 warnings</text>
+        <g transform="translate(880 314)">
+          <rect width="252" height="26" rx="13" fill="#fdf3ee" stroke="#e8bba8"/>
+          <circle cx="18" cy="13" r="4" fill="#d97757"/>
+          <text x="32" y="17" font-family="Poppins,sans-serif" font-size="11.5" font-weight="600" fill="#c2613f">summary: 5 errors · exit 1</text>
+        </g>
+      </svg>
+      <figcaption><span class="lang-en">Four of the five errors on <code>examples/demo-skill</code>, a deliberately flawed package that ships with the repo — run the command and reproduce it yourself.</span><span class="lang-zh">对仓库自带的故意写坏的 <code>examples/demo-skill</code> 报出的五个错误中的四个 —— 命令跑一遍就能复现。</span></figcaption>
+    </figure>
+  </div>
+
+  <div class="anth-container" style="max-width:900px; margin-top:var(--space-7);">
+    <h3 style="font-family:var(--font-heading); font-size:22px; font-weight:600; margin:0 0 var(--space-2);"><span class="lang-en">The confidence table is a table, not a vibe</span><span class="lang-zh">置信度是一张表，不是一种感觉</span></h3>
+    <p style="color:var(--anth-text-secondary); font-family:var(--font-body); font-size:16px; margin:0 0 var(--space-5);">
+      <span class="lang-en">A reviewer may downgrade any entry, and may never upgrade past the conditions. The check implements that asymmetry: above the cap is an error, below it is only a note.</span>
+      <span class="lang-zh">人审可以把任何一条下调，但永远不能越过条件上调。检查按这个不对称实现：高于上限报错，低于上限只是提示。</span>
+    </p>
+    <table class="layer-table">
+      <thead><tr>
+        <th><span class="lang-en">Level</span><span class="lang-zh">等级</span></th>
+        <th><span class="lang-en">What it takes</span><span class="lang-zh">需要什么</span></th>
+      </tr></thead>
+      <tbody>
+        <tr><td class="lyr lyr--hi">high</td><td><span class="lang-en">An executable check that <strong>passed</strong>, <em>and</em> reproduction on ≥2 distinct platforms or projects.</span><span class="lang-zh">一条可执行检查<strong>实测通过</strong>，<em>并且</em>在 ≥2 个不同平台或项目上复现过。</span></td></tr>
+        <tr><td class="lyr lyr--md">med</td><td><span class="lang-en">Reproduction on ≥2 — or verified once, and that second route is open to platform facts only. Verifying a method once does not make it general.</span><span class="lang-zh">在 ≥2 个平台复现过 —— 或者实测通过一次，而后一条路只对平台事实开放。一个做法只验过一次，不等于它通用。</span></td></tr>
+        <tr><td class="lyr lyr--lo">low</td><td><span class="lang-en">Everything else — including a method that passed its check on the single platform where you first met it.</span><span class="lang-zh">其余全部 —— 包括那种在你第一次遇到它的那个平台上验证通过了的做法。</span></td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="anth-container anth-container--wide" style="margin-top:var(--space-7);">
+    <div class="ref-grid">
+      <div class="ref-card">
+        <span class="no"><span class="lang-en">Refuses</span><span class="lang-zh">拒绝</span></span>
+        <h3><span class="lang-en">Counting the same project twice</span><span class="lang-zh">同一个项目算两次</span></h3>
+        <p><span class="lang-en">A reproduction line is keyed by platform/project. Ten runs on one project is one line — otherwise the write-back that records evidence becomes a back door around the gate it feeds.</span><span class="lang-zh">复现记录按平台/项目做唯一键。同一个项目跑十次仍是一行 —— 否则那条用来积累证据的回写，就成了绕过它自己所服务的关口的后门。</span></p>
+      </div>
+      <div class="ref-card">
+        <span class="no"><span class="lang-en">Refuses</span><span class="lang-zh">拒绝</span></span>
+        <h3><span class="lang-en">Overwriting a fact in silence</span><span class="lang-zh">悄悄改掉一个事实</span></h3>
+        <p><span class="lang-en">A changed value is appended and marked superseded, with the old one still readable — most of all for safety and irreversible values, where being quietly wrong is the expensive kind of wrong.</span><span class="lang-zh">改动的值只能追加并标注替代，旧值仍然可读 —— 尤其是安全项和不可逆的值，那里"错得没人发现"才是代价最大的错法。</span></p>
+      </div>
+      <div class="ref-card">
+        <span class="no"><span class="lang-en">Refuses</span><span class="lang-zh">拒绝</span></span>
+        <h3><span class="lang-en">Grading its own homework</span><span class="lang-zh">自己给自己判卷</span></h3>
+        <p><span class="lang-en">Review runs in a separate context. An unguided model judge picks the better of two skills 46.4% of the time — a coin toss. Self-review is a bias this design assumes, not one it hopes to avoid.</span><span class="lang-zh">质检在独立上下文里跑。无引导的模型评委在两个 skill 里挑更好的那个，准确率 46.4% —— 掷硬币。自评偏差是这套设计预设会发生的事，不是它指望躲开的事。</span></p>
+      </div>
+      <div class="ref-card">
+        <span class="no"><span class="lang-en">Won't pretend</span><span class="lang-zh">不假装</span></span>
+        <h3><span class="lang-en">That it can judge everything</span><span class="lang-zh">它什么都能判</span></h3>
+        <p><span class="lang-en">Whether an L1 is really exception-free, whether a contradiction was preserved — those stay with the reviewer, and <code>--explain</code> prints that boundary in full. Mechanising a judgement that is not mechanical only manufactures false positives.</span><span class="lang-zh">一条 L1 是不是真的举不出反例、矛盾有没有被保留 —— 这些留给人审，<code>--explain</code> 会把这条边界原样打印出来。把本来不机械的判断硬做成机械的，只会制造假阳性。</span></p>
+      </div>
+    </div>
+  </div>
+</section>
+
 <!-- Architecture -->
-<section class="anth-section anth-section--subtle" id="architecture">
+<section class="anth-section" id="architecture">
   <div class="anth-container" style="max-width:760px; margin-bottom:var(--space-7); text-align:center;">
     <span class="anth-badge"><span class="lang-en">Architecture</span><span class="lang-zh">架构</span></span>
     <h2 style="margin-top:var(--space-3);"><span class="lang-en">A distiller, a portable package, optional sinks.</span><span class="lang-zh">一个蒸馏器，一个可移植包，几个可选 sink。</span></h2>
@@ -405,7 +530,7 @@
     <h2 style="margin-top:var(--space-3);"><span class="lang-en">Mine. Layer. Reconcile. You approve.</span><span class="lang-zh">挖掘。分层。对账。你点头。</span></h2>
     <p style="color:var(--anth-text-secondary); font-size:17px; margin-top:var(--space-3); font-family:var(--font-body);">
       <span class="lang-en">Two human gates bracket an automatic middle. Nothing reaches the live library without your sign-off — because an unguided LLM judge picks the better of two skills only 46.4% of the time — indistinguishable from a coin (<a href="https://microsoft.github.io/SkillLens/" style="color:inherit">SkillLens, Microsoft</a>).</span>
-      <span class="lang-zh">两道人审关卡夹着一段自动流程。没有你点头，东西进不了正式库 —— 因为无引导的 LLM 评委在两个 skill 里挑更好的那个,准确率只有 46.4%,与掷硬币无异(<a href="https://microsoft.github.io/SkillLens/" style="color:inherit">SkillLens,Microsoft</a>)。</span>
+      <span class="lang-zh">两道人审关卡夹着一段自动流程。没有你点头，东西进不了正式库 —— 因为无引导的 LLM 评委在两个 skill 里挑更好的那个，准确率只有 46.4%，与掷硬币无异（<a href="https://microsoft.github.io/SkillLens/" style="color:inherit">SkillLens · Microsoft</a>）。</span>
     </p>
   </div>
   <div class="anth-container anth-container--wide">
@@ -731,19 +856,24 @@
 Skill: anthropic
 Page-type: landing
 Created: 2026-06-17 · original (tool intro for Whetstone)
+Revised: 2026-09-02 · repositioned around evidence discipline; added #evidence section
 
-Decisions (6):
-1. [hero-three-line-stack] "Distill once. / Reuse forever. / Hand it to anyone." three-line noun-phrase per canonical signature, over a single descriptive headline — keeps anthropic cadence and states the 3 value props (compounding / portability / transfer) in three breaths.
+Decisions (8):
+1. [hero-three-line-stack] Three-line noun-phrase headline per canonical signature. Revised 2026-09-02 from "Distill once. / Reuse forever. / Hand it to anyone." to "Distill the session. / Then refuse what / it cannot prove." — the old line was indistinguishable from every competing distillation tool's first sentence; the new one names the differentiator (refusal) in the same cadence.
 2. [hero-svg-as-product] hero SVG is a realistic split mock (left: a terminal showing a finished session + `whetstone distill` log; right: the generated verified-boot/ package tree + SKILL.md snippet) over abstract shapes — Whetstone's "product" is the distillation act, so the mock shows session→package, the strongest "here's what it does" proof.
 3. [testimonials→scenario] replaced the canonical's 3 testimonials with a single honest 5-step scenario card (secure-boot done once → handed to a Cursor teammate). Because: the tool is brand-new with no real users; fabricating attributed quotes would be dishonest. The scenario carries the same "make it concrete" job without inventing people.
 4. [two-engineering-diagrams] two SVG figures — a 3-layer architecture (orange distiller / blue portable package / olive optional sinks, ≥3 semantic hues, tinted zones not solid bands) and a 6-phase flow with two orange human-gate pills — satisfy the diagram-density contract for "system structure" and "≥3-step process".
 5. [L1-L4-table] the layering ruler is a 4-row table with per-layer hue-coded labels (orange/blue/olive/gold) rather than prose, so "how far does this carry" is scannable.
 6. [optional-everywhere] engram/llm-wiki/darwin are presented as "Optional" badged cards and the olive bottom zone of the architecture, never as requirements — encoding the zero-runtime-dependency, runtime-neutral positioning the whole tool rests on.
+7. [evidence-section-as-terminal-cards] the new #evidence section shows `whetstone verify` output as a window mock whose findings are structured cards (code badge / file:line / one-line message) rather than raw monospace lines. Because: the real messages run ~190 chars and SVG text cannot wrap, so a faithful transcript would be illegible at any usable font size — and a shortened fake transcript would be a fabricated screenshot on a page whose whole argument is "we do not fake evidence". The cards are honestly an illustration, and the figcaption says four of five plus "run it yourself".
+8. [refusal-cards-over-feature-cards] the section closes with four cards titled by what the tool REFUSES (double-counting, silent overwrite, self-grading) and one titled by what it will not pretend to judge. A feature list would read like every competitor's; a refusal list is falsifiable and is the actual design.
 
 Known trade-offs:
 - The hero and architecture SVGs are hand-maintained; if the package layout or phase names change, the mocks must be hand-updated or they drift. Accepted for the scalable hand-drawn anthropic feel over screenshot PNGs.
 - Single scenario instead of three testimonials means less "social proof" surface; chosen deliberately over fabricated quotes for a pre-release tool (honesty > pitch-deck density).
 - Bilingual EN/zh doubles copy maintenance; kept because the repo is open-sourced for an international + Chinese audience and §G expects a language toggle.
+- The #evidence terminal mock names four checks by id (V16/V12/V14/V10); if those ids are renumbered the figure drifts silently. Accepted — ids are part of the published `--explain` contract and are meant to be stable.
+- The 46.4% self-judgement figure is the only external number on the page; it is now attributed to SkillLens (Microsoft) inline in the flow section, since an unsourced number would violate the very standard this section argues for.
 /design-review:self-diff -->
 
 </body>
