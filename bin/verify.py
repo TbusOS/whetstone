@@ -70,6 +70,14 @@ RUNTIME_PATH = re.compile(r"~/\.claude|\.claude/skills|~/\.codex|~/\.cursor|~/\.
 RUNTIME_NAME = re.compile(r"Claude Code|Codex|Cursor|Gemini CLI|GitHub Copilot", re.I)
 EXEMPT_L3 = re.compile(r"<!--\s*l3-ok")
 EXEMPT_RT = re.compile(r"<!--\s*runtime-ok")
+EXEMPT_BLACKLIST = re.compile(r"<!--\s*blacklist-ok")
+# §14: the package's own "never do X here" list. A heading is the ruler because
+# presence is the only part a machine can decide — whether the list is any good is
+# Phase 4's call. Chinese and English headings both count; so does putting the list
+# in pitfalls.md, which is where a prohibition often naturally lands.
+BLACKLIST_HEAD = re.compile(
+    r"^#{2,4}\s+.*(禁止|反例|黑名单|绝不|不要做|别做|"
+    r"do\s*not|don'?t|never|anti-?pattern|blacklist|forbidden)", re.I)
 # a block is a provenance RECORD only if it carries a field-shaped line; merely
 # mentioning 来源/置信 in prose is not a record (that is V09b's job instead).
 FIELD_LINE = re.compile(r"^\s*>?\s*(?:[-*+]|\d+[.)])?\s*\**\s*"
@@ -744,6 +752,24 @@ def check_package(pkg, rep):
                 if "<" in tg or not os.path.isfile(os.path.join(pkg, tg)):
                     rep.add("E", "V20c", f"pitfalls.md [{title[:32]}]", f"涉及事实 points at a missing file: {tg}", "§10")
 
+    # ---- V25 the package's own prohibition list (§14) ----
+    # Two blacklists, two subjects: §9's governs the distiller, this one governs the
+    # shipped package. SkillLens (arXiv 2605.23899) measured an explicit "do not do X"
+    # list as one of three features that track real utility, on a corpus where 25% of
+    # extractor/consumer pairings transferred NEGATIVELY. Presence is checkable and
+    # content is not, so this is a W: it tells you the section is missing, never that
+    # the section is good.
+    if not EXEMPT_BLACKLIST.search(text):
+        heads = [t for _, t, inf in strip_fences(text.splitlines()) if not inf]
+        pf25 = os.path.join(pkg, "pitfalls.md")
+        if os.path.isfile(pf25):
+            heads += [t for _, t, inf in strip_fences(read(pf25).splitlines()) if not inf]
+        if not any(BLACKLIST_HEAD.match(t) for t in heads):
+            rep.add("W", "V25", "SKILL.md",
+                    "no section says what must NEVER be done in this domain",
+                    "§14 — add a 禁止 / 反例 / DO NOT heading (pitfalls.md counts); a "
+                    "principle-only skill declares <!-- blacklist-ok: reason -->")
+
     # params
     for fn in have_params:
         p = os.path.join(params_dir, fn)
@@ -806,7 +832,7 @@ def check_package(pkg, rep):
                 "§7 — a knowledge package without it is incomplete; a pure process skill (the distiller itself) has none by nature")
 
 
-EXPLAIN = """whetstone verify — the full check list (34 codes)
+EXPLAIN = """whetstone verify — the full check list ({n} codes)
 
 Rules live in references/extraction-framework.md and spec/skill-package.md.
 This is the mechanically decidable subset of them, made executable.
@@ -873,9 +899,15 @@ RUNTIME NEUTRALITY (spec/skill-package.md)
   V23b  no phrasing that binds the package to a single named runtime            W
   V24   no absolute user path (/home/x/, /Users/x/, C:\\Users\\)                  E
 
+UTILITY FEATURES (§14)
+  scope: features measured to track whether a skill actually helps its consumer,
+  as opposed to whether its knowledge is true. Only presence is decidable here.
+  V25   nothing in the package says what must NEVER be done in this domain      W
+
 INLINE EXEMPTIONS
-  <!-- l3-ok: reason -->       suppress V19 on that line
-  <!-- runtime-ok: reason -->  suppress V23/V23b/V24 on that line
+  <!-- l3-ok: reason -->        suppress V19 on that line
+  <!-- runtime-ok: reason -->   suppress V23/V23b/V24 on that line
+  <!-- blacklist-ok: reason --> suppress V25 for the whole package
 
 DELIBERATELY NOT DECIDED — these stay with the human reviewer (Phase 4).
 Mechanising a judgement that is not mechanical only manufactures false positives:
@@ -886,6 +918,13 @@ Mechanising a judgement that is not mechanical only manufactures false positives
     session, which is not in the package
   · when in doubt, was the entry placed lower rather than higher (§3) — only the
     outcome is visible, never the reasoning
+  · is the prohibition list (§14) made of real hazards or of filler — V25 sees the
+    heading, never the judgement inside it
+
+  And one thing no check here reaches at all: every code above asks whether the
+  knowledge is TRUE and traceable. None asks whether installing this package makes
+  its consumer better. The two do not predict each other, so a clean run means the
+  evidence discipline held — not that the skill is good.
 Redaction is also out of scope: run tech-writing-gate and your own sensitive-term
 list before publishing, rather than maintaining a second word list here.
 """
@@ -902,7 +941,9 @@ def main():
     args = ap.parse_args()
 
     if args.explain:
-        print(EXPLAIN)
+        # the count is computed, never typed: the hand-written one had already
+        # drifted (it said 34 while 37 codes were published)
+        print(EXPLAIN.format(n=len(re.findall(r"^\s+V[0-9a-z]+\s", EXPLAIN, re.M))))
         return 0
 
     targets = list(args.pkgs)

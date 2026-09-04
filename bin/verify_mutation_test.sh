@@ -106,6 +106,18 @@ o='r\"^\\\\s*>?\\\\s*(?:[-*+]|\\\\d+[.)])?\\\\s*\\\\**\\\\s*\"'
 assert o in s; s=s.replace(o,'r\"^\\\\s*[-*]?\\\\s*\\\\**\\\\s*\"',1)
 $W"
 
+mut "V25: accept any heading as a prohibition list" \
+"$R
+o='    r\"^#{2,4}\\\\s+.*(禁止|反例|黑名单|绝不|不要做|别做|\"'
+assert o in s; s=s.replace(o,'    r\"^#{2,4}\\\\s+.*(',1)
+$W"
+
+mut "V25: skip the prohibition-list check entirely" \
+"$R
+o='    if not EXEMPT_BLACKLIST.search(text):'
+assert o in s; s=s.replace(o,'    if False:',1)
+$W"
+
 cp "$S/verify.orig.py" bin/verify.py
 echo
 echo "mutations caught: $caught   missed: $missed"

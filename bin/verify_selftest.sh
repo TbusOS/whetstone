@@ -67,6 +67,11 @@ description: "Demo package used by the verify selftest. 触发词:demo / selftes
 
 见 `pitfalls.md`。
 
+## 禁止(本领域) (L2)
+
+- 绝不在没存下原始内容之前写:一次性存储写坏了回不去,没有原始内容就无法复原。
+- 绝不拿上层字段当写入成功的凭据:上层显示成功、底层没生效的情况真实存在。
+
 ## 平台参数 (L3)
 
 > 具体值见 `params/soc-x.md`。
@@ -227,6 +232,19 @@ d=$(mut m21); sed -i.bak 's#| `SLOT_A` |#| `SLOT_A` 之所以选这个位置,是
 d=$(mut m22); sed -i.bak '/^## 替代记录/,$d' "$d/params/soc-x.md"; rm -f "$d/params"/*.bak
                                                                   fires "$d" V22 "params without 替代记录 section"
 not_fires "$CLEAN" V22 "clean params has 替代记录"
+
+echo
+echo "[V25] the package's own prohibition list (§14)"
+d=$(mut m25); sed -i.bak '/^## 禁止/,/^## 平台参数/{/^## 平台参数/!d}' "$d/SKILL.md"; rm -f "$d"/*.bak
+                                                                  fires "$d" V25 "package forbids nothing anywhere"
+not_fires "$CLEAN" V25 "clean package has a 禁止 section"
+d=$(mut m25p); sed -i.bak '/^## 禁止/,/^## 平台参数/{/^## 平台参数/!d}' "$d/SKILL.md"
+printf '\n## 反例:绝不这样做\n\n- 绝不跳过读回比对。\n' >> "$d/pitfalls.md"; rm -f "$d"/*.bak
+                                                          not_fires "$d" V25 "a list in pitfalls.md counts too"
+d=$(mut m25x); sed -i.bak '/^## 禁止/,/^## 平台参数/{/^## 平台参数/!d}' "$d/SKILL.md"
+sed -i.bak2 's|^# Demo Skill$|# Demo Skill\n\n<!-- blacklist-ok: 纯原理型,没有可点名的高危动作 -->|' "$d/SKILL.md"
+rm -f "$d"/*.bak "$d"/*.bak2
+                                                          not_fires "$d" V25 "blacklist-ok exemption honoured"
 
 echo
 echo "[V23/V24] runtime neutrality"

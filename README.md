@@ -20,11 +20,12 @@ ERROR (5)
   ✗ pitfalls.md:5  [V12] [从上层状态反推底层状态会看错] L2 claims 置信度 high, the table allows only low — 复现记录 has 0 line(s), needs 2 (single-platform L1/L2 is capped at low — the §7 constraint outranks the table)
   ✗ params/soc-x.md:6  [V10] [存储起始位置] L3 claims 置信度 high, the table allows only low — 验证方式 never passed a test; 复现记录 has 1 line(s), needs 2
 
-WARN (2)
+WARN (3)
   ! SKILL.md:18  [V19] concrete value in the body (hex address/value): '0x1A40'
+  ! SKILL.md  [V25] no section says what must NEVER be done in this domain
   ! params/soc-x.md  [V22] no 替代记录 section
 
-summary: 5 error(s), 2 warning(s), 0 info
+summary: 5 error(s), 3 warning(s), 0 info
 ```
 
 Five refusals, in order: the same platform counted twice to fake cross-platform evidence ·
@@ -87,10 +88,17 @@ with the human reviewer, and `whetstone verify --explain` prints the boundary in
 - was a contradiction preserved rather than averaged away
 - were this session's reproduction write-backs applied (needs the session, not the package)
 - when in doubt, was the entry placed lower rather than higher (only the outcome is visible)
+- is the prohibition list a set of real hazards or filler (V25 sees the heading, not the judgement inside it)
 
 `--explain` also states where each check is narrower than the rule it serves — for instance
 that provenance is checked per declared record, so a bare bullet in a `SKILL.md` body with no
 provenance at all is not something `verify` can see.
+
+And one boundary sits outside the whole list: every check above asks whether the knowledge is
+**true and traceable**. None asks whether installing the package makes its consumer better.
+Those two do not predict each other — in the SkillLens corpus 25% of extractor/consumer
+pairings transferred *negatively*, and textual plausibility failed to predict utility. So a
+clean run means the evidence discipline held. It does not mean the skill is good.
 
 ## The four layers
 
@@ -121,7 +129,7 @@ are Python standard library, and everything it produces is plain markdown.
 ```bash
 git clone https://github.com/TbusOS/whetstone.git
 cd whetstone
-bash bin/verify_selftest.sh                       # 120 assertions across 37 checks
+bash bin/verify_selftest.sh                       # 124 assertions across 38 checks
 bash bin/verify_mutation_test.sh                  # delete each check; the suite must go red
 ./cli/whetstone verify examples/demo-skill --brief
 ```
@@ -150,7 +158,7 @@ it is CLI:
 
 ```bash
 whetstone verify <pkg> --strict     # evidence discipline — this is the one that says no
-whetstone verify --explain          # all 37 checks, their limits, and what is left to humans
+whetstone verify --explain          # all 38 checks, their limits, and what is left to humans
 whetstone lint --src ~/skills       # selection-menu hygiene: overlaps, collisions, vague descriptions
 whetstone index --src ~/skills      # grouped catalog
 whetstone promote <proposal>        # install a proposal, refusing to overwrite an existing skill
@@ -170,7 +178,7 @@ references/extraction-framework.md  the L1-L4 schema — the actual core
 spec/skill-package.md               portable skill-package format (the deliverable)
 commands/                           /distill and /promote slash-command definitions
 bin/verify.py                       evidence discipline, executable
-bin/verify_selftest.sh              120 assertions, both directions, coverage-enforced
+bin/verify_selftest.sh              124 assertions, both directions, coverage-enforced
 bin/verify_mutation_test.sh         deletes each check in turn; the suite must go red
 bin/lint.py · bin/index.py          selection-menu hygiene
 bin/pack.sh · bin/deploy.sh · bin/promote.sh   move and install packages
