@@ -90,3 +90,68 @@ both spec-level, no new infrastructure:
   spec/skill-package.md. `adapters/sync/engram.md` corrected two overstated claims about engram
   (its dedup is post-hoc heuristic only; memory-asset confidence decay is spec'd but unimplemented)
   — delegation must match measured reality, not docs.
+
+---
+
+## 2026-09 · utility features, the review-decision log, tag consistency
+
+Research pass over two Microsoft papers that study exactly what this tool does — SkillLens
+(the full lifecycle: raw experience → extraction → consumption) and SkillOpt (training the
+skill document as the state of a frozen agent). Both landed findings the framework could use,
+and one it had to absorb about its own limits.
+
+### The limit worth writing down first
+Every check in `verify` asks whether an entry is **true and traceable**. None asks whether
+installing the package makes its consumer better. SkillLens measured those two as
+uncorrelated: 25% of extractor/consumer pairings transferred *negatively* (47% in the worst
+domain), an unguided judge picks the better of two skills 46.4% of the time, and format has no
+significant effect (p>0.34) while "the skill that reads better is often the one that performs
+worse". So a clean run means the evidence discipline held — nothing more. That boundary is now
+stated in §14, `--explain`, the spec and the README rather than left implied.
+
+### §14 — the package's own prohibition list (+ V25)
+SkillLens found an explicit "never do X here" list to be one of three features tracking real
+utility. The framework had a blacklist (§9) but it governs the **distiller**; nothing ever
+required the shipped package to carry one. §14 adds that, the template gets a section, and V25
+checks it — W, not E, because presence is decidable and content is not. Its failure direction
+is permissive (a filler list passes unnoticed), so the limit is written wherever the check is.
+
+### §4 — "push it down to L3" means values, not commands
+V19 only ever scanned five things (hex, IP, system path, pinned version, dimensioned number);
+it never touched tool, command or function names. That was only true in the code. Read
+together, §9#1 ("no concrete values in the body") and §3 ("when unsure, place it lower")
+push toward a document of abstract steps — which is precisely what the same paper measured as
+worst-performing. §4 now states the distinction with a worked table.
+
+### The review-decision log — the framework's own raw material
+Nothing recorded what the reviewer *did* to a proposal. Yet each accept/amend/reject is a free
+label saying where the framework's judgement and the reviewer's diverged, and the whole
+self-improvement literature is stuck on where to get a grading signal. §7 (2026-08) and §14
+both came from outside reading plus a human call — the tool's own history did not exist to
+learn from. `whetstone decision` records it, and only records: no analysis, no rule changes.
+`stats` counts **distinct sources**, never lines, and a record with no source counts with all
+the others as one — independence that cannot be shown is not granted.
+
+### Tag consistency, done without guessing
+A tag only accumulates while one meaning keeps one string. Measured on the starter vocabulary,
+no similarity threshold does this job: 0.72 misses `priority-wrong`/`priority-mistake` (0.60)
+while 0.60 wrongly pairs `missing-feature`/`missing-split` (0.643); word order
+(`layer-wrong`/`wrong-layer`, 0.455) and language (0.0 across scripts) defeat it outright, and
+the two pairs are structurally identical — the difference is semantic. So: `add` shows the
+existing vocabulary when a new tag appears (similarity orders the list, never judges it), and
+`alias` folds two spellings at **read time**, leaving every stored line byte-identical.
+Chains resolve, loops are refused on write and reported rather than folded on read.
+
+### A mutation that never applied was passing
+`mut()` printed a lowercase note and returned when its anchor text had drifted — counted as
+neither caught nor missed, so an entry that had silently stopped testing anything kept the run
+green. Both batteries now count that separately and fail on it, and both wrap the suite in a
+timeout since a mutation can remove a loop guard. Verified by breaking an anchor on purpose:
+`caught: 13 missed: 0` exit 0 before, `did-not-apply: 1` exit 1 after.
+
+### Where it left off
+verify 124 checks + 14 mutations; decision 46 checks + 8 mutations. The decision log holds its
+first five records — this session's own framework changes, including one recording that the
+meta-level work was ranked last and the ranking was wrong. Nothing has reached the 3-source
+threshold, which is the expected state. The log's one failure mode is nobody filling it in,
+and that failure is silent.
