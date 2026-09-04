@@ -166,6 +166,7 @@ whetstone pack | deploy             # move a library between machines
 whetstone sync engram <skill>       # optional: push one skill into a local engram memory store
 whetstone decision add …            # record what you decided about a proposal, and why
 whetstone decision stats            # what those decisions have started to point at
+whetstone decision alias --from … --to …   # fold two spellings of one meaning together
 ```
 
 `lint` and `verify` guard different failures. `lint` guards **retrieval** — a library whose
@@ -180,6 +181,14 @@ could ever improve on its own evidence rather than on the next paper someone rea
 analyses nothing yet: see [`spec/review-decisions.md`](spec/review-decisions.md) for what
 it deliberately is not.
 
+A tag only accumulates while the same meaning keeps getting the same string, so `add` shows
+the existing vocabulary the moment you introduce a new one, and `alias` folds two spellings
+together afterwards — at read time, leaving every stored line byte-identical. What it will
+not do is guess: measured on this vocabulary no similarity threshold separates
+`priority-wrong`/`priority-mistake` (0.60) from `missing-feature`/`missing-split` (0.643),
+and word order and language defeat it outright. A bad ordering costs a glance; a bad merge
+costs the signal.
+
 ## Layout
 
 ```
@@ -191,7 +200,8 @@ commands/                           /distill and /promote slash-command definiti
 bin/verify.py                       evidence discipline, executable
 bin/verify_selftest.sh              124 assertions, both directions, coverage-enforced
 bin/verify_mutation_test.sh         deletes each check in turn; the suite must go red
-bin/decision.py                     the review-decision log (record only; 22 assertions)
+bin/decision.py                     the review-decision log (record only; 46 assertions)
+bin/decision_mutation_test.sh       deletes each decision check; the suite must go red
 bin/lint.py · bin/index.py          selection-menu hygiene
 bin/pack.sh · bin/deploy.sh · bin/promote.sh   move and install packages
 cli/whetstone                       runtime-agnostic CLI, pure bash

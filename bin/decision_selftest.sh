@@ -63,9 +63,12 @@ assert "skill" not in r and "conf" not in r, "empty optionals must be omitted, n
 PY
 then ok "given optionals stored, empty ones omitted"; else bad "optional-field handling is wrong"; fi
 
+rm -f "$LOG"
 out="$(dec add --subject "s" --verdict reject --reason "r" --tag brand-new-bucket 2>&1)"
-case "$out" in *"new tag"*) ok "an unknown tag is written through AND reported";;
-                         *) bad "an unknown tag was accepted silently";; esac
+case "$out" in *"not in the vocabulary yet"*) ok "an unknown tag is reported, not accepted silently";;
+                                           *) bad "an unknown tag was accepted silently";; esac
+if grep -q '"tag": *"brand-new-bucket"' "$LOG"; then ok "and it is written through as typed, not rejected or rewritten"
+else bad "an unknown tag was not stored as typed"; fi
 
 echo
 echo "[stats] counts distinct sources, not lines"
@@ -111,6 +114,84 @@ echo "[list] shows what the reviewer changed"
 rm -f "$LOG"
 addok --subject "某条方法" --verdict amend --reason "单平台,先放 L3" --layer L2 --final-layer L3
 if dec list | grep -q "L2→L3"; then ok "a layer move is visible in list"; else bad "layer move not shown"; fi
+
+echo
+echo "[vocabulary] a new tag is met with what already exists"
+rm -f "$LOG"
+out="$(dec add --subject s --verdict reject --reason r --tag priority-mistake --source S1 2>&1)"
+case "$out" in *"not in the vocabulary yet"*) ok "a brand-new tag triggers the listing";;
+                                           *) bad "a brand-new tag showed no vocabulary";; esac
+case "$out" in *"layer-wrong"*) ok "the listing names existing tags";;
+                             *) bad "the listing is empty";; esac
+out="$(dec add --subject s --verdict reject --reason r --tag priority-mistake --source S2 2>&1)"
+case "$out" in *"not in the vocabulary"*) bad "the listing repeats for a tag already in use";;
+                                       *) ok "a tag already in use does not re-trigger it";; esac
+out="$(dec add --subject s --verdict reject --reason r --tag layer-wrong --source S2 2>&1)"
+case "$out" in *"not in the vocabulary"*) bad "a documented tag triggered the listing";;
+                                       *) ok "a documented tag does not trigger it";; esac
+# ordering is the whole point of showing it: the spelling already in use must be
+# reachable at a glance, or the writer invents a third one
+out="$(dec add --subject s --verdict reject --reason r --tag priority-wrongly --source S3 2>&1)"
+first="$(printf '%s\n' "$out" | grep -A 1 'not in the vocabulary' | tail -1)"
+case "$first" in *priority-mistake*) ok "the most similar existing tag is listed first";;
+                                  *) bad "most-similar tag was not first: $first";; esac
+
+echo
+echo "[alias] folds counts without touching a stored line"
+rm -f "$LOG"
+for i in 1 2; do addok --subject "e$i" --verdict reject --reason r --tag priority-mistake --source "S$i"; done
+addok --subject e3 --verdict reject --reason r --tag priority-wrong --source S3
+before="$(cat "$LOG")"
+if dec stats | grep -q "reached the threshold"; then bad "split spellings already crossed the threshold"
+else ok "two spellings of one meaning stay below the threshold (the failure being fixed)"; fi
+dec alias --from priority-mistake --to priority-wrong --reason "同一件事" >/dev/null 2>&1
+if [ "$(grep -v '"kind": *"alias"' "$LOG")" = "$before" ]; then ok "every pre-existing line is byte-identical after the alias"
+else bad "the alias rewrote stored lines"; fi
+if dec stats | grep -qE '^ +3 +priority-wrong'; then ok "the fold merges the counts"
+else bad "the fold did not merge: $(dec stats | grep priority)"; fi
+if dec stats | grep -q "reached the threshold"; then ok "the merged tag now crosses the threshold"
+else bad "the merged tag did not cross the threshold"; fi
+if dec stats | grep -q "folded by alias"; then ok "the fold is printed, never applied silently"
+else bad "counts were merged without saying so"; fi
+if dec stats | grep -q "alias rule(s)"; then ok "alias rules are counted apart from decisions"
+else bad "alias rules were counted as decisions"; fi
+if dec stats | grep -qE '^by verdict: reject 3$'; then ok "an alias record carries no verdict into the tally"
+else bad "verdict tally polluted: $(dec stats | grep '^by verdict')"; fi
+if dec list -n 10 | grep -q "\[alias\]"; then ok "list renders an alias record"; else bad "list hides aliases"; fi
+
+echo
+echo "[alias] chains, loops and cancelling"
+dec alias --from 排序判断错 --to priority-mistake --reason "中文写法" >/dev/null 2>&1
+if dec aliases | grep -q "resolves to priority-wrong"; then ok "a chain a→b→c resolves to c"
+else bad "chain not resolved: $(dec aliases | tail -1)"; fi
+if dec alias --from priority-wrong --to priority-mistake --reason r >/dev/null 2>&1
+  then bad "a loop-closing alias was accepted"; else ok "a loop-closing alias is refused at write time"; fi
+if dec alias --from a --to b >/dev/null 2>&1; then bad "an alias without a reason was accepted"
+else ok "an alias without a reason is refused"; fi
+if dec alias --from priority-mistake --to priority-mistake --reason "分开" >/dev/null 2>&1
+  then ok "a self-alias cancels an existing fold"; else bad "cancelling failed"; fi
+if dec aliases | grep -q "^  priority-mistake  ->"; then bad "the cancelled fold is still in effect"
+else ok "after cancelling, the tag stands on its own"; fi
+if dec alias --from never-aliased --to never-aliased --reason r >/dev/null 2>&1
+  then bad "cancelling a non-existent alias was accepted"; else ok "cancelling nothing is refused"; fi
+
+echo
+echo "[alias] a loop already in the file must not hang or fold"
+rm -f "$LOG"
+addok --subject e --verdict reject --reason r --tag aa --source S1
+printf '%s\n' '{"date":"2026-09-04","kind":"alias","from":"aa","to":"bb","reason":"x"}' >> "$LOG"
+printf '%s\n' '{"date":"2026-09-04","kind":"alias","from":"bb","to":"aa","reason":"x"}' >> "$LOG"
+if timeout 10 python3 "$D" --file "$LOG" stats >/dev/null 2>&1; then ok "a hand-written loop does not hang stats"
+else bad "stats hung or crashed on an alias loop"; fi
+if dec stats | grep -q "alias loop"; then ok "the loop is reported"; else bad "the loop is silent"; fi
+if dec stats | grep -qE '^ +1 +aa'; then ok "a looping tag is left unfolded, counts split (safe direction)"
+else bad "a looping tag was folded anyway"; fi
+
+echo
+echo "[aliases] says so when there are none"
+rm -f "$LOG"
+if dec aliases | grep -q "no aliases in effect"; then ok "an empty alias set explains itself"
+else bad "empty alias set output is unhelpful"; fi
 
 echo
 echo "[empty] an empty log says so instead of pretending"

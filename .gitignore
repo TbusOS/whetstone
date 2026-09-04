@@ -29,5 +29,6 @@ __pycache__/
 
 # selftest staging
 .decision-selftest/
+.decision-mutation.*/
 .verify-selftest/
 .verify-mutation.*/

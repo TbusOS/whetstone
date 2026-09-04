@@ -47,7 +47,12 @@ review decisions (raw material for the framework's own evolution — see spec/re
   decision stats                          what the accumulated decisions point at
   decision list [-n N]                    recent records, incl. layer/confidence moves
   decision tags                           the starter tag vocabulary
+  decision alias --from X --to Y --reason R
+                                          fold two spellings of one meaning together
+                                          (read-time only; stored lines never change)
+  decision aliases                        which tags are folded into which
   decision-selftest                       run the decision selftest
+  decision-mutation                       delete each decision check; the suite must go red
 
 index hygiene (keep the selection menu clean as the library grows):
   lint [--src D] [--strict] [--json]      flag empty/overlapping/colliding descriptions
@@ -129,6 +134,7 @@ case "$cmd" in
   verify-mutation)   exec bash "$REPO_DIR/bin/verify_mutation_test.sh" "$@";;
   decision)          command -v python3 >/dev/null 2>&1 || { echo "decision needs python3" >&2; exit 3; }; exec python3 "$REPO_DIR/bin/decision.py" "$@";;
   decision-selftest) exec bash "$REPO_DIR/bin/decision_selftest.sh" "$@";;
+  decision-mutation) exec bash "$REPO_DIR/bin/decision_mutation_test.sh" "$@";;
   lint)              command -v python3 >/dev/null 2>&1 || { echo "lint needs python3" >&2; exit 3; }; exec python3 "$REPO_DIR/bin/lint.py" "$@";;
   index)             command -v python3 >/dev/null 2>&1 || { echo "index needs python3" >&2; exit 3; }; exec python3 "$REPO_DIR/bin/index.py" "$@";;
   capture)           exec bash "$REPO_DIR/adapters/capture/claude-code.sh" "$@";;

@@ -18,6 +18,27 @@ nothing. Analysis comes later, and only when there is enough to analyse.
   bin/decision.py add --subject "..." --verdict amend --reason "..." [--tag ...]
   bin/decision.py stats            what the accumulated decisions point at
   bin/decision.py list [-n N]      the most recent records
+  bin/decision.py alias --from X --to Y --reason "..."
+                                   declare that two tags were the same thing
+  bin/decision.py aliases          which tags are currently folded into which
+
+Tags only accumulate signal when the same meaning keeps getting the same string.
+Write it `priority-wrong` once and `priority-mistake` the next time and one signal
+becomes two rows of one, forever short of the threshold, with nothing on screen to
+say so. Two mechanisms answer that, and neither of them guesses at meaning:
+
+  before  — `add` puts the existing vocabulary in front of you when you introduce a
+            new tag, so reusing one is easier than inventing one.
+  after   — `alias` folds two tags together at read time. The stored lines never
+            change (§11: append, never overwrite) and `stats` prints every fold it
+            applied, so a merge is always visible and always reversible.
+
+Deliberately absent: any "did you mean X?" guess. Measured on this vocabulary, no
+string-similarity threshold works — 0.72 misses priority-wrong/priority-mistake
+(0.60) while 0.60 wrongly pairs missing-feature/missing-split (0.643); word order
+(layer-wrong/wrong-layer, 0.455) and language (priority-wrong/排序判断错, 0.0)
+defeat it outright. Similarity is used to ORDER the vocabulary shown, never to
+judge — a wrong order costs a glance, a wrong merge costs the signal.
 
 Records land in journal/review-decisions.jsonl — git-ignored, because they quote
 your real library. stdlib only, runtime-neutral.
@@ -28,6 +49,7 @@ import re
 import json
 import argparse
 import datetime
+import difflib
 
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 REPO_DIR = os.path.dirname(SCRIPT_DIR)
@@ -88,6 +110,145 @@ def load(path):
     return out, bad
 
 
+def alias_map(recs):
+    """from -> to, latest record wins.
+
+    A record whose `from` equals its `to` cancels any earlier alias for that tag —
+    that is §11 applied here: a later line overrides an earlier one and nothing
+    already written is edited.
+    """
+    m = {}
+    for r in recs:
+        if r.get("kind") != "alias":
+            continue
+        f, t = r.get("from"), r.get("to")
+        if not f or not t:
+            continue
+        if f == t:
+            m.pop(f, None)
+        else:
+            m[f] = t
+    return m
+
+
+def canonical(tag, amap):
+    """Follow the alias chain. Returns (canonical_tag, hit_cycle).
+
+    On a cycle it refuses to fold and returns the tag untouched. Picking a winner
+    inside a cycle would be arbitrary AND invisible; leaving the tags apart is
+    wrong in the direction you can see — the counts stay split and `stats` says why.
+    """
+    seen = [tag]
+    cur = tag
+    while cur in amap:
+        cur = amap[cur]
+        if cur in seen:
+            return tag, True
+        seen.append(cur)
+    return cur, False
+
+
+def tags_in_use(recs):
+    used = {}
+    for r in recs:
+        t = r.get("tag")
+        if t:
+            used[t] = used.get(t, 0) + 1
+    return used
+
+
+def show_vocabulary(new_tag, recs, limit=8):
+    """Put the vocabulary in front of the writer at the one moment reuse is still
+    free — before the new spelling exists.
+
+    Ordered by string similarity so a likely match sits near the top. That is
+    ORDERING, not judgement: the whole list prints either way, so a bad order costs
+    a glance, whereas a "did you mean X?" that guesses wrong costs the signal. The
+    measurements in the module docstring are why no such guess is offered.
+    """
+    used = tags_in_use(recs)
+    known = set(KNOWN_TAGS) | set(used)
+    if not known:
+        return
+    ranked = sorted(known,
+                    key=lambda t: (-difflib.SequenceMatcher(None, new_tag, t).ratio(), t))
+    print(f"  {new_tag!r} is not in the vocabulary yet. What is already there:")
+    for t in ranked[:limit]:
+        seen = f"   [{used[t]} record(s)]" if t in used else ""
+        print(f"      {t:<17} {KNOWN_TAGS.get(t, '')}{seen}")
+    if len(ranked) > limit:
+        print(f"      … and {len(ranked) - limit} more — `decision tags` lists the vocabulary")
+    print("  If one of those is the same thing, use it instead: a meaning split across")
+    print("  two spellings never reaches the threshold, and nothing on screen says so.")
+    print("  If it really is new, keep it — and once it recurs, add it to KNOWN_TAGS")
+    print("  and spec/review-decisions.md. Already written both ways?")
+    print("  `decision alias --from <old> --to <keep>` folds them at read time,")
+    print("  without touching a single stored line.")
+
+
+def cmd_alias(args):
+    """Declare that two tags were the same thing. Read-time only, by design."""
+    if not args.frm or not args.to:
+        print("--from and --to are both required", file=sys.stderr)
+        return 2
+    if not args.reason.strip():
+        print("--reason is required: folding two tags is a judgement, and the next "
+              "person to read stats deserves to see what it was", file=sys.stderr)
+        return 2
+    date = args.date or datetime.date.today().isoformat()
+    if not ABS_DATE.match(date):
+        print(f"date must be absolute YYYY-MM-DD, got {date!r}", file=sys.stderr)
+        return 2
+
+    recs, _ = load(args.file)
+    amap = alias_map(recs)
+    if args.frm == args.to:
+        if args.frm not in amap:
+            print(f"{args.frm!r} is not folded into anything — nothing to cancel",
+                  file=sys.stderr)
+            return 2
+    else:
+        probe = dict(amap)
+        probe[args.frm] = args.to
+        _, cyc = canonical(args.frm, probe)
+        if cyc:
+            print(f"refused: {args.frm!r} -> {args.to!r} closes a loop with the aliases "
+                  f"already recorded. Cancel one of them first "
+                  f"(`alias --from X --to X`).", file=sys.stderr)
+            return 2
+
+    rec = {"date": date, "kind": "alias", "from": args.frm, "to": args.to,
+           "reason": args.reason.strip()}
+    if args.source:
+        rec["source"] = args.source
+    os.makedirs(os.path.dirname(args.file), exist_ok=True)
+    with open(args.file, "a", encoding="utf-8") as f:
+        f.write(json.dumps(rec, ensure_ascii=False) + "\n")
+
+    if args.frm == args.to:
+        print(f"alias cancelled: {args.frm!r} now stands on its own again")
+    else:
+        print(f"alias recorded: {args.frm!r} -> {args.to!r}")
+        print("  Stored lines are unchanged; stats folds the counts and prints the fold.")
+    return 0
+
+
+def cmd_aliases(args):
+    recs, bad = load(args.file)
+    for n, err in bad:
+        print(f"  ! line {n} is not valid JSON ({err}) — not counted", file=sys.stderr)
+    amap = alias_map(recs)
+    if not amap:
+        print("no aliases in effect — every tag counts as itself")
+        return 0
+    print("aliases in effect (applied when reading, never to the stored lines):")
+    for f in sorted(amap):
+        canon, cyc = canonical(f, amap)
+        note = "  ← LOOP: not folded, counts stay split" if cyc else ""
+        print(f"  {f}  ->  {amap[f]}" + (f"  (resolves to {canon})" if canon != amap[f] else "") + note)
+    return 0
+
+
 def cmd_add(args):
     if args.verdict not in VERDICTS:
         print(f"verdict must be one of {'/'.join(VERDICTS)}", file=sys.stderr)
@@ -106,6 +267,7 @@ def cmd_add(args):
               "the reason says what actually happened", file=sys.stderr)
         return 2
 
+    prior, _ = load(args.file)
     rec = {"date": date, "kind": args.kind, "source": args.source,
            "subject": args.subject, "verdict": args.verdict, "reason": args.reason.strip()}
     for key, val in (("skill", args.skill), ("action", args.action),
@@ -120,9 +282,18 @@ def cmd_add(args):
         f.write(json.dumps(rec, ensure_ascii=False) + "\n")
 
     print(f"recorded: [{rec['verdict']}] {rec['subject']}")
-    if args.tag and args.tag not in KNOWN_TAGS:
-        print(f"  note: {args.tag!r} is a new tag. If it turns out to recur, add it to "
-              f"KNOWN_TAGS and spec/review-decisions.md so it stays greppable.")
+    if args.tag:
+        # read the log as it was BEFORE this line, so the tag just written does not
+        # count as prior use of itself
+        canon, cyc = canonical(args.tag, alias_map(prior))
+        if cyc:
+            print(f"  note: {args.tag!r} sits in an alias loop, so it is not folded. "
+                  f"`decision aliases` shows the loop.")
+        elif canon != args.tag:
+            print(f"  note: {args.tag!r} is folded into {canon!r} by an alias record — "
+                  f"stats counts it there. The line is stored exactly as you typed it.")
+        elif args.tag not in KNOWN_TAGS and args.tag not in tags_in_use(prior):
+            show_vocabulary(args.tag, prior)
     return 0
 
 
@@ -134,6 +305,11 @@ def cmd_list(args):
         print(f"no records yet in {args.file}")
         return 0
     for r in recs[-args.n:]:
+        if r.get("kind") == "alias":
+            arrow = "cancelled" if r.get("from") == r.get("to") else f"-> {r.get('to')}"
+            print(f"{r.get('date', '?')}  [alias]  {r.get('from')} {arrow}")
+            print(f"            {r.get('reason', '')}")
+            continue
         tag = f" #{r['tag']}" if r.get("tag") else ""
         moved = ""
         if r.get("final_layer") and r.get("final_layer") != r.get("layer"):
@@ -156,19 +332,33 @@ def cmd_stats(args):
               "has run a few times.")
         return 0
 
+    amap = alias_map(recs)
     by_verdict, by_tag_sources, by_kind = {}, {}, {}
+    folded, looped, n_alias = {}, set(), 0
     for r in recs:
+        if r.get("kind") == "alias":
+            n_alias += 1
+            continue                      # an alias is a rule, not a decision
         by_verdict[r.get("verdict", "?")] = by_verdict.get(r.get("verdict", "?"), 0) + 1
         by_kind[r.get("kind", "?")] = by_kind.get(r.get("kind", "?"), 0) + 1
         tag = r.get("tag")
         if tag:
+            canon, cyc = canonical(tag, amap)
+            if cyc:
+                looped.add(tag)
+            elif canon != tag:
+                folded.setdefault(canon, set()).add(tag)
             # No source means independence cannot be shown — so it is not granted.
             # Every sourceless record collapses into one bucket. Counting them as
             # distinct would reopen the exact back door this rule exists to close:
             # ten unattributed lines could clear the threshold on their own.
-            by_tag_sources.setdefault(tag, set()).add(r.get("source") or "__no-source__")
+            by_tag_sources.setdefault(canon, set()).add(r.get("source") or "__no-source__")
 
-    print(f"whetstone decision — {len(recs)} record(s) in {os.path.relpath(args.file, REPO_DIR)}")
+    n_dec = len(recs) - n_alias
+    extra = f" (+{n_alias} alias rule(s))" if n_alias else ""
+    rel = os.path.relpath(args.file, REPO_DIR)
+    where = args.file if rel.startswith("..") else rel   # outside the repo: show it plainly
+    print(f"whetstone decision — {n_dec} decision(s){extra} in {where}")
     print()
     print("by verdict: " + " · ".join(f"{k} {v}" for k, v in sorted(by_verdict.items())))
     print("by kind:    " + " · ".join(f"{k} {v}" for k, v in sorted(by_kind.items())))
@@ -177,9 +367,20 @@ def cmd_stats(args):
         print("\nno tagged records yet — tags are what makes a pattern visible.")
         return 0
 
+    if folded:
+        print("\nfolded by alias (every stored line is exactly as it was written):")
+        for canon in sorted(folded):
+            print(f"  {canon}  ←  " + ", ".join(sorted(folded[canon])))
+    if looped:
+        print("\n  ! these tags sit in an alias loop, so they were NOT folded and their "
+              "counts stay split: " + ", ".join(sorted(looped)))
+        print("    `decision aliases` shows the loop; cancel one leg with "
+              "`alias --from X --to X`.")
+
     print(f"\nby tag (counting DISTINCT sources, not lines — one session arguing the "
           f"same point five times is one signal):")
-    nosrc = sum(1 for r in recs if r.get("tag") and not r.get("source"))
+    nosrc = sum(1 for r in recs if r.get("kind") != "alias" and r.get("tag")
+                and not r.get("source"))
     if nosrc:
         print(f"  ({nosrc} tagged record(s) carry no source — they count as one between "
               f"them, since nothing shows they are independent)")
@@ -188,7 +389,7 @@ def cmd_stats(args):
     for tag, sources in rows:
         n = len(sources)
         mark = "  ← reached the threshold" if n >= SIGNAL_MIN else ""
-        new = "" if tag in KNOWN_TAGS else "  (new tag)"
+        new = "" if tag in KNOWN_TAGS else "  (undocumented)"
         print(f"  {n:>3}  {tag}{new}{mark}")
         if n >= SIGNAL_MIN:
             flagged.append((tag, n))
@@ -196,8 +397,11 @@ def cmd_stats(args):
     print()
     if flagged:
         for tag, n in flagged:
+            doc = "" if tag in KNOWN_TAGS else \
+                "  It is also still undocumented — a tag this load-bearing belongs in " \
+                "KNOWN_TAGS and spec/review-decisions.md."
             print(f"{tag}: {n} distinct sources — worth asking whether the framework "
-                  f"itself is unclear here, not just these entries.")
+                  f"itself is unclear here, not just these entries.{doc}")
         print()
         print(f"That is a prompt to look, not a finding. A framework change still needs")
         print(f"the same thing every knowledge entry needs: name what breaks without it,")
@@ -236,6 +440,18 @@ def main():
     l = sub.add_parser("list", help="most recent records")
     l.add_argument("-n", type=int, default=20)
     l.set_defaults(func=cmd_list)
+
+    al = sub.add_parser("alias", help="declare that two tags were the same thing")
+    al.add_argument("--from", dest="frm", required=True, help="the spelling to fold away")
+    al.add_argument("--to", required=True,
+                    help="the spelling to keep; pass the same value as --from to cancel")
+    al.add_argument("--reason", required=True, help="one line — why they are the same")
+    al.add_argument("--source", default="")
+    al.add_argument("--date", default="")
+    al.set_defaults(func=cmd_alias)
+
+    als = sub.add_parser("aliases", help="which tags are folded into which")
+    als.set_defaults(func=cmd_aliases)
 
     t = sub.add_parser("tags", help="the starter tag vocabulary")
     t.set_defaults(func=lambda args: ([print(f"  {k:<16} {v}") for k, v in
