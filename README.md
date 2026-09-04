@@ -164,11 +164,21 @@ whetstone index --src ~/skills      # grouped catalog
 whetstone promote <proposal>        # install a proposal, refusing to overwrite an existing skill
 whetstone pack | deploy             # move a library between machines
 whetstone sync engram <skill>       # optional: push one skill into a local engram memory store
+whetstone decision add …            # record what you decided about a proposal, and why
+whetstone decision stats            # what those decisions have started to point at
 ```
 
 `lint` and `verify` guard different failures. `lint` guards **retrieval** — a library whose
 descriptions overlap makes the model pick the wrong skill. `verify` guards **content** — a
 library whose entries carry unearned confidence makes the model believe the wrong thing.
+
+`decision` guards neither; it records. Reviewing a proposal produces a judgement — kept as
+proposed, moved down a layer, downgraded, refused — and every one of those says where the
+framework's judgement and yours diverged. They used to end with the session. They are the
+only labels this tool gets for free, and the only raw material from which the framework
+could ever improve on its own evidence rather than on the next paper someone reads. It
+analyses nothing yet: see [`spec/review-decisions.md`](spec/review-decisions.md) for what
+it deliberately is not.
 
 ## Layout
 
@@ -176,10 +186,12 @@ library whose entries carry unearned confidence makes the model believe the wron
 SKILL.md                            distiller entry point (Phase 0-5)
 references/extraction-framework.md  the L1-L4 schema — the actual core
 spec/skill-package.md               portable skill-package format (the deliverable)
+spec/review-decisions.md            what a recorded review decision looks like, and its limits
 commands/                           /distill and /promote slash-command definitions
 bin/verify.py                       evidence discipline, executable
 bin/verify_selftest.sh              124 assertions, both directions, coverage-enforced
 bin/verify_mutation_test.sh         deletes each check in turn; the suite must go red
+bin/decision.py                     the review-decision log (record only; 22 assertions)
 bin/lint.py · bin/index.py          selection-menu hygiene
 bin/pack.sh · bin/deploy.sh · bin/promote.sh   move and install packages
 cli/whetstone                       runtime-agnostic CLI, pure bash

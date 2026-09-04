@@ -95,6 +95,16 @@ for 每条学习时刻:
 
 意义:挖掘和分层是主观最重的两步,在这里拦比 Phase 5 返工便宜(对标 nuwa Phase 1.5/2.5)。
 
+**用户在这里改了分层的,当场记一条**(这一步的判断最容易转头就忘):
+
+```bash
+whetstone decision add --kind entry --skill <skill> --subject "<这条是什么>" \
+  --verdict amend --layer L2 --final-layer L3 --tag layer-wrong \
+  --source <commit/会话指针> --reason "<一句话:为什么该往下放>"
+```
+
+理由必填、可自由写;标签可留空。格式与读法见 `spec/review-decisions.md`。
+
 ---
 
 ## Phase 3 · 对账已有库(本流程最关键、最易出错的一步)
@@ -167,6 +177,11 @@ for 每条学习时刻:
    - 批准 → /promote 把 diff 合进正式库(可选:若另装了 darwin-skill,可加跑其打分;非必须,whetstone 不依赖它)
    - 拒/改 → 回 Phase 3 调整
 4. 无论入库与否,原始学习时刻都已在 journal 留底(可回溯)
+5. **把这次人审的每一条决定记下来**(`whetstone decision add`,一条提案一行):
+   收了什么、改了什么、拒了什么、为什么。**拒掉的尤其要记** ——
+   不记的话,下次蒸馏遇到同一个坑会原样再提一遍,你得再拒一次。
+   这些记录是框架将来能不能从自己的历史里改进的**唯一**原材料;
+   现在只攒不用,别急着拿它下结论(`spec/review-decisions.md` 写了它不是什么)。
 ```
 
 ---

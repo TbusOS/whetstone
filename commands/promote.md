@@ -16,6 +16,10 @@ Apply an approved `inbox/` proposal to the live skill library.
 4. Update `params/<platform>.md` tables.
 5. Keep the original provenance (the `journal/` entry for /distill proposals; the
    来源成员 · commit markers for whetstone-curator fetch proposals).
+6. Record the review decisions — one `whetstone decision add` per proposal item, for the
+   rejected and amended ones as much as the accepted ones. A rejection you do not record
+   is one the next distillation will propose again, word for word, and you will spend the
+   same judgement twice. Format and limits: `spec/review-decisions.md`.
 
 🔴 Only run after you approved the proposal — in `/distill` Phase 5, or in a
 whetstone-curator fetch report (same shape, same gate).

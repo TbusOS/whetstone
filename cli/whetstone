@@ -41,6 +41,14 @@ evidence discipline (the rules in extraction-framework, made executable):
   verify-selftest                         run the verify selftest (fixtures, both directions)
   verify-mutation                         delete each check in turn; the selftest must go red
 
+review decisions (raw material for the framework's own evolution — see spec/review-decisions.md):
+  decision add --subject S --verdict V --reason R [--tag T --source C ...]
+                                          record what the reviewer did to one proposal
+  decision stats                          what the accumulated decisions point at
+  decision list [-n N]                    recent records, incl. layer/confidence moves
+  decision tags                           the starter tag vocabulary
+  decision-selftest                       run the decision selftest
+
 index hygiene (keep the selection menu clean as the library grows):
   lint [--src D] [--strict] [--json]      flag empty/overlapping/colliding descriptions
   index [--src D] [--out F]               generate a grouped INDEX.md catalog
@@ -119,6 +127,8 @@ case "$cmd" in
   verify)            command -v python3 >/dev/null 2>&1 || { echo "verify needs python3" >&2; exit 3; }; exec python3 "$REPO_DIR/bin/verify.py" "$@";;
   verify-selftest)   exec bash "$REPO_DIR/bin/verify_selftest.sh" "$@";;
   verify-mutation)   exec bash "$REPO_DIR/bin/verify_mutation_test.sh" "$@";;
+  decision)          command -v python3 >/dev/null 2>&1 || { echo "decision needs python3" >&2; exit 3; }; exec python3 "$REPO_DIR/bin/decision.py" "$@";;
+  decision-selftest) exec bash "$REPO_DIR/bin/decision_selftest.sh" "$@";;
   lint)              command -v python3 >/dev/null 2>&1 || { echo "lint needs python3" >&2; exit 3; }; exec python3 "$REPO_DIR/bin/lint.py" "$@";;
   index)             command -v python3 >/dev/null 2>&1 || { echo "index needs python3" >&2; exit 3; }; exec python3 "$REPO_DIR/bin/index.py" "$@";;
   capture)           exec bash "$REPO_DIR/adapters/capture/claude-code.sh" "$@";;

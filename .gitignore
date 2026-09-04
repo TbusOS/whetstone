@@ -28,5 +28,6 @@ __pycache__/
 **/.DS_Store
 
 # selftest staging
+.decision-selftest/
 .verify-selftest/
 .verify-mutation.*/
