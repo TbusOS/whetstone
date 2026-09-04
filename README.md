@@ -143,6 +143,11 @@ there. Three independent reviews found four ways to slip past the promotion gate
 separator, a heading that merely mentioned "L3", a parenthesised platform suffix, a table
 without leading pipes — and every one of them is now a mutation entry.
 
+A mutation can also fail to apply, when the anchor text it edits has drifted. That entry then
+proves nothing, and counting it as neither caught nor missed kept the run green while one
+check quietly stopped being tested. It now has its own counter and fails the run — verified
+by breaking an anchor on purpose and watching the suite go red.
+
 Optional, none required: session capture
 ([`adapters/capture/`](adapters/capture/README.md)), update prompting
 (`bash autoupdate/install.sh`), downstream sinks ([`adapters/sync/`](adapters/sync)).

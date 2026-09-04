@@ -17,11 +17,19 @@ cd "$SCRIPT_DIR/.."
 S="$(mktemp -d "$SCRIPT_DIR/../.verify-mutation.XXXXXX")"
 trap 'cp "$S/verify.orig.py" bin/verify.py 2>/dev/null; rm -rf "$S"' EXIT
 cp bin/verify.py "$S/verify.orig.py"
-caught=0; missed=0
+caught=0; missed=0; skipped=0
 
 mut() { # $1 = label, $2 = python source that mutates bin/verify.py
-  if ! python3 -c "$2"; then echo "  --  mutation would not apply: $1"; cp "$S/verify.orig.py" bin/verify.py; return; fi
-  if bash bin/verify_selftest.sh >/dev/null 2>&1; then
+  # A mutation whose anchor text has drifted does not apply, and then it proves
+  # nothing at all. Counting it as neither caught nor missed let the run stay green
+  # while one entry silently stopped testing anything — so it gets its own counter
+  # and it fails the run.
+  if ! python3 -c "$2"; then
+    echo "  --  MUTATION DID NOT APPLY: $1"; skipped=$((skipped+1))
+    cp "$S/verify.orig.py" bin/verify.py; return
+  fi
+  # a mutation may remove a loop guard, so the suite must be able to time out
+  if timeout 180 bash bin/verify_selftest.sh >/dev/null 2>&1; then
     echo "  MISS  $1"; missed=$((missed+1))
   else
     echo "  ok    $1"; caught=$((caught+1))
@@ -120,6 +128,6 @@ $W"
 
 cp "$S/verify.orig.py" bin/verify.py
 echo
-echo "mutations caught: $caught   missed: $missed"
+echo "mutations caught: $caught   missed: $missed   did-not-apply: $skipped"
 bash bin/verify_selftest.sh 2>&1 | tail -1
-[ "$missed" -eq 0 ]
+[ "$missed" -eq 0 ] && [ "$skipped" -eq 0 ]
