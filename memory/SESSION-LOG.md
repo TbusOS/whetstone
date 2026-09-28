@@ -155,3 +155,42 @@ first five records — this session's own framework changes, including one recor
 meta-level work was ranked last and the ranking was wrong. Nothing has reached the 3-source
 threshold, which is the expected state. The log's one failure mode is nobody filling it in,
 and that failure is silent.
+
+---
+
+## 2026-09-28 · use-time conflicts, recorded in two steps
+
+### Why the review moved to use time
+The question was whether human review of distilled knowledge could become AI review. A
+four-way survey (open-source memory systems read at the code level, papers on self-evolving
+experience libraries, work on calibrating LLM judges against humans, and the autoresearch /
+darwin / nuwa family) agreed on one point: no system lets an AI decide on its own whether an
+old entry should change. The ones that work share a shape — mechanical checks underneath, the
+AI only classifying, escalation when unsure, autonomy granted per class from measured
+agreement. One large memory library removed LLM-driven UPDATE/DELETE entirely in 2026-04.
+The reviewer then reframed the problem: judge an entry when it is USED, not when it enters.
+At use time the code and the board are in front of the agent, so "is this still right" has an
+answer. `spec/use-time-conflicts.md` is that protocol: classify first (a mismatch is not
+necessarily a wrong entry — the entry may be stale, platform-scoped, or the code may be
+repeating the very mistake a pitfall warns about), grade the evidence, report before changing
+anything, and change only on a human yes.
+
+### Why two steps
+The party being scored writes the record. Written in one line after the answer, the AI's
+"own" call can be copied from the human's and agreement reads 100% with nothing on screen.
+So `decision report` puts the AI's call on file first and prints an id plus a fingerprint the
+conflict card must carry, and `decision resolve` appends the answer. A used id cannot be
+reported again, an edited report no longer matches its fingerprint and is not scored, an
+answer with no report before it is ignored, and an entry reported twice in one source is
+scored on its FIRST call. The remaining hole — running `report` only after hearing the answer
+— is not something the tool can see; the fingerprint line on the card is what a human glances
+at.
+
+### Scoring, and what it may change
+Per (type x evidence) group, agreement is judged by an exact one-sided binomial lower bound,
+never the point estimate (22 agreeing out of 22 is the least that clears 0.90 at delta 0.1;
+18 of 20 clears only 0.755). A tier changes how the human is asked — full, one-line summary,
+end-of-task batch — never whether. No exam on record, a guess share above 30%, or a miss of
+that type all send a group back to full confirmation. decision selftest 46 -> 113, mutations
+8 -> 30. The exam questions themselves are still to be written from real entries.
+

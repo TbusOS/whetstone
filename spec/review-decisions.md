@@ -29,6 +29,9 @@
 | `verdict` | `accept` 原样收 / `amend` 收但改了 / `reject` 拒 / `defer` 先放着待补 |
 | `reason` | **一句自由文本,必填**。标签说的是"属于哪一类",这里说的是"这次到底怎么回事" |
 
+使用经验时发现的冲突不走 `add`,分两步记(`decision report` → `decision resolve`,漏报用 `decision miss`),
+`kind` 为 `conflict-report` / `conflict-resolve` / `conflict-miss`,字段与打分见 `spec/use-time-conflicts.md` 第 7-9 节。
+
 选填(有就写,没有就不写这个键):
 
 | 字段 | 内容 |

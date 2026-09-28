@@ -51,6 +51,18 @@ review decisions (raw material for the framework's own evolution — see spec/re
                                           fold two spellings of one meaning together
                                           (read-time only; stored lines never change)
   decision aliases                        which tags are folded into which
+  decision report --entry E --ai-type T --ai-evidence V --ai-action A --ai-certainty C
+                  --subject S --reason R [--source C --safety --blocking]
+                                          step 1 of a conflict found while USING an entry:
+                                          the AI's call, on file BEFORE you are asked; prints
+                                          the id + fingerprint the card must carry
+  decision resolve --conflict-id ID --verdict V --reason R [--final-type T]
+                                          step 2: your answer (spec/use-time-conflicts.md)
+  decision miss --entry E --final-type T --verdict V --subject S --reason R
+                                          one the AI used without reporting — you found it
+  decision exam --result pass|fail --reason R
+                                          one sitting of the known-answer exam; no group is
+                                          relaxed until the latest sitting passes
   decision-selftest                       run the decision selftest
   decision-mutation                       delete each decision check; the suite must go red
 
