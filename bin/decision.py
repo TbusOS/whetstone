@@ -34,7 +34,7 @@ one scored.
 
   bin/decision.py add --subject "..." --verdict amend --reason "..." [--tag ...]
   bin/decision.py report --entry skill/item --ai-type stale --ai-evidence seen \
-                         --ai-action update --ai-certainty high \
+                         --ai-action update --ai-certainty high --model <model-id> \
                          --subject "..." --reason "why the AI thinks so" --source <session>
                                    step 1: the AI's call, BEFORE the human is asked
   bin/decision.py resolve --conflict-id C-YYYYMMDD-NN --verdict amend --final-type scope \
@@ -168,9 +168,15 @@ def fingerprint(rec):
     before the record does: the call is on file before the human answers. It is
     recomputed on every read, so a report line edited afterwards stops matching and
     is not scored (§11: append, never overwrite).
+
+    The model that made the call is covered too, so relabelling a record to credit
+    another model breaks the match. A report written before the model was recorded
+    has no `model` key and is checked over the fields it had; adding the key later,
+    or removing it, changes the field list and breaks the match all the same.
     """
-    fields = [rec.get(f) for f in ("conflict_id", "entry", "ai_type", "ai_evidence",
-                                   "ai_action", "ai_certainty", "reported_at")]
+    keys = ["conflict_id", "entry", "ai_type", "ai_evidence", "ai_action", "ai_certainty",
+            "reported_at"] + (["model"] if "model" in rec else [])
+    fields = [rec.get(f) for f in keys]
     return hashlib.sha256(json.dumps(fields, ensure_ascii=False).encode("utf-8")).hexdigest()[:6]
 
 
@@ -433,7 +439,8 @@ def cmd_list(args):
             flags = "".join(f"  [{f}]" for f in ("safety", "blocking") if r.get(f))
             print(f"{r.get('date', '?')}  [report]  {r.get('conflict_id', '?')} · "
                   f"{r.get('fingerprint', '?')}  {r.get('entry', '?')}  {r.get('ai_type', '?')} "
-                  f"({r.get('ai_evidence', '?')}, {r.get('ai_certainty', '?')}){flags}")
+                  f"({r.get('ai_evidence', '?')}, {r.get('ai_certainty', '?')}) · "
+                  f"{r.get('model', 'unknown')}{flags}")
             print(f"            AI: {r.get('ai_reason', '')}")
             continue
         if r.get("kind") == "conflict-resolve":
@@ -479,6 +486,10 @@ def cmd_report(args):
         print("--reason is required: the card says why the AI thinks so, and so must the "
               "record", file=sys.stderr)
         return 2
+    if not args.model.strip():
+        print("--model is required: a group is only relaxed on the record of the model "
+              "that is judging now", file=sys.stderr)
+        return 2
     now = datetime.datetime.now()
     date = now.date().isoformat()
     recs, _ = load(args.file)
@@ -496,6 +507,7 @@ def cmd_report(args):
            "ai_type": args.ai_type, "ai_evidence": args.ai_evidence,
            "ai_action": args.ai_action, "ai_certainty": args.ai_certainty,
            "subject": args.subject, "ai_reason": args.reason.strip(),
+           "model": args.model.strip(),
            "blocking": bool(args.blocking), "safety": bool(args.safety)}
     for key, val in (("entry_source", args.entry_source), ("source", args.source)):
         if val:
@@ -645,6 +657,7 @@ def conflict_items(recs):
             verdict = ans.get("verdict")
             final = ans.get("final_type") or by_id[ans.get("conflict_id")].get("ai_type")
         items.append({"pos": first_i, "ai": first, "verdict": verdict, "final": final,
+                      "model": first.get("model") or "unknown",
                       "key": key, "id": first.get("conflict_id")})
     items.sort(key=lambda x: x["pos"])
     if rereported:
@@ -662,21 +675,38 @@ def conflict_items(recs):
     return items, misses, problems
 
 
-def conflict_section(recs):
+def conflict_section(recs, model=None):
     """Spec §8-§9: score the AI's conflict calls and say how each group may be asked.
 
     "Since the last miss" means the reports written after that miss, so file
     positions are used rather than dates — one day holds many records.
+
+    Only the current model's reports count toward a tier: agreement earned by one
+    model says nothing about the next, so a model change starts from zero. Current
+    means the model of the latest report, unless `stats --model` names another.
     """
     items, missed, problems = conflict_items(recs)
     if not items and not missed and not problems:
         return
+    latest = [r for r in recs if r.get("kind") == "conflict-report"]
+    current = model or ((latest[-1].get("model") or "unknown") if latest else "unknown")
+    mine = [x for x in items if x["model"] == current]
     pending = [x for x in items if x["verdict"] is None]
     print()
     print(f"use-time conflicts — {len(items)} reported by the AI ({len(pending)} awaiting "
           f"your answer), {len(missed)} missed and found by you")
     for p in problems:
         print(f"  ! {p}")
+    others = {}
+    for x in items:
+        if x["model"] != current:
+            others[x["model"]] = others.get(x["model"], 0) + 1
+    if others:
+        print(f"  model: tiers count only {current} ({len(mine)} of {len(items)} reports); "
+              f"the rest show in judged / type-right but not in basis: " +
+              " · ".join(f"{m} {n}" for m, n in sorted(others.items())))
+    else:
+        print(f"  model: {current} (all {len(items)} reports)")
 
     # Real conflict records are the test: the lower bound below needs at least 22
     # agreeing ones before any group relaxes. A separate known-answer exam used to
@@ -684,8 +714,8 @@ def conflict_section(recs):
     # tier only ever changes how the human is asked, never whether. What stays is
     # the one gate that catches a busy-looking loop running on guesses (spec §8).
     relax_ok = True
-    guesses = sum(1 for x in items if x["ai"].get("ai_evidence") in ("inferred", "unseen"))
-    share = guesses / len(items) if items else 0.0
+    guesses = sum(1 for x in mine if x["ai"].get("ai_evidence") in ("inferred", "unseen"))
+    share = guesses / len(mine) if mine else 0.0
     if share > GUESS_SHARE_MAX:
         relax_ok = False
         print(f"  ! {share:.0%} of reported conflicts rest on inference or on nothing seen "
@@ -712,7 +742,7 @@ def conflict_section(recs):
     for (typ, ev), g in sorted(groups.items()):
         all_j = [x for x in g if judged(x)]
         cut = last_miss.get(typ, -1)
-        basis = [x for x in g if x["pos"] > cut and judged(x)]
+        basis = [x for x in g if x["model"] == current and x["pos"] > cut and judged(x)]
         k = sum(1 for x in basis if right(x))
         lb = lower_bound(k, len(basis))
         alarms = sum(1 for x in g if x["final"] == "none")
@@ -726,7 +756,7 @@ def conflict_section(recs):
             tier = "summary"
         else:
             tier = "full"
-        since = "  (basis: after the last miss)" if cut >= 0 else ""
+        since = "  (basis: after the last miss)" if cut >= 0 else ""   # basis = current model only
         print(f"  {typ + ' × ' + ev:<25} {len(all_j):>6}  "
               f"{sum(1 for x in all_j if right(x)):>10}  {f'{k}/{len(basis)}':<7} "
               f"{lb:>11.3f}  {alarms:>11}  {tier}{since}")
@@ -753,14 +783,14 @@ def conflict_section(recs):
               f"not reported (the true share can only be higher)")
 
     cal = {}
-    for x in items:
+    for x in mine:
         if judged(x):
             c = cal.setdefault(x["ai"].get("ai_certainty", "?"), [0, 0])
             c[0] += 1
             c[1] += 1 if right(x) else 0
     if cal:
         print()
-        print("  calibration, type-right by the AI's own certainty: " + " · ".join(
+        print(f"  calibration ({current}), type-right by the AI's own certainty: " + " · ".join(
             f"{c} {cal[c][1]}/{cal[c][0]}" for c in CERTAINTY if c in cal))
         hi, lo = cal.get("high"), cal.get("low")
         if (hi and lo and hi[0] >= CALIB_MIN and lo[0] >= CALIB_MIN
@@ -842,7 +872,7 @@ def cmd_stats(args):
     print("by verdict: " + " · ".join(f"{k} {v}" for k, v in sorted(by_verdict.items())))
     print("by kind:    " + " · ".join(f"{k} {v}" for k, v in sorted(by_kind.items())))
 
-    conflict_section(recs)
+    conflict_section(recs, getattr(args, "model", None))
 
     if not by_tag_sources:
         print("\nno tagged records yet — tags are what makes a pattern visible.")
@@ -922,6 +952,8 @@ def main():
     rp.add_argument("--ai-action", dest="ai_action", required=True, help="/".join(AI_ACTIONS))
     rp.add_argument("--ai-certainty", dest="ai_certainty", required=True,
                     help="/".join(CERTAINTY) + " — the AI's certainty in its own call")
+    rp.add_argument("--model", required=True,
+                    help="the model making this call, as the runtime names it; tiers are per model")
     rp.add_argument("--subject", required=True, help="what the conflict is about, in a few words")
     rp.add_argument("--reason", required=True, help="why the AI thinks so (stored as ai_reason)")
     rp.add_argument("--conflict-id", dest="conflict_id", default="",
@@ -955,6 +987,8 @@ def main():
     ms.set_defaults(func=cmd_miss)
 
     s = sub.add_parser("stats", help="what the records point at")
+    s.add_argument("--model", default=None,
+                   help="score this model's conflict calls (default: the model of the latest report)")
     s.set_defaults(func=cmd_stats)
 
     l = sub.add_parser("list", help="most recent records")

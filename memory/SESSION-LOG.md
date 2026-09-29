@@ -197,6 +197,10 @@ that type all send a group back to full confirmation. decision selftest 46 -> 11
 already needs at least 22 agreeing real records per group, the two traps an exam would
 have targeted surface in real records anyway (a changed type drags the group down;
 inferred and unseen groups never relax), and a tier only changes how the question is asked.
+The one gap that left — agreement earned by one model being credited to the next — was closed
+the same day: every report now records the model that made the call (covered by the
+fingerprint), and tiers count only the current model's reports, so a model change starts every
+group from zero. Older reports without the field read as model "unknown".
 
 ### Two old bugs, found while wiring the rule in
 Writing the always-on rule meant running `whetstone decision` from PATH, and it failed:

@@ -193,6 +193,24 @@ i=s.index(o); j=s.index('return 2', i)+len('return 2')+1
 s=s[:i]+s[j:]
 $W"
 
+mut "model: basis counts every model's reports, not just the current one" \
+"$R
+o='        basis = [x for x in g if x[\"model\"] == current and x[\"pos\"] > cut and judged(x)]'
+assert o in s; s=s.replace(o,'        basis = [x for x in g if x[\"pos\"] > cut and judged(x)]',1)
+$W"
+
+mut "model: the current model is the earliest report, not the latest" \
+"$R
+o='latest[-1].get(\"model\")'
+assert o in s; s=s.replace(o,'latest[0].get(\"model\")',1)
+$W"
+
+mut "model: the fingerprint leaves the model out (a report can be relabelled)" \
+"$R
+o='+ ([\"model\"] if \"model\" in rec else [])'
+assert o in s; s=s.replace(o,'',1)
+$W"
+
 mut "resolve: accept a changed type under verdict accept" \
 "$R
 o='    if final and final != \"none\" and verdict == \"accept\":'

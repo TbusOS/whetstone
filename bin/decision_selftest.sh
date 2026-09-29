@@ -201,7 +201,7 @@ else bad "empty alias set output is unhelpful"; fi
 # ---------------------------------------------------------------------------------
 # step 1 with every AI field filled in; extra args override / extend
 rep() { dec report --subject s --reason why --entry sk/e --ai-type stale --ai-evidence seen \
-            --ai-action update --ai-certainty high "$@"; }
+            --ai-action update --ai-certainty high --model m1 "$@"; }
 repok() { rep "$@" >/dev/null 2>&1; }
 lastid() { python3 - "$LOG" <<'PY'
 import json, sys
@@ -215,15 +215,15 @@ nlines() { wc -l < "$LOG" | tr -d ' '; }
 # bulk fixture: report + answer pairs written straight to the log with valid
 # fingerprints — stats is what is under test, and 45 x 2 CLI calls per case would
 # make the mutation battery crawl.
-# gen <n> <ai_type> <ai_evidence> <verdict|pending> [final_type] [prefix] [certainty] [source]
+# gen <n> <ai_type> <ai_evidence> <verdict|pending> [final_type] [prefix] [certainty] [source] [model]
 gen() {
   PYTHONDONTWRITEBYTECODE=1 python3 - "$SCRIPT_DIR" "$LOG" "$@" <<'PY'
 import json, os, sys
 sys.path.insert(0, sys.argv[1])
 import decision as d
-a = sys.argv[2:] + [""] * 8
+a = sys.argv[2:] + [""] * 9
 log, n, t, ev, v = a[0], int(a[1]), a[2], a[3], a[4]
-final, pre, cert, src = a[5], a[6] or "G", a[7] or "high", a[8]
+final, pre, cert, src, model = a[5], a[6] or "G", a[7] or "high", a[8], a[9] or "m1"
 start = 0
 if os.path.isfile(log):
     start = sum(1 for l in open(log, encoding="utf-8") if '"conflict-report"' in l)
@@ -234,7 +234,7 @@ with open(log, "a", encoding="utf-8") as f:
              "reported_at": "2026-09-28T10:00:00", "entry": f"sk/{pre}{i}",
              "ai_type": t, "ai_evidence": ev, "ai_action": "update", "ai_certainty": cert,
              "subject": "s", "ai_reason": "r", "blocking": False, "safety": False,
-             "source": src or f"{pre}{i}"}
+             "source": src or f"{pre}{i}", "model": model}
         r["fingerprint"] = d.fingerprint(r)
         f.write(json.dumps(r) + "\n")
         if v != "pending":
@@ -272,9 +272,14 @@ else ok "a used id is refused: a call once written is not rewritten"; fi
 if repok --entry ""; then bad "a report without --entry was accepted"; else ok "a report without --entry is refused"; fi
 if repok --ai-type obsolete; then bad "an unknown --ai-type was accepted"; else ok "an unknown --ai-type is refused"; fi
 if dec report --subject s --reason why --entry sk/e --ai-type stale --ai-action update \
-     --ai-certainty high >/dev/null 2>&1
+     --ai-certainty high --model m1 >/dev/null 2>&1
   then bad "a report without --ai-evidence was accepted"
   else ok "a report missing part of the AI's call is refused (nothing to score)"; fi
+if dec report --subject s --reason why --entry sk/e --ai-type stale --ai-evidence seen \
+     --ai-action update --ai-certainty high >/dev/null 2>&1
+  then bad "a report without --model was accepted"
+  else ok "a report without --model is refused (tiers are per model)"; fi
+if repok --model " "; then bad "a blank --model was accepted"; else ok "a blank --model is refused"; fi
 if repok --reason " "; then bad "a report without a reason was accepted"
 else ok "a report without the AI's reason is refused"; fi
 if repok --conflict-id C-2026-1; then bad "a malformed conflict id was accepted"
@@ -425,6 +430,16 @@ else bad "an edited report went unnoticed"; fi
 if dec stats | grep -qE '^  scope × seen'; then bad "the edited report was scored"
 else ok "and it is not scored"; fi
 
+rm -f "$LOG"; repok --entry sk/t --source T1
+python3 - "$LOG" <<'PY'
+import json, sys
+p = sys.argv[1]
+r = json.loads(open(p, encoding="utf-8").readline()); r["model"] = "m-other"   # credit another model
+open(p, "w", encoding="utf-8").write(json.dumps(r) + "\n")
+PY
+if dec stats | grep -q "no longer matches its fingerprint"; then ok "relabelling a report's model is caught (the model is in the fingerprint)"
+else bad "a report credited to another model went unnoticed"; fi
+
 rm -f "$LOG"
 printf '%s\n' '{"date":"2026-09-28","kind":"conflict-resolve","conflict_id":"C-20260928-01","verdict":"accept","reason":"r"}' >> "$LOG"
 repok --conflict-id C-20260928-01
@@ -437,6 +452,36 @@ rm -f "$LOG"
 for i in 1 2 3 4 5; do repok --source SAME; done
 if dec stats | grep -q "reported more than once within one source"; then ok "one entry reported five times in one source counts once"
 else bad "same entry + source was counted more than once"; fi
+
+echo
+echo "[conflict stats] tiers count only the current model's reports"
+rm -f "$LOG"; gen 22 stale seen accept "" A "" "" m1
+if row stale seen | grep -q "summary" && dec stats | grep -q "model: m1 (all 22 reports)"; then
+  ok "one model: 22/22 reaches summary and the model is named"
+else bad "single-model baseline wrong: $(dec stats | grep -E 'model:| × seen')"; fi
+gen 1 stale seen pending "" B "" "" m2
+if row stale seen | grep -qE ' full$' && dec stats | grep -q "tiers count only m2 (1 of 23 reports)"; then
+  ok "a report from a new model starts it from zero: m1's 22 do not carry over"
+else bad "a new model inherited the old model's tier: $(dec stats | grep -E 'model:| × seen')"; fi
+if row stale seen | grep -qE ' +22 +22 +0/0 '; then ok "the old model's records still show in judged / type-right"
+else bad "old model's records vanished from the table: $(row stale seen)"; fi
+if dec stats --model m1 | grep -E '^  stale × seen' | grep -q "summary"; then ok "stats --model m1 scores m1 again"
+else bad "stats --model did not switch the scored model"; fi
+rm -f "$LOG"
+PYTHONDONTWRITEBYTECODE=1 python3 - "$SCRIPT_DIR" "$LOG" <<'PY'
+import json, sys
+sys.path.insert(0, sys.argv[1])
+import decision as d
+r = {"date": "2026-09-28", "kind": "conflict-report", "conflict_id": "C-20260928-01",
+     "reported_at": "2026-09-28T10:00:00", "entry": "sk/old", "ai_type": "stale",
+     "ai_evidence": "seen", "ai_action": "update", "ai_certainty": "high",
+     "subject": "s", "ai_reason": "r", "blocking": False, "safety": False, "source": "O1"}
+r["fingerprint"] = d.fingerprint(r)                 # written before the model was recorded
+open(sys.argv[2], "w", encoding="utf-8").write(json.dumps(r) + "\n")
+PY
+if dec stats | grep -q "model: unknown" && ! dec stats | grep -q "no longer matches"; then
+  ok "a report from before the model field reads as model 'unknown', fingerprint intact"
+else bad "an older report without a model was mishandled: $(dec stats | grep -E 'model:|matches')"; fi
 
 echo
 echo "[conflict stats] entries for review, rule prompts, calibration, safety"
@@ -482,9 +527,9 @@ else bad "the tally was polluted: $(dec stats | grep '^by verdict')"; fi
 rm -f "$LOG"
 repok --entry sk/l; resok --conflict-id "$(lastid)" --verdict amend --final-type scope
 dec miss --entry sk/gone --final-type wrong --verdict accept --subject s --reason r >/dev/null 2>&1
-if dec list | grep -q "\[report\]  C-.* · [0-9a-f]\{6\}" && dec list | grep -q "→ scope" \
+if dec list | grep -q "\[report\]  C-.* · [0-9a-f]\{6\}.* · m1" && dec list | grep -q "→ scope" \
    && dec list | grep -q "MISSED"; then
-  ok "list shows the report with its fingerprint, the answer and the miss"
+  ok "list shows the report with its fingerprint and model, the answer and the miss"
 else bad "list hides the report, the answer or the miss"; fi
 
 echo

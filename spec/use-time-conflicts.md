@@ -172,7 +172,7 @@ AI 那一半"自己的判断"完全可以照着人的答案填,一致率就成�
 ```bash
 # ① 报之前:AI 写下自己的判断,拿到编号和指纹,贴进冲突报告
 whetstone decision report --entry boot-x/pitfall-7 --entry-source abc1234 \
-  --ai-type stale --ai-evidence seen --ai-action update --ai-certainty high \
+  --ai-type stale --ai-evidence seen --ai-action update --ai-certainty high --model <模型标识> \
   --subject "OTP[ADDR] 的读法" --reason "路径在 def5678 改过" --source def5678 --safety --blocking
 #   → reported C-20260928-01 · fingerprint e470f3
 # ② 人回答后:追加人的决定
@@ -220,6 +220,7 @@ whetstone decision miss --entry boot-x/pitfall-3 --final-type wrong --verdict ac
 | `ai_evidence` | ① | `seen` / `inferred` / `unseen` |
 | `ai_action` | ① | `update` / `variant` / `supersede` / `keep` / `ask` |
 | `ai_certainty` | ① | `high` / `med` / `low` —— AI 对**自己这次判断**有几成把握,不是经验的置信度 |
+| `model` | ① | 做这次判断的模型,用运行环境给出的模型标识,必填;算进指纹,事后改成别的模型会对不上 |
 | `ai_reason` | ① | AI 为什么这么判 |
 | `final_type` | ② 漏报 | 人改成的类型;`none` = 其实没冲突(误报)。和 AI 的一样就不写 |
 | `blocking` / `safety` | ① | 是否卡住了下一步 / 是否涉及安全相关经验(第 9 节) |
@@ -230,7 +231,7 @@ whetstone decision miss --entry boot-x/pitfall-3 --final-type wrong --verdict ac
 
 ## 8. 打分
 
-按第一次报告的 **`ai_type` × `ai_evidence`** 分组算四个数。"已判"= 有回答、回答不是 `defer`、
+按第一次报告的 **`ai_type` × `ai_evidence`** 分组算四个数,**放宽依据只算当前模型的记录**(见本节末)。"已判"= 有回答、回答不是 `defer`、
 人的类型不是 `none`;还在等回答的不算。
 
 | 指标 | 算法 | 为什么要它 |
@@ -274,8 +275,15 @@ whetstone decision miss --entry boot-x/pitfall-3 --final-type wrong --verdict ac
   这两档**永远不放宽**
 - 放宽只改怎么问、不改问不问,判错的代价是多看一眼,不是错改经验
 
-**剩下的一个空档**:换了模型之后,旧模型攒下的判对记录会继续算在新模型头上。
-工具现在不记录判断是哪个模型做的,这一条只能靠人记着 —— 换模型时,可以把放宽过的组先当作完整确认。
+### 换了模型从零算(2026-09-29)
+
+一个模型攒下的判对记录,说明不了下一个模型。所以每条报告都记下做判断的模型(`--model`),
+`stats` 放宽确认时**只算当前模型的记录**:当前 = 最近一条报告的模型,也可以用 `stats --model X` 指定。
+换了模型,每一组都从 0 条开始攒;旧模型的记录照样显示在表里(`judged` / `type-right` 两列),
+只是不进 `basis`,也不进推断占比和校准。
+
+漏报不带模型(AI 没报,谈不上哪个模型判的),照旧按类型退回完整确认,不分模型。
+记模型字段之前写的报告读作 `unknown`,指纹按它当时的字段校验。
 
 ## 9. 分数用来做什么
 
@@ -297,6 +305,7 @@ whetstone decision miss --entry boot-x/pitfall-3 --final-type wrong --verdict ac
 
 - 任何档位都**不会自动改经验**
 - 该组出现一次漏报 → 立刻退回完整确认,之后只按漏报之后的记录重新算
+- 换了模型 → 每一组都从 0 条开始,旧模型的记录不算数(第 8 节末)
 - `inferred` / `unseen` 组永远完整确认:AI 没看到实际情况,它判对的次数说明不了什么
 - `safety=true` 的永远完整确认,并且改之前重测一次
 
