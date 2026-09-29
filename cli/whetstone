@@ -74,7 +74,14 @@ review decisions (raw material for the framework's own evolution — see spec/re
   decision-mutation                       delete each decision check; the suite must go red
 
 index hygiene (keep the selection menu clean as the library grows):
-  lint [--src D] [--strict] [--json]      flag empty/overlapping/colliding descriptions
+  lint [--src D] [--strict] [--json]      flag empty/overlapping/colliding descriptions, and
+       [--listing F|-] [--menu-budget N]  whether the whole menu fits (--listing = the menu
+       [--menu-reserve N]                 a runtime actually sent: which skills lost their
+                                          descriptions)
+  menu-snapshot [--session ID]            print the menu Claude Code last sent (for --listing):
+                                            whetstone menu-snapshot | whetstone lint --listing -
+  lint-selftest                           run the lint selftest (both directions per check)
+  lint-mutation                           break each menu check in turn; the selftest must go red
   index [--src D] [--out F]               generate a grouped INDEX.md catalog
 
 capture (optional, runtime-specific):
@@ -156,6 +163,9 @@ case "$cmd" in
   decision-selftest) exec bash "$REPO_DIR/bin/decision_selftest.sh" "$@";;
   decision-mutation) exec bash "$REPO_DIR/bin/decision_mutation_test.sh" "$@";;
   lint)              command -v python3 >/dev/null 2>&1 || { echo "lint needs python3" >&2; exit 3; }; exec python3 "$REPO_DIR/bin/lint.py" "$@";;
+  menu-snapshot)     command -v python3 >/dev/null 2>&1 || { echo "menu-snapshot needs python3" >&2; exit 3; }; exec python3 "$REPO_DIR/adapters/menu/claude-code.py" "$@";;
+  lint-selftest)     exec bash "$REPO_DIR/bin/lint_selftest.sh" "$@";;
+  lint-mutation)     exec bash "$REPO_DIR/bin/lint_mutation_test.sh" "$@";;
   index)             command -v python3 >/dev/null 2>&1 || { echo "index needs python3" >&2; exit 3; }; exec python3 "$REPO_DIR/bin/index.py" "$@";;
   capture)           exec bash "$REPO_DIR/adapters/capture/claude-code.sh" "$@";;
   selftest)          exec bash "$REPO_DIR/adapters/capture/selftest.sh" "$@";;

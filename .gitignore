@@ -33,4 +33,6 @@ __pycache__/
 .deploy-selftest/
 .decision-mutation.*/
 .verify-selftest/
+.lint-selftest/
+.lint-mutation.*/
 .verify-mutation.*/

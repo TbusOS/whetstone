@@ -231,3 +231,31 @@ guard is now in this repo, `bin/deploy_selftest.sh` holds it (all six value-taki
 must exit 2 within five seconds; the old script hung on seven checks), and the drift checker
 on the other side decides direction by commit time and never overwrites a newer copy.
 
+---
+
+## 2026-09-29 · the menu has a budget, and lint now checks it
+
+### What was measured
+Whether a skill gets loaded when the conversation touches its topic. Thirty days of local
+sessions on one machine (59 sessions): skills tied to a working directory by an always-loaded
+rule were loaded in 8 of 10 sessions; skills that depended on trigger words in their
+description were loaded in 5 of 38 session-and-skill pairs where the words came up. The
+runtime's menu stayed at about 25K chars while it grew from 69 to 111 entries, so 35 of the
+library's 65 skills were shown as a bare name. With the description in the menu, 26% of
+trigger-word messages loaded the skill; with only the name, 1%.
+
+### What changed
+`lint` used to check descriptions one by one. They can each be fine and still not fit. It now
+adds up the whole menu, compares it with a budget (a flag; the default is that measurement),
+and when over gives the fair share per description and which to trim first. Trimming every
+description above the share down to it always fits, so the only case that needs retiring or
+merging skills is a share too small to write a description in. `--listing` takes the menu the
+runtime actually sent — `adapters/menu/claude-code.py` reads it from Claude Code's session
+records — and names the skills shown as name only, and the ones shown with something other
+than their own description.
+
+### What the check found in its own parser
+The frontmatter parser read one line of a quoted description. A description whose second
+line starts at column 0 (legal inside quotes) was cut short and its second line read as a new
+key. The fix was checked against PyYAML on every skill in the library, not on fixtures alone.
+

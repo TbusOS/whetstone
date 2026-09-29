@@ -384,13 +384,36 @@ runtime 把**每个 skill 的 name + description** 拼成一张菜单**常驻上
   —— 已互相区分方向,模型能挑对(如 `md-to-pdf` ◂▸ `doc-to-markdown`)。
 
 长度:控制在能力行 + 触发词 + 边界声明能说清的范围;**过长是菜单 token 成本**,过短没法匹配。
+单条上限 1024 字符(Agent Skills 标准,`spec/skill-package.md`)。
+
+**单条都合格,合在一起也可能装不下。** 菜单有总预算,由 runtime 决定;超了 runtime 不删 skill,
+而是**去掉一部分 skill 的描述、只留名字**(Claude Code 文档:从最少用的开始去)。只剩名字的 skill,
+描述里写的触发词模型根本看不到。一次实测(2026-09-29,一台机器、Claude Code):
+- 76 份会话开头的菜单一直在 24,536–26,880 字符之间,条目从 69 涨到 111,带描述的一直停在 46–56 条;
+  库里 65 个 skill 有 35 个只剩名字。
+- 用户消息用到某 skill 的触发词时:菜单里有它的描述,98 条里 26% 加载了它;只有名字,99 条里 1%。
+- 一个描述超过 runtime 自己上限(1,536)的 skill,菜单里显示的是它正文的第一个标题,不是描述(1 例)。
+
+所以库长大以后要管两个数:**总长**(整份菜单放不放得下)和**平均份额**
+(预算扣掉每条的名字和格式,平分给每条描述还剩多少)。超出时先砍超过平均份额最多的那几条 ——
+把所有超出份额的描述砍到份额,总长一定放得下(低于份额的那些留下了余量);
+只有份额小到写不出一条能匹配的描述(< 40 字符)时,才必须停用或合并 skill。
 
 **机械兜底**(库长大后靠工具,不靠人记):
 
 ```bash
 whetstone lint     # 扫:缺触发词 / 缺边界 / 触发词高重叠(Jaccard)/ 名字前缀撞车
+                   #     / 单条超 1024 / YAML 写错 / 整份菜单超预算(给平均份额和先砍哪几条)
+whetstone menu-snapshot | whetstone lint --listing -
+                   # 拿 runtime 实际发出的菜单对照:哪些 skill 只剩名字、哪些显示的不是自己的描述
 whetstone index    # 生成分族 INDEX.md 目录(给人看的导航)
 ```
+
+预算是 runtime 的属性,用 `--menu-budget` 改(默认 25000,即上面那次实测);
+库外的条目(runtime 内置、插件的 skill)也占预算,有 `--listing` 时直接量出来,
+没有时用 `--menu-reserve` 估。`menu-snapshot` 是 Claude Code 专属的适配器
+(`adapters/menu/claude-code.py`,从会话记录里取最近一份开局菜单);别的 runtime 要对照,
+写一个同样输出 `- name: description` 每行一条的适配器即可。
 
 新增 skill 或改 description 后跑 `lint`;它把上面四条契约变成可执行检查(`bin/lint.py`)。
 **这是 §12「边界即索引」的落地**:边界定得准 → description 好写 → 触发准 → 库不退化。

@@ -9,6 +9,8 @@ and don't count. This linter checks the menu, not the bodies.
 Checks (per skill):
   E  description missing / too short        -> model has nothing to match on
   I  description very long                  -> menu token cost
+  W  description over 1024 chars             -> over the Agent Skills limit (spec/skill-package.md)
+  W  description is not valid YAML           -> a strict runtime may drop it (plain value with ': ')
   W  no trigger markers (触发词 / TRIGGER)   -> weak match signal
   W  in a family but no boundary line        -> risks colliding with peers
 Pairwise:
@@ -18,11 +20,31 @@ Downgraded to INFO (acknowledged, not noise):
   - companion suffix (-audit/-validator/...) whose description references the base
     (e.g. gated-dual-clone-audit audits gated-dual-clone) — intentional, not a clash
   - high trigger overlap where each description names the other (mutually disambiguated)
+Menu size (the whole library at once):
+  W  menu over budget                        -> the runtime keeps every name but drops
+                                                descriptions to fit; a skill without its
+                                                description is picked by name alone
+  I  menu size, the fair share per description, which descriptions to trim first
+With --listing (the menu a runtime actually sent; adapters/menu/<runtime>.py prints it):
+  W  skills shown as name only               -> their triggers never reached the model
+  W  menu shows a different description      -> e.g. over a runtime's own cap it showed the
+                                                body's first heading instead
+  I  skill missing from the snapshot         -> installed after it, or not picked up
+
+Why a budget and not a per-skill limit: descriptions are fine one by one and still do not
+fit together. Measured on one library (2026-09-29, Claude Code): 76 session-start menus
+stayed at 24,536-26,880 chars while entries grew from 69 to 111, so the entries that
+carried a description stayed at 46-56 and 35 of 65 skills were names only. Of 197 user
+messages that used a skill's trigger words, 26% loaded it when its description was in
+the menu and 1% when only its name was. The budget is a runtime property, so it is a flag
+(--menu-budget, default 25000 = that measurement); Claude Code documents it as about 1%
+of the context window.
 
 Runtime-neutral: --src is any skills dir (default WHETSTONE_SKILLS_DIR or ~/.claude/skills).
 stdlib only. Exit 1 if any ERROR (or any WARNING with --strict).
 
   bin/lint.py [--src DIR] [--json] [--strict] [--no-symlinks]
+              [--menu-budget N] [--menu-reserve N] [--listing FILE|-]
 """
 import os
 import sys
@@ -33,6 +55,11 @@ import argparse
 # --- tunables (kept explicit so the contract is auditable) -----------------
 MIN_DESC = 40           # below this = effectively missing -> ERROR
 LONG_DESC = 700         # above this = INFO (menu cost, not an error)
+SPEC_DESC_MAX = 1024    # Agent Skills limit (spec/skill-package.md) -> WARN. Claude Code's own
+                        # cap is 1,536; one skill over it was shown with its body's first
+                        # heading instead of its description (2026-09-29, one case)
+MENU_BUDGET = 25000     # chars for the whole menu; see the module docstring for where it comes from
+MENU_TRIM_SHOWN = 8     # how many trim candidates the text report lists (JSON has all)
 OVERLAP_WARN = 0.40     # trigger-set Jaccard >= this between two skills -> WARN
 FAMILY_T = 0.12         # trigger Jaccard >= this means "same family" (boundary line expected)
 SEP = re.compile(r"[/、,，;；:：。.\s|·]+")
@@ -47,9 +74,77 @@ COMPANION_SUFFIX = {"audit", "validator", "review", "critic", "evaluator",
                     "lint", "test", "check", "verify", "checker", "curator"}
 
 
-def parse_frontmatter(path):
-    """Return the YAML frontmatter as a dict. Folded/literal block scalars
-    (description: > / |) are joined into one string."""
+_DQ_ESCAPES = {'"': '"', "\\": "\\", "/": "/", "n": "\n", "t": "\t", "r": "\r", "0": "\0",
+               " ": " ", "a": "\a", "b": "\b", "e": "\x1b", "f": "\f", "v": "\v"}
+
+
+def _close_quote(text, q):
+    """Index of the closing quote in a YAML flow scalar body, or None if still open.
+    Double quotes escape with a backslash; single quotes escape by doubling."""
+    i = 0
+    while i < len(text):
+        c = text[i]
+        if q == '"' and c == "\\":
+            i += 2
+            continue
+        if c == q:
+            if q == "'" and i + 1 < len(text) and text[i + 1] == "'":
+                i += 2
+                continue
+            return i
+        i += 1
+    return None
+
+
+def _fold(raw):
+    """YAML line folding for flow scalars: a line break becomes a space, an empty
+    line becomes a newline, and the indentation of continuation lines is dropped."""
+    out, pending_nl = [], 0
+    for n, ln in enumerate(raw.split("\n")):
+        s = ln.strip() if n else ln.rstrip()
+        if not s and n:
+            pending_nl += 1
+            continue
+        if n:
+            out.append("\n" * pending_nl if pending_nl else " ")
+        pending_nl = 0
+        out.append(s)
+    return "".join(out)
+
+
+def _unescape_dq(s):
+    out, i = [], 0
+    while i < len(s):
+        c = s[i]
+        if c == "\\" and i + 1 < len(s):
+            nxt = s[i + 1]
+            if nxt in _DQ_ESCAPES:
+                out.append(_DQ_ESCAPES[nxt])
+                i += 2
+                continue
+            if nxt in "xuU":
+                width = {"x": 2, "u": 4, "U": 8}[nxt]
+                try:
+                    out.append(chr(int(s[i + 2:i + 2 + width], 16)))
+                    i += 2 + width
+                    continue
+                except ValueError:
+                    pass
+        out.append(c)
+        i += 1
+    return "".join(out)
+
+
+def parse_frontmatter(path, problems=None):
+    """Return the YAML frontmatter as a dict of top-level string values.
+
+    Reads the scalar forms skill files actually use: block scalars (> and |), quoted
+    strings that run over several lines — even when a continuation line starts at
+    column 0, which is legal inside quotes — and plain multi-line strings. A value
+    that is not valid YAML is still read, and a note goes into `problems` (key ->
+    reason), because a runtime that parses strictly may drop it (2026-09-29: an
+    earlier version of this parser read only the first line of a quoted
+    description and took its second line for a new key)."""
     try:
         lines = open(path, encoding="utf-8", errors="replace").read().splitlines()
     except OSError:
@@ -66,19 +161,50 @@ def parse_frontmatter(path):
     out, i = {}, 0
     while i < len(fm):
         ln = fm[i]
-        if ":" in ln and not ln.startswith((" ", "\t")):
-            k, v = ln.split(":", 1)
-            k, v = k.strip(), v.strip()
-            if v in (">", "|", ">-", "|-", ">+", "|+"):
-                blk, j = [], i + 1
-                while j < len(fm) and (fm[j].startswith((" ", "\t")) or fm[j].strip() == ""):
-                    blk.append(fm[j].strip())
-                    j += 1
-                out[k] = " ".join(x for x in blk if x)
+        if ":" not in ln or ln.startswith((" ", "\t", "#")):
+            i += 1
+            continue
+        k, v = ln.split(":", 1)
+        k, v = k.strip(), v.strip()
+        if v in (">", "|", ">-", "|-", ">+", "|+"):
+            blk, j = [], i + 1
+            while j < len(fm) and (fm[j].startswith((" ", "\t")) or fm[j].strip() == ""):
+                blk.append(fm[j].strip())
+                j += 1
+            joiner = "\n" if v.startswith("|") else " "
+            out[k] = joiner.join(x for x in blk if x)
+            i = j
+            continue
+        if v[:1] in ('"', "'"):
+            q, body, j = v[0], v[1:], i + 1
+            end = _close_quote(body, q)
+            while end is None and j < len(fm):
+                body += "\n" + fm[j]
+                j += 1
+                end = _close_quote(body, q)
+            if end is None:
+                if problems is not None:
+                    problems[k] = f"the {q}-quoted value is never closed"
+                out[k] = _fold(body)
                 i = j
                 continue
-            out[k] = v.strip('"').strip("'")
-        i += 1
+            raw = _fold(body[:end])
+            out[k] = _unescape_dq(raw) if q == '"' else raw.replace("''", "'")
+            i = j
+            continue
+        # plain scalar: indented lines that follow continue it
+        parts, j = [v], i + 1
+        while v and j < len(fm) and fm[j].startswith((" ", "\t")) and fm[j].strip():
+            parts.append(fm[j].strip())
+            j += 1
+        val = " ".join(parts)
+        if problems is not None and val:
+            if ": " in val or val.endswith(":"):
+                problems[k] = "an unquoted value contains ': ' — YAML reads that as a new key; quote the value"
+            elif " #" in val:
+                problems[k] = "an unquoted value contains ' #' — YAML cuts the rest off as a comment; quote the value"
+        out[k] = val
+        i = j
     return out
 
 
@@ -92,14 +218,126 @@ def load_skills(src, include_symlinks=True):
         is_link = os.path.islink(d)
         if is_link and not include_symlinks:
             continue
-        fm = parse_frontmatter(sk)
+        problems = {}
+        fm = parse_frontmatter(sk, problems)
+        desc = fm.get("description", "") or ""
+        extra = fm.get("when_to_use", "") or ""   # Claude Code shows it with the description
         skills.append({
             "dir": name,
-            "name": fm.get("name", name),
-            "desc": fm.get("description", "") or "",
+            "name": fm.get("name", name) or name,
+            "desc": desc,
+            "menu_desc": desc + (" " + extra if extra else ""),
+            "yaml_problem": problems.get("description") or problems.get("when_to_use"),
             "symlink": is_link,
         })
     return skills
+
+
+# --- menu size --------------------------------------------------------------
+
+def menu_entry_len(name, desc):
+    """Chars one skill costs in the menu: '- name: desc' plus the line break, or
+    '- name' when the description was dropped (matches Claude Code's listing text)."""
+    return len(name) + 5 + len(desc) if desc else len(name) + 3
+
+
+def parse_listing(text):
+    """Parse a menu as a runtime sent it: one '- name: description' or '- name' per
+    entry. A description that contains a line break (YAML '\\n' in a double-quoted
+    value) continues on lines that do not start with '- '. Returns {name: desc|None}."""
+    entries, cur = {}, None
+    for ln in text.splitlines():
+        if ln.startswith("- "):
+            body = ln[2:]
+            cut = body.find(": ")
+            if cut > 0:
+                cur = body[:cut]
+                entries[cur] = body[cut + 2:]
+            else:
+                cur = body.strip()
+                entries[cur] = None
+        elif cur is not None and entries.get(cur) is not None:
+            entries[cur] += "\n" + ln
+    return entries
+
+
+def _norm(s):
+    return " ".join((s or "").split())
+
+
+def menu_check(skills, budget, reserve=None, listing=None):
+    """Whole-library check: does the menu fit? Returns (issues, report)."""
+    issues = []
+    n = len(skills)
+    full = sum(menu_entry_len(s["name"], s["menu_desc"]) for s in skills)
+    overhead = sum(len(s["name"]) + 5 for s in skills)   # '- name: ' + line break, per entry
+    rep = {"entries": n, "chars": full, "budget": budget}
+
+    snap = foreign = None
+    if listing is not None:
+        snap = parse_listing(listing)
+        ours = {s["name"] for s in skills} | {s["dir"] for s in skills}
+        foreign = {k: v for k, v in snap.items() if k not in ours}
+        reserve, rep["reserve_source"] = sum(menu_entry_len(k, v) for k, v in foreign.items()), "listing"
+    elif reserve is None:
+        reserve, rep["reserve_source"] = 0, "not counted"
+    else:
+        rep["reserve_source"] = "--menu-reserve"
+    rep["reserve"] = reserve
+    over = full + reserve - budget
+    rep["over"] = over
+
+    # Fair share: what each description may use if every entry keeps one. Trimming every
+    # description above it down to it always fits — the ones below it leave slack — so
+    # the only case trimming cannot fix is a share too small to say anything.
+    room = budget - reserve - overhead
+    fair = room // n if n and room > 0 else 0
+    heavy = sorted((s for s in skills if len(s["menu_desc"]) > fair),
+                   key=lambda s: (-len(s["menu_desc"]), s["name"]))
+    savings = sum(len(s["menu_desc"]) - fair for s in heavy)
+    rep.update(fair_share=fair, savings=savings,
+               trim=[{"name": s["name"], "chars": len(s["menu_desc"]),
+                      "over_fair_share": len(s["menu_desc"]) - fair} for s in heavy])
+
+    if over > 0:
+        if fair == 0:
+            msg = (f"menu needs ~{full + reserve} chars, budget is {budget}: the names alone plus "
+                   f"{reserve} chars from outside this library already fill it — retire or merge skills")
+        else:
+            msg = (f"menu needs ~{full + reserve} chars, budget is {budget} (over by {over}). The runtime "
+                   f"keeps every name but drops descriptions to fit (Claude Code: least-used skills "
+                   f"first), and a skill without its description is picked by name alone. Fair share "
+                   f"≈ {fair} chars per description; {len(heavy)} are above it, trimming them to it "
+                   f"saves {savings}")
+            if fair < MIN_DESC:
+                msg += (f" — but a {fair}-char share is below the {MIN_DESC} a description needs to be "
+                        f"matched on: retire or merge skills instead")
+        issues.append(("W", "(menu)", msg))
+
+    if snap is not None:
+        name_only, differ, missing = [], [], []
+        for s in skills:
+            key = s["name"] if s["name"] in snap else (s["dir"] if s["dir"] in snap else None)
+            if key is None:
+                missing.append(s["name"])
+                continue
+            shown = snap[key]
+            if shown is None:
+                name_only.append(s["name"])
+            elif _norm(shown) != _norm(s["menu_desc"]):
+                differ.append(s["name"])
+                issues.append(("W", s["name"], f"the menu shows a different description ({len(shown)} chars) "
+                               f"than SKILL.md ({len(s['menu_desc'])} chars) — over a runtime's own cap, or a "
+                               f"frontmatter the runtime parsed differently; the triggers in SKILL.md are not "
+                               f"what the model saw"))
+        if name_only:
+            issues.append(("W", "(menu)", f"{len(name_only)} of {n} skills are shown as name only in the "
+                           f"menu snapshot — their triggers never reached the model: {', '.join(name_only)}"))
+        for m in missing:
+            issues.append(("I", m, "not in the menu snapshot (installed after it, or the runtime did not pick it up)"))
+        rep["snapshot"] = {"entries": len(snap), "chars": len(listing.rstrip("\n")), "foreign_entries": len(foreign),
+                           "name_only": name_only, "different": differ, "missing": missing}
+    return issues, rep
 
 
 def trigger_tokens(desc):
@@ -171,10 +409,16 @@ def lint(skills):
         nm = s["name"]
         tag = " [symlink]" if s["symlink"] else ""
         d = s["desc"]
+        if s.get("yaml_problem"):
+            add("W", nm + tag, f"frontmatter is not valid YAML: {s['yaml_problem']} — a runtime that parses strictly may drop the description")
         if len(d) < MIN_DESC:
             add("E", nm + tag, f"description missing/too short ({len(d)} chars) — nothing for the model to match on")
             continue
-        if len(d) > LONG_DESC:
+        if len(d) > SPEC_DESC_MAX:
+            add("W", nm + tag, f"description is {len(d)} chars, over the Agent Skills limit of {SPEC_DESC_MAX} "
+                "(spec/skill-package.md) — a runtime may cut or replace it (Claude Code showed one over its own "
+                "1,536 cap with the body's first heading instead)")
+        elif len(d) > LONG_DESC:
             add("I", nm + tag, f"description long ({len(d)} chars) — ok if it's all triggers/boundaries, else trim")
         if not TRIGGER_MARK.search(d):
             add("W", nm + tag, "no trigger markers (触发词 / TRIGGER ...) — weak match signal")
@@ -184,6 +428,33 @@ def lint(skills):
     return issues
 
 
+def print_menu(m):
+    src = {"listing": "measured from --listing", "--menu-reserve": "--menu-reserve",
+           "not counted": "not counted — pass --listing or --menu-reserve"}[m["reserve_source"]]
+    print("MENU  (every skill's name + description: paid by every session, before any skill is used)")
+    print(f"  this library  {m['entries']} entries, {m['chars']:,} chars")
+    print(f"  outside it    {m['reserve']:,} chars ({src})")
+    print(f"  budget        {m['budget']:,} chars (--menu-budget)")
+    if m["over"] > 0:
+        print(f"  over by       {m['over']:,} chars")
+    else:
+        print(f"  headroom      {-m['over']:,} chars")
+    print(f"  fair share    ≈{m['fair_share']:,} chars per description")
+    if m["over"] > 0 and m["trim"]:
+        top = m["trim"][:MENU_TRIM_SHOWN]
+        print(f"  trim first    ({len(m['trim'])} above the fair share, largest first; saves {m['savings']:,} in all)")
+        for t in top:
+            print(f"                {t['name']}  {t['chars']:,}  (+{t['over_fair_share']:,})")
+        if len(m["trim"]) > len(top):
+            print(f"                … {len(m['trim']) - len(top)} more in --json")
+    snap = m.get("snapshot")
+    if snap:
+        print(f"  snapshot      {snap['entries']} entries, {snap['chars']:,} chars; "
+              f"{len(snap['name_only'])} of this library's {m['entries']} shown as name only, "
+              f"{len(snap['different'])} with a different description")
+    print()
+
+
 def main():
     ap = argparse.ArgumentParser(description="whetstone lint — skill index hygiene")
     ap.add_argument("--src", default=os.environ.get("WHETSTONE_SKILLS_DIR",
@@ -191,16 +462,35 @@ def main():
     ap.add_argument("--json", action="store_true")
     ap.add_argument("--strict", action="store_true", help="exit 1 on warnings too")
     ap.add_argument("--no-symlinks", action="store_true", help="skip symlinked skills")
+    ap.add_argument("--menu-budget", type=int, default=MENU_BUDGET,
+                    help=f"chars the runtime spends on the whole menu (default {MENU_BUDGET})")
+    ap.add_argument("--menu-reserve", type=int, default=None,
+                    help="chars taken by menu entries outside this library (built-in / plugin skills)")
+    ap.add_argument("--listing", metavar="FILE",
+                    help="the menu a runtime actually sent ('-' = stdin); "
+                         "adapters/menu/claude-code.py prints Claude Code's latest")
     args = ap.parse_args()
 
     if not os.path.isdir(args.src):
         print(f"src not found: {args.src}", file=sys.stderr)
         return 2
+    listing = None
+    if args.listing:
+        try:
+            listing = sys.stdin.read() if args.listing == "-" else open(args.listing, encoding="utf-8").read()
+        except OSError as e:
+            print(f"cannot read --listing: {e}", file=sys.stderr)
+            return 2
+        if not parse_listing(listing):
+            print("--listing has no '- name' entries — not a skill menu", file=sys.stderr)
+            return 2
     skills = load_skills(args.src, include_symlinks=not args.no_symlinks)
     if not skills:
         print(f"no skills (no */SKILL.md) under {args.src}", file=sys.stderr)
         return 2
     issues = lint(skills)
+    m_issues, menu = menu_check(skills, args.menu_budget, args.menu_reserve, listing)
+    issues += m_issues
     E = [x for x in issues if x[0] == "E"]
     W = [x for x in issues if x[0] == "W"]
     I = [x for x in issues if x[0] == "I"]
@@ -211,6 +501,7 @@ def main():
             "errors": [{"who": w, "msg": m} for _, w, m in E],
             "warnings": [{"who": w, "msg": m} for _, w, m in W],
             "infos": [{"who": w, "msg": m} for _, w, m in I],
+            "menu": menu,
         }, ensure_ascii=False, indent=2))
     else:
         print(f"whetstone lint — {args.src}  ({len(skills)} skills in menu)\n")
@@ -221,6 +512,7 @@ def main():
             for _, who, msg in group:
                 print(f"  {who}: {msg}")
             print()
+        print_menu(menu)
         print(f"summary: {len(E)} error(s), {len(W)} warning(s), {len(I)} info across {len(skills)} skills")
 
     if E:

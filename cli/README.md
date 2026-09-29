@@ -18,7 +18,9 @@ ln -s "$PWD/cli/whetstone" ~/.local/bin/whetstone
 | `whetstone deploy <pack.tar.gz> [--dest D] [--force]` | `bin/deploy.sh` | install a pack into a skills dir (collision-safe) |
 | `whetstone promote <proposal> [--list] [--dry-run] [--force]` | `bin/promote.sh` | apply an approved `inbox/` proposal to the live library |
 | `whetstone sync engram <skill> [--dry-run]` | `adapters/sync/engram.sh` | push a skill into engram (optional sink) |
-| `whetstone lint [--src D] [--strict] [--json]` | `bin/lint.py` | flag empty / overlapping / colliding skill descriptions |
+| `whetstone lint [--src D] [--strict] [--json] [--listing F\|-] [--menu-budget N] [--menu-reserve N]` | `bin/lint.py` | flag empty / overlapping / colliding skill descriptions, and whether the whole menu fits its budget |
+| `whetstone menu-snapshot [--session ID]` | `adapters/menu/claude-code.py` | print the menu Claude Code last sent; pipe it to `lint --listing -` |
+| `whetstone lint-selftest` / `lint-mutation` | `bin/lint_selftest.sh` / `bin/lint_mutation_test.sh` | lint selftest; break each menu check, the selftest must go red |
 | `whetstone index [--src D] [--out F]` | `bin/index.py` | generate a grouped `INDEX.md` catalog |
 | `whetstone capture [--clean]` | `adapters/capture/claude-code.sh` | the Claude Code session journaler |
 | `whetstone selftest` | `adapters/capture/selftest.sh` | run the capture-hook selftest |
@@ -44,4 +46,17 @@ model pick the wrong skill or miss the right one. `lint` checks that menu agains
 description contract (extraction-framework §13): missing triggers, overlapping trigger
 sets, name near-collisions (e.g. `foo-review` vs `foo-review-framework`). `index`
 emits a grouped `INDEX.md` for humans. Run `lint` after adding or editing any skill.
+
+Descriptions can each be fine and still not fit together. The menu has a budget set by
+the runtime; over it, the runtime keeps every name but drops descriptions, and a skill
+shown by name alone is almost never picked from its triggers (measured on one library:
+26% of trigger-word messages loaded the skill when its description was in the menu, 1%
+when only its name was). `lint` adds up the menu, compares it with `--menu-budget`
+(default 25000 chars, Claude Code as measured in 2026-09), and when it is over prints the
+fair share per description and which descriptions to trim first. To see what the runtime
+actually did, feed it the real menu:
+
+```bash
+whetstone menu-snapshot | whetstone lint --listing -   # which skills are name-only right now
+```
 

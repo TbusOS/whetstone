@@ -164,7 +164,8 @@ it is CLI:
 ```bash
 whetstone verify <pkg> --strict     # evidence discipline — this is the one that says no
 whetstone verify --explain          # all 38 checks, their limits, and what is left to humans
-whetstone lint --src ~/skills       # selection-menu hygiene: overlaps, collisions, vague descriptions
+whetstone lint --src ~/skills       # selection-menu hygiene: overlaps, collisions, vague descriptions,
+                                    # and whether the whole menu fits (menu-snapshot | lint --listing -)
 whetstone index --src ~/skills      # grouped catalog
 whetstone promote <proposal>        # install a proposal, refusing to overwrite an existing skill
 whetstone pack | deploy             # move a library between machines
@@ -207,13 +208,15 @@ bin/verify_selftest.sh              124 assertions, both directions, coverage-en
 bin/verify_mutation_test.sh         deletes each check in turn; the suite must go red
 bin/decision.py                     the review-decision log (record only; 46 assertions)
 bin/decision_mutation_test.sh       deletes each decision check; the suite must go red
-bin/lint.py · bin/index.py          selection-menu hygiene
+bin/lint.py · bin/index.py          selection-menu hygiene, incl. whether the whole menu fits
+bin/lint_selftest.sh                43 assertions, both directions; lint_mutation_test.sh breaks 20 checks
 bin/pack.sh · bin/deploy.sh · bin/promote.sh   move and install packages
 cli/whetstone                       runtime-agnostic CLI, pure bash
 templates/                          skeletons for a distilled skill / params / pitfalls
 examples/demo-skill/                deliberately flawed package behind the demo above
 inbox/ · journal/                   proposals awaiting review; mined source material
 adapters/capture · adapters/sync    optional: session capture, optional sinks
+adapters/menu                       optional: the menu a runtime actually sent (Claude Code)
 autoupdate/                         optional: multi-CLI update prompter
 docs/                               the project page at doc.tbusos.com/whetstone
 ```
