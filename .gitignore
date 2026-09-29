@@ -6,8 +6,9 @@ inbox/*
 *.bak
 *.bak.*
 
-# 设计评审产物(截图)
+# 设计评审产物(截图 + 检查钩子的本机回执)
 shots/
+.design-gate/
 
 # pack/deploy 产物(运行时,不入库)
 .pack-stage/

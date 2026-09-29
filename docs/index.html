@@ -88,6 +88,11 @@
   .install-table code { font-family:var(--font-mono); font-size:13.5px; }
 
   .scene-card { background:#ffffff; border:1px solid var(--anth-light-gray); border-radius:var(--radius-lg); padding:var(--space-7); }
+  /* the nav is a fixed 64px; on a narrow screen its links would wrap past it and
+     sit on top of the page, so they step aside (the footer carries the same links) */
+  @media (max-width:768px) {
+    .anth-nav-inner > div:nth-child(2) { display:none; }
+  }
 </style>
 </head>
 <body>
@@ -98,6 +103,7 @@
   <div>
     <a href="#why"><span class="lang-en">Why</span><span class="lang-zh">为什么</span></a>
     <a href="#evidence"><span class="lang-en">Evidence</span><span class="lang-zh">证据</span></a>
+    <a href="use-time-conflicts.html"><span class="lang-en">Use-time check</span><span class="lang-zh">用时纠错</span></a>
     <a href="#architecture"><span class="lang-en">Architecture</span><span class="lang-zh">架构</span></a>
     <a href="#flow"><span class="lang-en">How it works</span><span class="lang-zh">流程</span></a>
     <a href="skills.html"><span class="lang-en">Skills</span><span class="lang-zh">技能</span></a>
@@ -401,6 +407,11 @@
       <span class="lang-en">What this looked like when I ran it against my own library: </span>
       <span class="lang-zh">拿它对准我自己的库跑出来是什么样：</span>
       <a class="anth-link" href="why-verify.html"><span class="lang-en">I marked 61 entries “high confidence.” Not one could name a test.</span><span class="lang-zh">我给 61 条经验标了「高置信度」，没有一条说得出验证方式</span></a>
+    </p>
+    <p style="text-align:center; margin-top:var(--space-3); font-family:var(--font-body); font-size:16px;">
+      <span class="lang-en">And after an entry is in the library, it is checked again each time it is used: </span>
+      <span class="lang-zh">入库之后，每次用到一条经验还会再核一次：</span>
+      <a class="anth-link" href="use-time-conflicts.html"><span class="lang-en">check the note when you use it, not when you file it</span><span class="lang-zh">经验对不对，用的时候才判得准</span></a>
     </p>
   </div>
 </section>
@@ -827,7 +838,7 @@
 <!-- Footer -->
 <footer class="anth-footer">
   <div class="anth-footer-grid">
-    <div class="anth-footer-group"><h5>Whetstone</h5><a href="#why"><span class="lang-en">Why</span><span class="lang-zh">为什么</span></a><a href="#architecture"><span class="lang-en">Architecture</span><span class="lang-zh">架构</span></a><a href="#flow"><span class="lang-en">How it works</span><span class="lang-zh">流程</span></a><a href="#install"><span class="lang-en">Install</span><span class="lang-zh">安装</span></a></div>
+    <div class="anth-footer-group"><h5>Whetstone</h5><a href="#why"><span class="lang-en">Why</span><span class="lang-zh">为什么</span></a><a href="use-time-conflicts.html"><span class="lang-en">Use-time check</span><span class="lang-zh">用时纠错</span></a><a href="#architecture"><span class="lang-en">Architecture</span><span class="lang-zh">架构</span></a><a href="#flow"><span class="lang-en">How it works</span><span class="lang-zh">流程</span></a><a href="#install"><span class="lang-en">Install</span><span class="lang-zh">安装</span></a></div>
     <div class="anth-footer-group"><h5><span class="lang-en">Output</span><span class="lang-zh">产物</span></h5><a href="#architecture"><span class="lang-en">Skill package</span><span class="lang-zh">Skill 包</span></a><a href="#flow">L1–L4</a><a href="#scenario"><span class="lang-en">Scenario</span><span class="lang-zh">场景</span></a></div>
     <div class="anth-footer-group"><h5><span class="lang-en">Companions</span><span class="lang-zh">搭档</span></h5><a href="https://github.com/TbusOS">engram</a><a href="https://github.com/TbusOS">llm-wiki</a><a href="https://github.com/alchaincyf/darwin-skill">darwin</a></div>
     <div class="anth-footer-group"><h5><span class="lang-en">Credits</span><span class="lang-zh">致谢</span></h5><a href="https://github.com/alchaincyf/nuwa-skill">nuwa-skill</a><a href="https://github.com/alchaincyf/darwin-skill">darwin-skill</a><a href="https://github.com/TbusOS">TbusOS</a></div>
