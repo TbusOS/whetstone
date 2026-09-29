@@ -114,18 +114,6 @@ o='        relax_ok = False\n        print(f\"  ! {share'
 assert o in s; s=s.replace(o,'        print(f\"  ! {share',1)
 $W"
 
-mut "conflict: relax with no exam sitting at all" \
-"$R
-o='    if not exams:\n        relax_ok = False'
-assert o in s; s=s.replace(o,'    if not exams:\n        pass',1)
-$W"
-
-mut "conflict: ignore a failed exam after a pass" \
-"$R
-o='    elif exams[-1].get(\"result\") != \"pass\":\n        relax_ok = False'
-assert o in s; s=s.replace(o,'    elif exams[-1].get(\"result\") != \"pass\":\n        pass',1)
-$W"
-
 mut "conflict: count a false alarm as a wrong type" \
 "$R
 o='        return x[\"verdict\"] is not None and x[\"verdict\"] != \"defer\" and x[\"final\"] != \"none\"'
@@ -217,7 +205,7 @@ o='    if args.final_type and not same:'
 assert o in s; s=s.replace(o,'    if args.final_type:',1)
 $W"
 
-mut "stats: count AI reports and exam sittings as decisions" \
+mut "stats: count AI reports as decisions" \
 "$R
 o='            events[r[\"kind\"]] = events.get(r[\"kind\"], 0) + 1\n            continue'
 assert o in s; s=s.replace(o,'            events[r[\"kind\"]] = events.get(r[\"kind\"], 0) + 1',1)

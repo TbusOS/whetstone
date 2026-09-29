@@ -42,8 +42,6 @@ one scored.
                                    step 2: the human's answer
   bin/decision.py miss --entry skill/item --final-type wrong --verdict accept \
                        --subject "..." --reason "you found it; the AI used it silently"
-  bin/decision.py exam --result pass|fail --reason "..."
-                                   one sitting of the known-answer exam (spec §8)
   bin/decision.py stats            what the accumulated decisions point at
   bin/decision.py list [-n N]      the most recent records
   bin/decision.py alias --from X --to Y --reason "..."
@@ -106,7 +104,7 @@ AI_ACTIONS = ("update", "variant", "supersede", "keep", "ask")
 CERTAINTY = ("high", "med", "low")
 CONFLICT_ID = re.compile(r"^C-\d{8}-\d{2,}$")
 # records that are events, not decisions: they carry no verdict of their own
-EVENT_KINDS = ("exam", "conflict-report")
+EVENT_KINDS = ("conflict-report",)
 
 # Every number below is a guess, exactly like SIGNAL_MIN: L3 in the framework's own
 # terms, waiting for this file to calibrate it. Do not defend them.
@@ -431,10 +429,6 @@ def cmd_list(args):
             print(f"{r.get('date', '?')}  [alias]  {r.get('from')} {arrow}")
             print(f"            {r.get('reason', '')}")
             continue
-        if r.get("kind") == "exam":
-            print(f"{r.get('date', '?')}  [exam {r.get('result', '?')}]")
-            print(f"            {r.get('reason', '')}")
-            continue
         if r.get("kind") == "conflict-report":
             flags = "".join(f"  [{f}]" for f in ("safety", "blocking") if r.get(f))
             print(f"{r.get('date', '?')}  [report]  {r.get('conflict_id', '?')} · "
@@ -462,37 +456,6 @@ def cmd_list(args):
         print(f"{r.get('date', '?')}  [{r.get('verdict', '?')}]{tag}{moved}  "
               f"{r.get('subject', '')}")
         print(f"            {r.get('reason', '')}")
-    return 0
-
-
-def cmd_exam(args):
-    """Record one sitting of the known-answer exam (spec §8 ②).
-
-    The exam itself — a few conflicts whose answers are known, including a
-    code-regress trap and a case whose right answer is "cannot tell" — lives outside
-    this tool. Only the result is kept here, because `stats` relaxes no group until
-    the latest sitting is a pass.
-    """
-    if args.result not in ("pass", "fail"):
-        print("--result must be pass or fail", file=sys.stderr)
-        return 2
-    if not args.reason.strip():
-        print("--reason is required: which questions, which model, what was got wrong",
-              file=sys.stderr)
-        return 2
-    date = args.date or datetime.date.today().isoformat()
-    if not ABS_DATE.match(date):
-        print(f"date must be absolute YYYY-MM-DD, got {date!r}", file=sys.stderr)
-        return 2
-    rec = {"date": date, "kind": "exam", "result": args.result, "reason": args.reason.strip()}
-    if args.source:
-        rec["source"] = args.source
-    os.makedirs(os.path.dirname(args.file), exist_ok=True)
-    with open(args.file, "a", encoding="utf-8") as f:
-        f.write(json.dumps(rec, ensure_ascii=False) + "\n")
-    print(f"recorded: exam {args.result}")
-    if args.result == "fail":
-        print("  every group is back on full confirmation until a later sitting passes")
     return 0
 
 
@@ -715,23 +678,18 @@ def conflict_section(recs):
     for p in problems:
         print(f"  ! {p}")
 
-    # Two gates keep a busy-looking loop from relaxing anything (spec §8).
+    # Real conflict records are the test: the lower bound below needs at least 22
+    # agreeing ones before any group relaxes. A separate known-answer exam used to
+    # gate this too; it was dropped (2026-09-29) because it duplicated that, and a
+    # tier only ever changes how the human is asked, never whether. What stays is
+    # the one gate that catches a busy-looking loop running on guesses (spec §8).
     relax_ok = True
     guesses = sum(1 for x in items if x["ai"].get("ai_evidence") in ("inferred", "unseen"))
     share = guesses / len(items) if items else 0.0
     if share > GUESS_SHARE_MAX:
         relax_ok = False
         print(f"  ! {share:.0%} of reported conflicts rest on inference or on nothing seen "
-              f"(> {GUESS_SHARE_MAX:.0%}): no group is relaxed while that holds (spec §8 ①)")
-    exams = [r for r in recs if r.get("kind") == "exam"]
-    if not exams:
-        relax_ok = False
-        print("  ! no exam sitting recorded: until one passes, every group stays on full "
-              "confirmation (spec §8 ②)")
-    elif exams[-1].get("result") != "pass":
-        relax_ok = False
-        print(f"  ! the last exam sitting ({exams[-1].get('date', '?')}) did not pass: "
-              f"every group is back on full confirmation (spec §8 ②)")
+              f"(> {GUESS_SHARE_MAX:.0%}): no group is relaxed while that holds (spec §8)")
 
     last_miss = {}
     for i, r in missed:
@@ -854,7 +812,7 @@ def cmd_stats(args):
     for r in recs:
         if r.get("kind") in EVENT_KINDS:
             events[r["kind"]] = events.get(r["kind"], 0) + 1
-            continue                      # an exam sitting or an AI's report is not a decision
+            continue                      # an AI's report is not a decision; its answer is
         if r.get("kind") == "alias":
             n_alias += 1
             continue                      # an alias is a rule, not a decision
@@ -877,8 +835,6 @@ def cmd_stats(args):
     extra = f" (+{n_alias} alias rule(s))" if n_alias else ""
     if events.get("conflict-report"):
         extra += f" (+{events['conflict-report']} AI conflict report(s))"
-    if events.get("exam"):
-        extra += f" (+{events['exam']} exam sitting(s))"
     rel = os.path.relpath(args.file, REPO_DIR)
     where = args.file if rel.startswith("..") else rel   # outside the repo: show it plainly
     print(f"whetstone decision — {n_dec} decision(s){extra} in {where}")
@@ -997,13 +953,6 @@ def main():
     ms.add_argument("--safety", action="store_true")
     ms.add_argument("--date", default="")
     ms.set_defaults(func=cmd_miss)
-
-    e = sub.add_parser("exam", help="record one sitting of the known-answer exam")
-    e.add_argument("--result", required=True, help="pass / fail")
-    e.add_argument("--reason", required=True, help="which questions, which model, what went wrong")
-    e.add_argument("--source", default="")
-    e.add_argument("--date", default="")
-    e.set_defaults(func=cmd_exam)
 
     s = sub.add_parser("stats", help="what the records point at")
     s.set_defaults(func=cmd_stats)

@@ -37,6 +37,7 @@ usage: whetstone <command> [args]
 skill library (scriptable):
   pack [--src D] [--out F] [--only a,b]   package a skill library -> tarball + MANIFEST
   deploy <pack.tar.gz> [--dest D] [--force]  install a pack into a skills dir (collision-safe)
+  deploy-selftest                         run the deploy selftest (a missing option value must not spin)
   promote <proposal> [--list] [--dry-run] [--force]
                                           apply an approved inbox/ proposal to the live library
   sync engram <skill> [--dry-run]         push a skill into engram (optional sink)
@@ -69,9 +70,6 @@ review decisions (raw material for the framework's own evolution — see spec/re
                                           step 2: your answer (spec/use-time-conflicts.md)
   decision miss --entry E --final-type T --verdict V --subject S --reason R
                                           one the AI used without reporting — you found it
-  decision exam --result pass|fail --reason R
-                                          one sitting of the known-answer exam; no group is
-                                          relaxed until the latest sitting passes
   decision-selftest                       run the decision selftest
   decision-mutation                       delete each decision check; the suite must go red
 
@@ -149,6 +147,7 @@ cmd="${1:-help}"; [ $# -gt 0 ] && shift
 case "$cmd" in
   pack)              exec bash "$REPO_DIR/bin/pack.sh" "$@";;
   deploy)            exec bash "$REPO_DIR/bin/deploy.sh" "$@";;
+  deploy-selftest)   exec bash "$REPO_DIR/bin/deploy_selftest.sh" "$@";;
   promote)           exec bash "$REPO_DIR/bin/promote.sh" "$@";;
   verify)            command -v python3 >/dev/null 2>&1 || { echo "verify needs python3" >&2; exit 3; }; exec python3 "$REPO_DIR/bin/verify.py" "$@";;
   verify-selftest)   exec bash "$REPO_DIR/bin/verify_selftest.sh" "$@";;

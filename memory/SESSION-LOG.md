@@ -190,9 +190,13 @@ at.
 Per (type x evidence) group, agreement is judged by an exact one-sided binomial lower bound,
 never the point estimate (22 agreeing out of 22 is the least that clears 0.90 at delta 0.1;
 18 of 20 clears only 0.755). A tier changes how the human is asked — full, one-line summary,
-end-of-task batch — never whether. No exam on record, a guess share above 30%, or a miss of
+end-of-task batch — never whether. A guess share above 30% or a miss of
 that type all send a group back to full confirmation. decision selftest 46 -> 113, mutations
-8 -> 30. The exam questions themselves are still to be written from real entries.
+8 -> 30. A separate known-answer exam was drafted as a further gate and dropped on
+2026-09-29 at the reviewer's call: the next real use of an entry is the exam. Relaxing
+already needs at least 22 agreeing real records per group, the two traps an exam would
+have targeted surface in real records anyway (a changed type drags the group down;
+inferred and unseen groups never relax), and a tier only changes how the question is asked.
 
 ### Two old bugs, found while wiring the rule in
 Writing the always-on rule meant running `whetstone decision` from PATH, and it failed:
@@ -213,3 +217,13 @@ HEAD and working tree are compared before and after. Verified in throwaway clone
 remotes: the old script reproduces the leak, the new one passes 44/44 without touching the
 clone, a deliberately broken fixture stops before the tests, and the ceiling alone still
 holds. On this machine the suite had been 31 passed / 12 failed all along.
+
+### deploy.sh: a fix that lived only in the copy
+The missing-value spin in `deploy.sh` (`shift 2` with one argument left fails and shifts
+nothing) had been fixed on 2026-09-03 — in the private library's copy of the script, not
+here. The private drift checker then kept reporting "upstream is newer, the copy is behind"
+and suggesting `--sync`, which would have overwritten the fix with the old version. The
+guard is now in this repo, `bin/deploy_selftest.sh` holds it (all six value-taking options
+must exit 2 within five seconds; the old script hung on seven checks), and the drift checker
+on the other side decides direction by commit time and never overwrites a newer copy.
+

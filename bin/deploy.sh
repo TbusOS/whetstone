@@ -31,19 +31,36 @@ STAGE="$REPO_DIR/.deploy-stage"
 
 PACK=""; DEST="${WHETSTONE_SKILLS_DIR:-$HOME/.claude/skills}"; FORCE=0
 LINK_SRC=""; GEN_SRC=""; DESTFILE=""; IMPORT_FILE=""; IMPORT_TARGET=""
+# Options that take a value end in `shift 2`. In bash, `shift 2` FAILS and
+# shifts NOTHING when only one argument is left, so a missing value leaves $#
+# unchanged and spins this loop forever at 100% CPU. Observed for real:
+# `deploy.sh --gen-claudemd` (value omitted) burned one core from 2026-08-31
+# to 2026-09-03 — 76.5 hours of CPU time — before anyone noticed, because it
+# holds no memory, opens no files and produces no output while spinning.
+# Two layers below: need_arg rejects a missing value up front, and the
+# progress check catches any future branch that forgets to shift at all.
+need_arg() {  # $1 = option name, $2 = remaining arg count
+  [ "$2" -ge 2 ] || { echo "deploy.sh: $1 requires a value" >&2; exit 2; }
+}
+
 while [ $# -gt 0 ]; do
+  _argc_before=$#
   case "$1" in
-    --dest)         DEST="$2"; shift 2;;
+    --dest)         need_arg "$1" $#; DEST="$2"; shift 2;;
     --force)        FORCE=1; shift;;
-    --link)         LINK_SRC="$2"; shift 2;;
-    --gen-claudemd) GEN_SRC="$2"; shift 2;;
-    --dest-file)    DESTFILE="$2"; shift 2;;
-    --add-import)   IMPORT_FILE="$2"; shift 2;;
-    --import)       IMPORT_TARGET="$2"; shift 2;;
+    --link)         need_arg "$1" $#; LINK_SRC="$2"; shift 2;;
+    --gen-claudemd) need_arg "$1" $#; GEN_SRC="$2"; shift 2;;
+    --dest-file)    need_arg "$1" $#; DESTFILE="$2"; shift 2;;
+    --add-import)   need_arg "$1" $#; IMPORT_FILE="$2"; shift 2;;
+    --import)       need_arg "$1" $#; IMPORT_TARGET="$2"; shift 2;;
     --clean)        rm -rf "$STAGE"; echo "whetstone deploy: cleaned"; exit 0;;
     -*) echo "unknown arg: $1" >&2; exit 2;;
     *)  PACK="$1"; shift;;
   esac
+  [ $# -lt "$_argc_before" ] || {
+    echo "deploy.sh: internal error - arg parsing made no progress at: $1" >&2
+    exit 2
+  }
 done
 
 # ── gen-claudemd mode: base/conduct.md → always-on memory file ────────────

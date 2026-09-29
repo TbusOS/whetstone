@@ -1,8 +1,8 @@
 # 用时冲突处理规范 (Use-time Conflict Protocol)
 
 > 状态:2026-09-28。第 7 节的两步记录、第 8-9 节的打分与确认分档已在 `bin/decision.py` 实现
-> (`whetstone decision report` / `resolve` / `miss` / `exam` / `stats`);
-> 第 8 节 ② 的考卷题目本身还没出,出题要从真实经验改写。
+> (`whetstone decision report` / `resolve` / `miss` / `stats`)。
+> 2026-09-29 按 user 决定去掉了单独的考卷:真实冲突记录就是考试(理由见第 8 节末)。
 
 **一句话**:agent 在干活时用到库里的经验,发现它和当前代码 / 实测对不上,
 要先分类、按证据说话、主动报给人;要改经验,先说清哪里不对、改成什么、为什么,
@@ -165,10 +165,9 @@ AI 那一半"自己的判断"完全可以照着人的答案填,一致率就成�
 | ① 报之前 | `decision report` | `conflict-report` | AI:类型、证据档、建议、把握、理由 |
 | ② 人回答后 | `decision resolve` | `conflict-resolve` | 人:决定、改成的类型、理由 |
 | 漏报 | `decision miss` | `conflict-miss` | 人:这是哪一类冲突(AI 没报,所以没有 AI 那一半) |
-| 考卷 | `decision exam` | `exam` | 考卷结果(第 8 节 ②) |
 
 所有记录都追加进 `journal/review-decisions.jsonl`(格式见 `spec/review-decisions.md`)。
-`conflict-report` 和 `exam` 不是决定,不进 verdict 统计。
+`conflict-report` 不是决定,不进 verdict 统计;它的回答 `conflict-resolve` 才是。
 
 ```bash
 # ① 报之前:AI 写下自己的判断,拿到编号和指纹,贴进冲突报告
@@ -182,8 +181,6 @@ whetstone decision resolve --conflict-id C-20260928-01 --verdict amend --final-t
 # 漏报:人发现的,AI 用过却没报 —— 这个命令根本没有 --ai-* 参数
 whetstone decision miss --entry boot-x/pitfall-3 --final-type wrong --verdict accept \
   --subject "…" --reason "你发现的" --source <会话>
-# 考卷每考一次记一行
-whetstone decision exam --result pass --reason "考卷 v1,8 题全对,模型 X"
 ```
 
 ### 两步之间靠什么连上、靠什么防改
@@ -256,29 +253,29 @@ whetstone decision exam --result pass --reason "考卷 v1,8 题全对,模型 X"
 **不单看"被采纳率"。** 只看它,AI 会学会只报稳的、难的不报,分数越来越高、漏报越来越多。
 所以**漏报比误报罚得重**:误报只拉低判对率;漏报直接让该组退回完整确认(第 9 节)。
 
-### 两道防止"看起来在进化、其实在空转"的检查
+### 防止"看起来在进化、其实在空转"
 
 **自进化的循环很容易只在纸面上跑。** darwin-skill 自己的记录里,早期 40 次优化 0 次回滚、
 67% 是没真跑的推演(`references/skilllens-evidence.md`);sky-skills 的 design-evolve
-设计完整,ledger 里一次真实改动都没有。下面两道检查就是防这个的:
+设计完整,ledger 里一次真实改动都没有。
 
-**① 推断占比。** `stats` 同时报出 `inferred` + `unseen` 占全部冲突的比例。
+**推断占比。** `stats` 同时报出 `inferred` + `unseen` 占全部冲突的比例。
 超过 30% 就在输出顶部警告:这批分数大多建立在 AI 的推测上,不能拿来放宽确认。
 (照搬 darwin-skill `SKILL.md`:"dry_run 比例 > 30% → 评估失效警告";30% 同样是拍的。)
 
-**② 考卷。** 一小套**答案已知**的冲突样例,每个类型至少一题,外加两类专门的陷阱题:
+### 为什么不单独出考卷(2026-09-29 user 定)
 
-- **`code-regress` 陷阱**:代码改成了经验警告过的写法,正确答案是"不改经验、报代码" ——
-  考的是 AI 会不会拿原理去"纠正"一条坑
-- **核不清题**:证据不足,正确答案是 `unseen` / `ask` —— 考的是 AI 该说"不知道"时会不会说。
-  照搬 nuwa-skill 的边缘测试(`SKILL.md` 4.2 节):"期望结果:可能...但不确定;不应该斩钉截铁"
+草案里原有一套"答案已知的冲突样例",考过才放宽确认。去掉的理由是 user 那句话:
+**下次真用经验的时候,就是真正的考试。** 具体到这套规则:
 
-用法:第一次用 AI 判冲突前考一次,之后每改一次第 3 节判定规则或换模型再考一次,
-每次用 `whetstone decision exam` 记下结果。**没有考卷记录,`stats` 不放宽任何组**;
-"改了规则或换了模型要重考"这一条,工具判断不了,只能靠人记着。
-**有一题答错,所有组退回完整确认。** 这和 darwin-skill 的劣化对照(故意造 4 类劣化版本,
-5 个盲评裁判必须全部识别出来)、本仓 `bin/verify_mutation_test.sh`(故意改坏,自检必须报红)是同一个思路:
-先证明判官分得出对错,再用它的判断。
+- 放宽确认本来就要求同一组判对率的精确下界 ≥ 90%,**最少也要 22 条真实记录全部判对**;考卷只是在它前面又加一道门
+- 原本想靠考卷兜住的两类陷阱,真实记录里一样看得见:AI 把"代码又犯了经验警告过的错"判成
+  "经验过期",人会改类型,这一组的判对率当场被拉低;证据不足时 AI 只能标 `inferred` / `unseen`,
+  这两档**永远不放宽**
+- 放宽只改怎么问、不改问不问,判错的代价是多看一眼,不是错改经验
+
+**剩下的一个空档**:换了模型之后,旧模型攒下的判对记录会继续算在新模型头上。
+工具现在不记录判断是哪个模型做的,这一条只能靠人记着 —— 换模型时,可以把放宽过的组先当作完整确认。
 
 ## 9. 分数用来做什么
 
@@ -327,7 +324,7 @@ whetstone decision exam --result pass --reason "考卷 v1,8 题全对,模型 X"
 | 7 | 只按被采纳率给 AI 打分 | 会奖励少报 |
 | 8 | 在全库范围找冲突候选 | 误伤(Graphiti #1728) |
 | 9 | 把"补充"当"矛盾"处理 | 删旧加新会把经验打碎(Memory-R1) |
-| 10 | AI 改打分规则:第 3 节判定表、第 8 节算法、统计代码、考卷 | 被打分的一方能改尺子,分数就没有意义(autoresearch 的评测代码只读);只能按 `kind: framework` 提议,人确认 |
+| 10 | AI 改打分规则:第 3 节判定表、第 8 节算法、统计代码 | 被打分的一方能改尺子,分数就没有意义(autoresearch 的评测代码只读);只能按 `kind: framework` 提议,人确认 |
 | 11 | 用"某些关键词出现了几次"当质量检查 | 查的是字在不在,不是对不对(nuwa-skill 的 `quality_check.py` 出现 2 次「矛盾 / 张力」就算过) |
 | 12 | 先问人,再记自己的判断;或听完回答换个编号重报一次 | 被打分的一方照着答案填自己的判断,一致率虚高且看不出来(第 7 节) |
 
@@ -353,4 +350,4 @@ whetstone decision exam --result pass --reason "考卷 v1,8 题全对,模型 X"
 | extraction-framework §6 | `scope` 的处理 = 记成一个 L2 模式 + 多个 L3 变体 |
 | extraction-framework §7 | `code-regress` 和"用了没出问题"都回写复现记录;改完按机械表重判置信度 |
 | extraction-framework §11 | 所有改动追加 + 标记,不覆盖、不删 |
-| `spec/review-decisions.md` | 记录复用同一个文件,`kind` 为 `conflict-report` / `conflict-resolve` / `conflict-miss` / `exam`;按来源去重规则照旧 |
+| `spec/review-decisions.md` | 记录复用同一个文件,`kind` 为 `conflict-report` / `conflict-resolve` / `conflict-miss`;按来源去重规则照旧 |

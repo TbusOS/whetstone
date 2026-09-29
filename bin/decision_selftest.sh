@@ -196,7 +196,7 @@ else bad "empty alias set output is unhelpful"; fi
 # ---------------------------------------------------------------------------------
 # use-time conflicts (spec/use-time-conflicts.md). The failures worth fencing off are
 # the silent ones: a group relaxed on a point estimate, a miss that resets nothing, a
-# relaxation granted on guesses or with no exam behind it — and above all the AI
+# relaxation granted on guesses — and above all the AI
 # agreeing with the human in hindsight, which is why a call is recorded in two steps.
 # ---------------------------------------------------------------------------------
 # step 1 with every AI field filled in; extra args override / extend
@@ -245,7 +245,6 @@ with open(log, "a", encoding="utf-8") as f:
             f.write(json.dumps(ans) + "\n")
 PY
 }
-examrec() { dec exam --result "$1" --reason r >/dev/null 2>&1; }
 row() { dec stats | grep -E "^  $1 × $2 +[0-9]"; }   # one group's line in stats
 
 echo
@@ -338,38 +337,32 @@ then ok "lower_bound matches the four reference values in the spec"
 else bad "lower_bound drifted from the reference values"; fi
 
 rm -f "$LOG"; gen 22 stale seen accept
-if row stale seen | grep -q "gate above"; then ok "no exam sitting: even 22/22 stays on full confirmation"
-else bad "a group was relaxed with no exam behind it: $(row stale seen)"; fi
-examrec pass
-if row stale seen | grep -q "summary"; then ok "after a passed exam, 22/22 seen reaches summary"
-else bad "22/22 seen with a passed exam did not reach summary: $(row stale seen)"; fi
-examrec fail
-if row stale seen | grep -q "gate above"; then ok "a later failed exam sends every group back to full"
-else bad "a failed exam did not revoke the tier: $(row stale seen)"; fi
+if row stale seen | grep -q "summary"; then ok "22/22 seen reaches summary — the real records are the test, no exam needed"
+else bad "22/22 seen did not reach summary: $(row stale seen)"; fi
 
-rm -f "$LOG"; examrec pass; gen 21 stale seen accept
+rm -f "$LOG"; gen 21 stale seen accept
 if row stale seen | grep -qE ' full$'; then ok "21/21 stays full (bound 0.896 < 0.90)"
 else bad "21/21 was relaxed: $(row stale seen)"; fi
-rm -f "$LOG"; examrec pass; gen 18 stale seen accept; gen 2 stale seen amend scope B
+rm -f "$LOG"; gen 18 stale seen accept; gen 2 stale seen amend scope B
 if row stale seen | grep -qE ' full$'; then ok "18/20 stays full — the point estimate 0.90 is not enough"
 else bad "18/20 was relaxed on its point estimate: $(row stale seen)"; fi
-rm -f "$LOG"; examrec pass; gen 45 stale seen accept
+rm -f "$LOG"; gen 45 stale seen accept
 if row stale seen | grep -q "batch"; then ok "45/45 reaches batch"; else bad "45/45 did not reach batch: $(row stale seen)"; fi
-rm -f "$LOG"; examrec pass; gen 44 stale seen accept
+rm -f "$LOG"; gen 44 stale seen accept
 if row stale seen | grep -q "summary"; then ok "44/44 is summary, not yet batch"
 else bad "44/44 tier wrong: $(row stale seen)"; fi
-rm -f "$LOG"; examrec pass; gen 45 stale inferred accept
+rm -f "$LOG"; gen 45 stale inferred accept
 if row stale inferred | grep -q "nothing seen"; then ok "an inferred group never relaxes, even at 45/45"
 else bad "an inferred group was relaxed: $(row stale inferred)"; fi
 
 echo
 echo "[conflict stats] the guess-share gate"
-rm -f "$LOG"; examrec pass; gen 22 stale seen accept; gen 10 wrong inferred accept "" I
+rm -f "$LOG"; gen 22 stale seen accept; gen 10 wrong inferred accept "" I
 if dec stats | grep -q "rest on inference"; then ok "31% inferred raises the warning"
 else bad "31% inferred raised no warning"; fi
 if row stale seen | grep -q "gate above"; then ok "and no group is relaxed while it holds"
 else bad "a group was relaxed above the guess share: $(row stale seen)"; fi
-rm -f "$LOG"; examrec pass; gen 22 stale seen accept; gen 9 wrong inferred accept "" I
+rm -f "$LOG"; gen 22 stale seen accept; gen 9 wrong inferred accept "" I
 if dec stats | grep -q "rest on inference"; then bad "29% inferred raised the warning"
 else ok "29% inferred stays below the gate"; fi
 if row stale seen | grep -q "summary"; then ok "and the seen group relaxes normally"
@@ -377,7 +370,7 @@ else bad "the seen group did not relax below the gate: $(row stale seen)"; fi
 
 echo
 echo "[conflict stats] a miss resets its type; false alarms, defers and pending stay out"
-rm -f "$LOG"; examrec pass; gen 22 stale seen accept
+rm -f "$LOG"; gen 22 stale seen accept
 dec miss --entry sk/m --final-type stale --verdict accept --subject s --reason r --source M1 >/dev/null 2>&1
 if row stale seen | grep -q "after the last miss" && row stale seen | grep -qE ' full '; then
   ok "a miss of type stale sends stale × seen back to full"
@@ -391,15 +384,15 @@ else bad "a scope miss reset the stale group: $(row stale seen)"; fi
 if dec stats | grep -q "found by you, not reported"; then ok "misses are summarised as a share"
 else bad "misses are not summarised"; fi
 
-rm -f "$LOG"; examrec pass; gen 22 stale seen accept; gen 1 stale seen reject none F
+rm -f "$LOG"; gen 22 stale seen accept; gen 1 stale seen reject none F
 if row stale seen | grep -q "summary"; then ok "a false alarm is not counted as a wrong type"
 else bad "a false alarm dragged the group down: $(row stale seen)"; fi
 if row stale seen | grep -qE ' 1  summary'; then ok "and it shows in the false-alarm column"
 else bad "false alarm not shown: $(row stale seen)"; fi
-rm -f "$LOG"; examrec pass; gen 21 stale seen accept; gen 1 stale seen defer "" D
+rm -f "$LOG"; gen 21 stale seen accept; gen 1 stale seen defer "" D
 if row stale seen | grep -qE ' full$'; then ok "a deferred answer is not counted as judged"
 else bad "a deferred answer was counted: $(row stale seen)"; fi
-rm -f "$LOG"; examrec pass; gen 22 stale seen accept; gen 1 stale seen pending "" P
+rm -f "$LOG"; gen 22 stale seen accept; gen 1 stale seen pending "" P
 if row stale seen | grep -q "summary"; then ok "a report awaiting its answer is not scored"
 else bad "a pending report was scored: $(row stale seen)"; fi
 if dec stats | grep -q "awaiting your answer (not scored yet): C-"; then ok "and it is listed as awaiting an answer"
@@ -478,18 +471,12 @@ if dec stats | grep -q "Safety entries"; then ok "a safety report brings the alw
 else bad "a safety report brought no note"; fi
 
 echo
-echo "[exam] and AI reports are events, not decisions"
+echo "[events] an AI report is an event, not a decision"
 rm -f "$LOG"
-if dec exam --result maybe --reason r >/dev/null 2>&1; then bad "an exam result other than pass/fail was accepted"
-else ok "an exam result other than pass/fail is refused"; fi
-if dec exam --result pass --reason " " >/dev/null 2>&1; then bad "an exam without a reason was accepted"
-else ok "an exam without a reason is refused"; fi
 addok --subject s --verdict accept --reason r
-examrec pass
 repok
-if dec stats | grep -qE '^by verdict: accept 1$' && dec stats | grep -q "exam sitting" \
-   && dec stats | grep -q "AI conflict report"; then
-  ok "exam sittings and AI reports are counted apart from decisions"
+if dec stats | grep -qE '^by verdict: accept 1$' && dec stats | grep -q "AI conflict report"; then
+  ok "AI reports are counted apart from decisions"
 else bad "the tally was polluted: $(dec stats | grep '^by verdict')"; fi
 
 rm -f "$LOG"
