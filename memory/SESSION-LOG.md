@@ -194,3 +194,22 @@ end-of-task batch — never whether. No exam on record, a guess share above 30%,
 that type all send a group back to full confirmation. decision selftest 46 -> 113, mutations
 8 -> 30. The exam questions themselves are still to be written from real entries.
 
+### Two old bugs, found while wiring the rule in
+Writing the always-on rule meant running `whetstone decision` from PATH, and it failed:
+`cli/whetstone` took its directory from the symlink it was called through, so every
+subcommand that reads `bin/` had been broken through `~/.local/bin/whetstone` for five
+weeks — only `--version` worked, which is why nobody noticed. It now resolves links in a
+loop (no `readlink -f`, which older macOS lacks); the decision selftest calls it through a
+one-level and a relative two-level link, and both went red on the old script first.
+
+The second one did damage. The autoupdate selftest pins PATH, which on this machine selects
+git 2.25; `git init -b` does not exist there, so the fixture repos were never created, and
+a later `git -C <plain dir> add -A / commit / push` walked up into the real repository and
+pushed a dirty working tree to the public origin under a fake author (that commit was
+rewritten away afterwards). Three layers now:
+`GIT_CEILING_DIRECTORIES` stops discovery at the fixture directory, every fixture is checked
+to be its own repository before any test runs (exit 2 otherwise), and the enclosing repo's
+HEAD and working tree are compared before and after. Verified in throwaway clones with fake
+remotes: the old script reproduces the leak, the new one passes 44/44 without touching the
+clone, a deliberately broken fixture stops before the tests, and the ceiling alone still
+holds. On this machine the suite had been 31 passed / 12 failed all along.

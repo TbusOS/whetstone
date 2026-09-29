@@ -19,6 +19,17 @@ set -u
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
 STAGE="$REPO_DIR/.autoupdate-selftest"
+# The fixture repos live under $STAGE, which sits INSIDE this repository. If one of
+# them fails to build, a later `git -C <dir> ...` walks up and lands on the real repo.
+# On 2026-09-29 exactly that happened: /usr/bin/git 2.25 has no `init -b`, the
+# fixture never existed, and `add -A` / `commit` / `push` below ran against this
+# repository — a dirty working tree went out to the public origin as
+# "c3: add skills + command". Three layers now: git may not search above $STAGE,
+# every fixture is checked before any test runs, and the enclosing repo is compared
+# before and after.
+export GIT_CEILING_DIRECTORIES="$STAGE"
+REPO_HEAD_BEFORE="$(git -C "$REPO_DIR" rev-parse HEAD 2>/dev/null)"
+REPO_STATUS_BEFORE="$(git -C "$REPO_DIR" status --porcelain 2>/dev/null | cksum)"
 CHECK="$SCRIPT_DIR/hooks/check-update.sh"
 DOUP="$SCRIPT_DIR/bin/do-update.sh"
 INSTALL="$SCRIPT_DIR/install.sh"
@@ -45,8 +56,10 @@ mkdir -p "$FAKEHOME/.claude/skills" "$FAKEHOME/.config" \
          "$FAKEHOME3/.claude" "$FAKEHOME3/.config" \
          "$FAKEHOME4/.claude" "$FAKEHOME4/.config"
 
-G init -q --bare -b main "$STAGE/remote.git"
+G init -q --bare "$STAGE/remote.git"
+G --git-dir="$STAGE/remote.git" symbolic-ref HEAD refs/heads/main   # `init -b` needs git >= 2.28
 G clone -q "$STAGE/remote.git" "$STAGE/seed" 2>/dev/null
+G -C "$STAGE/seed" symbolic-ref HEAD refs/heads/main   # an empty clone's branch name varies by version
 echo one > "$STAGE/seed/f.txt"
 G -C "$STAGE/seed" add f.txt && G -C "$STAGE/seed" commit -qm "c1: first"
 G -C "$STAGE/seed" push -q origin main
@@ -54,6 +67,20 @@ G clone -q "$STAGE/remote.git" "$STAGE/watched" 2>/dev/null
 echo two >> "$STAGE/seed/f.txt"
 G -C "$STAGE/seed" commit -qam "c2: second"
 G -C "$STAGE/seed" push -q origin main
+
+# Stop before any test unless each fixture is a repository of its own. Judged by its
+# top-level path, not by whether git succeeds: a missing fixture inside $REPO_DIR
+# makes git succeed — against the wrong repository.
+for d in "$STAGE/seed" "$STAGE/watched"; do
+  want="$(cd -P "$d" 2>/dev/null && pwd)"
+  top="$(git -C "$d" rev-parse --show-toplevel 2>/dev/null)"
+  top="$( [ -n "$top" ] && cd -P "$top" && pwd)"
+  if [ -z "$want" ] || [ "$top" != "$want" ]; then
+    echo "FATAL: fixture $d is not a git repository of its own (toplevel: ${top:-none})." >&2
+    echo "       Stopping before any test: later git commands would run somewhere else." >&2
+    exit 2
+  fi
+done
 
 mkdir -p "$CONF/cache"
 printf '%s\n' "$STAGE/watched" > "$CONF/repos"
@@ -207,6 +234,11 @@ grep -qF "/some/other/repo" "$FAKEHOME2/.config/sky-skills-autoupdate/repos" \
   && ok "sibling's own repos entries preserved" || bad "sibling repos entry lost"
 grep -qxF "$REPO_DIR" "$FAKEHOME2/.config/sky-skills-autoupdate/repos" \
   && bad "our clone still in sibling repos" || ok "our clone removed from sibling repos"
+
+[ "$(git -C "$REPO_DIR" rev-parse HEAD 2>/dev/null)" = "$REPO_HEAD_BEFORE" ] \
+  && [ "$(git -C "$REPO_DIR" status --porcelain 2>/dev/null | cksum)" = "$REPO_STATUS_BEFORE" ] \
+  && ok "the enclosing repository is untouched (HEAD and working tree)" \
+  || bad "the ENCLOSING repository changed during the selftest — check git log / git status now"
 
 echo
 echo "passed $pass, failed $fail"
