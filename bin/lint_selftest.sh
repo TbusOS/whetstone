@@ -10,7 +10,7 @@
 #   bash bin/lint_selftest.sh
 export PATH="/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
 export PYTHONNOUSERSITE=1
-unset CDPATH WHETSTONE_SKILLS_DIR
+unset CDPATH WHETSTONE_SKILLS_DIR CLAUDE_CODE_SESSION_ID
 set -u
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -230,6 +230,40 @@ python3 "$ADAPTER" --projects "$A" --session nosuch >/dev/null 2>&1; rc=$?
 check "no menu found: exit 2" '[ "$rc" = 2 ]'
 python3 "$ADAPTER" --projects "$A" | python3 "$LINT" --src "$M" --listing - --json > "$STAGE/pipe.json" 2>/dev/null
 check "adapter | lint --listing - works end to end" '[ "$(jget "$STAGE/pipe.json" "d[\"menu\"][\"snapshot\"][\"entries\"]")" = 2 ]'
+
+# --events: which skills, by name, and which were really loaded
+E="$STAGE/events"; mkdir -p "$E/p"
+python3 - "$E/p/ev-session.jsonl" <<'EOF'
+import json, sys
+def att(ts, a): return json.dumps({"type": "attachment", "timestamp": ts, "attachment": a})
+def tool(ts, name, inp): return json.dumps({"type": "assistant", "timestamp": ts,
+    "message": {"content": [{"type": "tool_use", "name": name, "input": inp}]}})
+rows = [
+  att("2026-01-01T00:00:00Z", {"type": "skill_listing", "isInitial": True, "content": "- a: x\n- b\n- c: y"}),
+  att("2026-01-01T00:01:00Z", {"type": "skill_listing", "isInitial": False, "names": ["glass"], "content": "- glass: z"}),
+  att("2026-01-01T00:02:00Z", {"type": "skill_listing", "isInitial": False, "content": "- one: q\n- two"}),
+  tool("2026-01-01T00:03:00Z", "Skill", {"skill": "alpha"}),
+  tool("2026-01-01T00:04:00Z", "Read", {"file_path": "/x/skills/beta/SKILL.md"}),
+  # another file of a skill, whose path still mentions SKILL.md: not a load
+  tool("2026-01-01T00:05:00Z", "Read", {"file_path": "/x/skills/gamma/references/SKILL.md-notes.md"}),
+  att("2026-01-01T00:06:00Z", {"type": "invoked_skills", "skills": [{"name": "alpha"}]}),
+]
+open(sys.argv[1], "w").write("\n".join(rows) + "\n")
+EOF
+out="$(python3 "$ADAPTER" --projects "$E" --events 2>/dev/null)"; rc=$?
+check "--events: the full menu is one line with its size" '[ "$rc" = 0 ] && printf "%s\n" "$out" | grep -q "menu    full menu, 3 entries$"'
+check "--events: a delta names its skills (names field, or parsed from the text)" 'printf "%s\n" "$out" | grep -q "+1 (installed or edited): glass$" && printf "%s\n" "$out" | grep -q "+2 (installed or edited): one, two$"'
+check "--events: Skill calls, SKILL.md reads and replays count as loaded" 'printf "%s\n" "$out" | grep -q "loaded  Skill tool: alpha$" && printf "%s\n" "$out" | grep -q "loaded  read SKILL.md: beta$" && printf "%s\n" "$out" | grep -q "loaded  replayed after compaction: alpha$"'
+check "--events: reading another file of a skill is not a load; menu entries are not loads" 'printf "%s\n" "$out" | tail -1 | grep -qx "loaded in this session: alpha, beta"'
+# a newer session file appears; the env var still pins the one this command runs in
+printf '%s\n' '{"type":"attachment","timestamp":"2026-01-02T00:00:00Z","attachment":{"type":"skill_listing","isInitial":true,"content":"- other: o"}}' > "$E/p/zz-other.jsonl"
+python3 -c "import os,time,sys; t=time.time(); os.utime(sys.argv[1],(t-100,t-100)); os.utime(sys.argv[2],(t,t))" "$E/p/ev-session.jsonl" "$E/p/zz-other.jsonl"
+out="$(python3 "$ADAPTER" --projects "$E" --events 2>/dev/null)"
+check "--events without the env var: the newest session" 'printf "%s\n" "$out" | grep -q "full menu, 1 entries" && printf "%s\n" "$out" | tail -1 | grep -qx "loaded in this session: none"'
+out="$(CLAUDE_CODE_SESSION_ID=ev-session python3 "$ADAPTER" --projects "$E" --events 2>/dev/null)"
+check "--events with CLAUDE_CODE_SESSION_ID: that session, not the newest" 'printf "%s\n" "$out" | tail -1 | grep -qx "loaded in this session: alpha, beta"'
+python3 "$ADAPTER" --projects "$E" --events --session nosuch >/dev/null 2>&1; rc=$?
+check "--events: an unknown session exits 2" '[ "$rc" = 2 ]'
 
 # ---------------------------------------------------------------- the old checks
 echo

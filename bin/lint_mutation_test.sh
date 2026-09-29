@@ -95,6 +95,19 @@ mut "adapter: the first menu found wins, not the newest" adapter \
 mut "adapter: --session is ignored" adapter \
   'files = [f for f in files if os.path.basename(f).startswith(session)]' 'pass'
 
+mut "events: a delta shows no names" adapter \
+  'ev.append((ts, "menu", f"+{len(names)} (installed or edited)", names))' \
+  'ev.append((ts, "menu", f"+{len(names)} (installed or edited)", []))'
+mut "events: any file read under a skill counts as a load" adapter \
+  'str(inp.get("file_path", "")).endswith("/SKILL.md")' '"/skills/" in str(inp.get("file_path", ""))'
+mut "events: replays after compaction are dropped" adapter \
+  'ev.append((ts, "loaded", "replayed after compaction", names))' 'pass'
+mut "events: CLAUDE_CODE_SESSION_ID is ignored" adapter \
+  'session = session or os.environ.get("CLAUDE_CODE_SESSION_ID") or None' 'pass'
+mut "events: menu entries are counted as loaded" adapter \
+  'loaded = sorted({n for _, k, _, ns in ev if k == "loaded" for n in ns})' \
+  'loaded = sorted({n for _, k, _, ns in ev for n in ns})'
+
 echo
 echo "mutations caught: $caught   missed: $missed   did-not-apply: $skipped"
 # a mutation that fails to apply is neither caught nor missed — it silently proves

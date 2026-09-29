@@ -80,6 +80,9 @@ index hygiene (keep the selection menu clean as the library grows):
                                           descriptions)
   menu-snapshot [--session ID]            print the menu Claude Code last sent (for --listing):
                                             whetstone menu-snapshot | whetstone lint --listing -
+  menu-snapshot --events [--session ID]   which skills, by name: every menu update ("N skill
+                                          available") and every real load, in time order
+                                          (default: this session, via $CLAUDE_CODE_SESSION_ID)
   lint-selftest                           run the lint selftest (both directions per check)
   lint-mutation                           break each menu check in turn; the selftest must go red
   index [--src D] [--out F]               generate a grouped INDEX.md catalog

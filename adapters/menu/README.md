@@ -18,6 +18,21 @@ continues on the following lines (they do not start with `- `).
 ```bash
 whetstone menu-snapshot | whetstone lint --listing -
 python3 adapters/menu/claude-code.py --session <id>   # one session's menu
+whetstone menu-snapshot --events                       # this session's skill events, by name
 ```
+
+`--events` exists because the UI prints only a count ("1 skill available"). Two kinds of
+event look alike there and are not the same thing:
+
+- **menu**: the runtime (re)sent a skill's name and description — the full menu at session
+  start, or a delta when a SKILL.md was installed or edited. Nothing of the body is in
+  context yet.
+- **loaded**: the body entered the context — a `Skill` tool call, a `Read` of a SKILL.md,
+  or the replay of already-loaded skills after the conversation was compacted.
+
+The last line lists every skill loaded in the session. Without `--session` it reads the
+session named by `$CLAUDE_CODE_SESSION_ID` (Claude Code sets it for the commands it runs);
+without that, the session written to most recently, which with several sessions open may
+be another one.
 
 Tested by `bin/lint_selftest.sh` (the adapter section) and `bin/lint_mutation_test.sh`.

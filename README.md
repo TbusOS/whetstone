@@ -209,7 +209,7 @@ bin/verify_mutation_test.sh         deletes each check in turn; the suite must g
 bin/decision.py                     the review-decision log (record only; 46 assertions)
 bin/decision_mutation_test.sh       deletes each decision check; the suite must go red
 bin/lint.py · bin/index.py          selection-menu hygiene, incl. whether the whole menu fits
-bin/lint_selftest.sh                43 assertions, both directions; lint_mutation_test.sh breaks 20 checks
+bin/lint_selftest.sh                50 assertions, both directions; lint_mutation_test.sh breaks 25 checks
 bin/pack.sh · bin/deploy.sh · bin/promote.sh   move and install packages
 cli/whetstone                       runtime-agnostic CLI, pure bash
 templates/                          skeletons for a distilled skill / params / pitfalls

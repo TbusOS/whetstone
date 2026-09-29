@@ -20,6 +20,7 @@ ln -s "$PWD/cli/whetstone" ~/.local/bin/whetstone
 | `whetstone sync engram <skill> [--dry-run]` | `adapters/sync/engram.sh` | push a skill into engram (optional sink) |
 | `whetstone lint [--src D] [--strict] [--json] [--listing F\|-] [--menu-budget N] [--menu-reserve N]` | `bin/lint.py` | flag empty / overlapping / colliding skill descriptions, and whether the whole menu fits its budget |
 | `whetstone menu-snapshot [--session ID]` | `adapters/menu/claude-code.py` | print the menu Claude Code last sent; pipe it to `lint --listing -` |
+| `whetstone menu-snapshot --events [--session ID]` | `adapters/menu/claude-code.py` | one session's skill events by name: menu updates (the UI's "N skill available") vs real loads |
 | `whetstone lint-selftest` / `lint-mutation` | `bin/lint_selftest.sh` / `bin/lint_mutation_test.sh` | lint selftest; break each menu check, the selftest must go red |
 | `whetstone index [--src D] [--out F]` | `bin/index.py` | generate a grouped `INDEX.md` catalog |
 | `whetstone capture [--clean]` | `adapters/capture/claude-code.sh` | the Claude Code session journaler |
