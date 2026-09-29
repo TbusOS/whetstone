@@ -38,7 +38,13 @@ carried a description stayed at 46-56 and 35 of 65 skills were names only. Of 19
 messages that used a skill's trigger words, 26% loaded it when its description was in
 the menu and 1% when only its name was. The budget is a runtime property, so it is a flag
 (--menu-budget, default 25000 = that measurement); Claude Code documents it as about 1%
-of the context window.
+of the context window, and it moves with the model: the same library got a 25,123-char
+menu in an Opus session and a 7,978-char one in a Haiku 4.5 session, where every one of
+its skills was a bare name. Check with the model you actually run.
+
+Skills marked disable-model-invocation: true are left out of the size: only the user can
+invoke them and their description is not in context (Claude Code docs; confirmed on a
+live menu, where such skills had no entry at all).
 
 Runtime-neutral: --src is any skills dir (default WHETSTONE_SKILLS_DIR or ~/.claude/skills).
 stdlib only. Exit 1 if any ERROR (or any WARNING with --strict).
@@ -228,6 +234,10 @@ def load_skills(src, include_symlinks=True):
             "desc": desc,
             "menu_desc": desc + (" " + extra if extra else ""),
             "yaml_problem": problems.get("description") or problems.get("when_to_use"),
+            # disable-model-invocation: true = only the user can invoke it, and its
+            # description is not in the model's context (Claude Code docs), so it takes
+            # no menu space
+            "hidden": str(fm.get("disable-model-invocation", "")).strip().lower() in ("true", "yes", "on"),
             "symlink": is_link,
         })
     return skills
@@ -268,15 +278,17 @@ def _norm(s):
 def menu_check(skills, budget, reserve=None, listing=None):
     """Whole-library check: does the menu fit? Returns (issues, report)."""
     issues = []
+    hidden = [s for s in skills if s.get("hidden")]
+    skills = [s for s in skills if not s.get("hidden")]
     n = len(skills)
     full = sum(menu_entry_len(s["name"], s["menu_desc"]) for s in skills)
     overhead = sum(len(s["name"]) + 5 for s in skills)   # '- name: ' + line break, per entry
-    rep = {"entries": n, "chars": full, "budget": budget}
+    rep = {"entries": n, "chars": full, "budget": budget, "hidden": [s["name"] for s in hidden]}
 
     snap = foreign = None
     if listing is not None:
         snap = parse_listing(listing)
-        ours = {s["name"] for s in skills} | {s["dir"] for s in skills}
+        ours = {s["name"] for s in skills + hidden} | {s["dir"] for s in skills + hidden}
         foreign = {k: v for k, v in snap.items() if k not in ours}
         reserve, rep["reserve_source"] = sum(menu_entry_len(k, v) for k, v in foreign.items()), "listing"
     elif reserve is None:
@@ -335,6 +347,10 @@ def menu_check(skills, budget, reserve=None, listing=None):
                            f"menu snapshot — their triggers never reached the model: {', '.join(name_only)}"))
         for m in missing:
             issues.append(("I", m, "not in the menu snapshot (installed after it, or the runtime did not pick it up)"))
+        for h in hidden:
+            if h["name"] in snap or h["dir"] in snap:
+                issues.append(("W", h["name"], "marked disable-model-invocation, yet it is in the menu snapshot — the "
+                               "runtime did not hide it (snapshot taken before the change, or the runtime ignores the flag)"))
         rep["snapshot"] = {"entries": len(snap), "chars": len(listing.rstrip("\n")), "foreign_entries": len(foreign),
                            "name_only": name_only, "different": differ, "missing": missing}
     return issues, rep
@@ -432,7 +448,8 @@ def print_menu(m):
     src = {"listing": "measured from --listing", "--menu-reserve": "--menu-reserve",
            "not counted": "not counted — pass --listing or --menu-reserve"}[m["reserve_source"]]
     print("MENU  (every skill's name + description: paid by every session, before any skill is used)")
-    print(f"  this library  {m['entries']} entries, {m['chars']:,} chars")
+    hid = f" (+{len(m['hidden'])} hidden from the model: disable-model-invocation)" if m.get("hidden") else ""
+    print(f"  this library  {m['entries']} entries, {m['chars']:,} chars{hid}")
     print(f"  outside it    {m['reserve']:,} chars ({src})")
     print(f"  budget        {m['budget']:,} chars (--menu-budget)")
     if m["over"] > 0:

@@ -88,6 +88,15 @@ mut "listing: a different description is not reported" lint \
   'elif _norm(shown) != _norm(s["menu_desc"]):' 'elif False:'
 mut "listing: stdin is not read" lint \
   'sys.stdin.read() if args.listing == "-" else' '"" if args.listing == "-" else'
+mut "hidden: manual-only skills are counted in the menu" lint \
+  'skills = [s for s in skills if not s.get("hidden")]' 'pass'
+mut "hidden: the flag is never read" lint \
+  '"hidden": str(fm.get("disable-model-invocation", "")).strip().lower() in ("true", "yes", "on"),' '"hidden": False,'
+mut "hidden: a manual-only skill in the snapshot is not reported" lint \
+  'if h["name"] in snap or h["dir"] in snap:' 'if False:'
+mut "hidden: a manual-only skill in the snapshot is taken for a foreign entry" lint \
+  'ours = {s["name"] for s in skills + hidden} | {s["dir"] for s in skills + hidden}' \
+  'ours = {s["name"] for s in skills} | {s["dir"] for s in skills}'
 mut "adapter: deltas are taken for the full menu" adapter \
   'or not att.get("isInitial") or' 'or'
 mut "adapter: the first menu found wins, not the newest" adapter \

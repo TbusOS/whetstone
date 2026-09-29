@@ -168,6 +168,25 @@ check "a share below 40 chars says retire or merge" 'grep -q "below the 40 a des
 python3 "$LINT" --src "$M" --menu-budget 100 --menu-reserve 100 --json > "$STAGE/m5.json"
 check "reserve alone fills the budget: says retire or merge" 'grep -q "already fill it" "$STAGE/m5.json"'
 
+# disable-model-invocation: only the user can invoke it; its description is not in context
+H="$STAGE/hidden"; mkdir -p "$H"; cp -r "$M"/alpha "$M"/beta "$H"/
+skill "$H" manual "description: \"manual only. 触发词: manual, only. $(rep m 200)\"" 'disable-model-invocation: true'
+python3 "$LINT" --src "$H" --json > "$STAGE/h1.json"
+python3 "$LINT" --src "$M" --json > "$STAGE/h0.json"
+check "a manual-only skill costs no menu space" '[ "$(jget "$STAGE/h1.json" "d[\"menu\"][\"chars\"]")" = "$(python3 - "$(dirname "$LINT")" "$M" <<'"'"'EOF'"'"'
+import sys; sys.path.insert(0, sys.argv[1]); import lint
+sk = [s for s in lint.load_skills(sys.argv[2]) if s["name"] in ("alpha", "beta")]
+print(sum(lint.menu_entry_len(s["name"], s["menu_desc"]) for s in sk))
+EOF
+)" ] && [ "$(jget "$STAGE/h1.json" "d[\"menu\"][\"hidden\"]")" = "['"'"'manual'"'"']" ]'
+check "…while an ordinary skill does (the flag is what matters)" '[ "$(jget "$STAGE/h0.json" "d[\"menu\"][\"hidden\"]")" = "[]" ]'
+printf -- '- alpha\n- beta: x\n' > "$STAGE/hsnap1.txt"
+printf -- '- alpha\n- beta: x\n- manual: shown anyway\n' > "$STAGE/hsnap2.txt"
+python3 "$LINT" --src "$H" --listing "$STAGE/hsnap1.txt" --json > "$STAGE/h2.json"
+python3 "$LINT" --src "$H" --listing "$STAGE/hsnap2.txt" --json > "$STAGE/h3.json"
+check "absent from the snapshot is expected for it, not reported" '[ "$(jget "$STAGE/h2.json" "d[\"menu\"][\"snapshot\"][\"missing\"]")" = "[]" ] && ! grep -q "yet it is in the menu" "$STAGE/h2.json"'
+check "present in the snapshot is reported (runtime did not hide it)" 'grep -q "marked disable-model-invocation, yet it is in the menu snapshot" "$STAGE/h3.json" && [ "$(jget "$STAGE/h3.json" "d[\"menu\"][\"reserve\"]")" = 0 ]'
+
 # ---------------------------------------------------------------- listing
 echo
 echo "[listing] compare with the menu a runtime actually sent"
