@@ -501,6 +501,21 @@ if dec list | grep -q "\[report\]  C-.* · [0-9a-f]\{6\}" && dec list | grep -q 
 else bad "list hides the report, the answer or the miss"; fi
 
 echo
+echo "[cli] reachable the way it is installed: through a symlink on PATH"
+# The CLI was installed as ~/.local/bin/whetstone -> cli/whetstone, and for five weeks
+# every subcommand that needs bin/ failed through that link, because the entry script
+# took its own directory from the link rather than from the file it points to. Only
+# --version worked, so nothing looked broken until a rule told the agent to run it.
+mkdir -p "$STAGE/pathbin" "$STAGE/pathbin2"
+ln -sf "$REPO_DIR/cli/whetstone" "$STAGE/pathbin/whetstone"
+( cd "$STAGE/pathbin2" && ln -sf ../pathbin/whetstone whetstone )     # a relative link to a link
+for link in "$STAGE/pathbin/whetstone" "$STAGE/pathbin2/whetstone"; do
+  out="$("$link" decision --file "$LOG" tags 2>&1)"
+  case "$out" in *layer-wrong*) ok "decision runs through ${link#"$STAGE"/}";;
+                             *) bad "decision fails through ${link#"$STAGE"/}: $out";; esac
+done
+
+echo
 echo "[empty] an empty log says so instead of pretending"
 rm -f "$LOG"
 if dec stats | grep -q "expected state"; then ok "empty log explains itself"; else bad "empty log output is unhelpful"; fi

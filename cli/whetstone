@@ -15,7 +15,16 @@
 ORIG_PATH="$PATH"
 export PATH="/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
 export PYTHONNOUSERSITE=1
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+# Resolve the file itself, not the link it was called through: installed as a symlink
+# on PATH, dirname of the link would be ~/.local/bin and every bin/ lookup would miss.
+# Loop rather than `readlink -f`, which older macOS does not have.
+SRC="${BASH_SOURCE[0]}"
+while [ -L "$SRC" ]; do
+  LINK_DIR="$(cd -P "$(dirname "$SRC")" && pwd)"
+  SRC="$(readlink "$SRC")"
+  case "$SRC" in /*) ;; *) SRC="$LINK_DIR/$SRC";; esac
+done
+SCRIPT_DIR="$(cd -P "$(dirname "$SRC")" && pwd)"
 REPO_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
 WHETSTONE_VERSION="0.2.0"
 
