@@ -35,4 +35,6 @@ __pycache__/
 .verify-selftest/
 .lint-selftest/
 .lint-mutation.*/
+.route-selftest/
+.route-mutation.*/
 .verify-mutation.*/

@@ -79,5 +79,52 @@ else
 fi
 
 echo
+echo "[scopes] skill-scopes.tsv links a skill into project dirs instead of the global dir"
+SC="$STAGE/sc"; mkdir -p "$SC/src/skills" "$SC/global" "$SC/proj-a" "$SC/proj b" "$SC/hm/ph"
+for n in wide narrow other; do
+  mkdir -p "$SC/src/skills/$n"; printf -- '---\nname: %s\ndescription: fixture\n---\n' "$n" > "$SC/src/skills/$n/SKILL.md"
+done
+abs_narrow="$(cd "$SC/src/skills/narrow" && pwd)"
+ln -s "$abs_narrow" "$SC/global/narrow"                 # left over from an earlier global deploy
+ln -s "$SC/elsewhere/other" "$SC/global/other"          # someone else's link: must not be touched
+printf '# comment line\n\nnarrow\t%s\t%s\t~/ph\nother\t%s\n' "$SC/proj-a" "$SC/proj b" "$SC/proj-a" > "$SC/src/skill-scopes.tsv"
+out="$(HOME="$SC/hm" timeout 10 bash "$DEPLOY" --link "$SC/src" --dest "$SC/global" 2>&1)"; rc=$?
+[ "$rc" = 0 ] && ok "a valid scope file runs (exit 0)" || bad "valid scope file: exit $rc: $out"
+{ [ "$(readlink "$SC/proj-a/.claude/skills/narrow")" = "$abs_narrow" ] && [ -L "$SC/proj b/.claude/skills/narrow" ] \
+  && [ -L "$SC/hm/ph/.claude/skills/narrow" ]; } \
+  && ok "a scoped skill is linked into every listed dir (a path with a space, and ~/)" || bad "scoped links missing: $out"
+[ ! -e "$SC/global/narrow" ] && [ ! -L "$SC/global/narrow" ] \
+  && ok "…and this repo's old global link to it is removed" || bad "global link to a scoped skill still there"
+{ [ "$(readlink "$SC/global/other")" = "$SC/elsewhere/other" ] && printf '%s' "$out" | grep -q "NOTE: $SC/global/other is not this repo's link"; } \
+  && ok "a global entry that is not this repo's link is left alone, and said so" || bad "foreign global entry: $out"
+[ -L "$SC/global/wide" ] && [ ! -e "$SC/proj-a/.claude/skills/wide" ] \
+  && ok "an unlisted skill is linked globally, as before" || bad "unlisted skill: $out"
+printf '%s' "$out" | grep -q "2 scoped to project dirs (1 removed from" \
+  && ok "the summary counts scoped skills and removed global links" || bad "summary: $out"
+out2="$(HOME="$SC/hm" timeout 10 bash "$DEPLOY" --link "$SC/src" --dest "$SC/global" 2>&1)"
+{ printf '%s' "$out2" | grep -q "0 linked, 0 relinked" && printf '%s' "$out2" | grep -q "ok (already linked): narrow"; } \
+  && ok "a second run changes nothing" || bad "second run: $out2"
+
+# a broken scope file stops the run before anything is linked
+bad_case() { # $1 label, $2 scope file content
+  local B="$STAGE/sc-bad"; rm -rf "$B"; mkdir -p "$B/global" "$B/p"; cp -r "$SC/src" "$B/src"
+  printf "$2" "$B/p" > "$B/src/skill-scopes.tsv"
+  local o r; o="$(timeout 10 bash "$DEPLOY" --link "$B/src" --dest "$B/global" 2>&1)"; r=$?
+  if [ "$r" = 1 ] && [ -z "$(ls -A "$B/global")" ] && [ ! -e "$B/p/.claude" ] && printf '%s' "$o" | grep -q "nothing linked"; then
+    ok "refused, nothing linked: $1"
+  else
+    bad "$1: exit $r, global: $(ls -A "$B/global" | tr '\n' ' '), out: $o"
+  fi
+}
+bad_case "an unknown skill"                 'ghost\t%s\n'
+bad_case "a directory that does not exist"  'narrow\t%s/missing\n'
+bad_case "a skill with no directory"        'narrow\n%.0s'
+bad_case "spaces instead of a TAB"          'narrow   %s\n'
+rm -f "$SC/src/skill-scopes.tsv"; rm -rf "$SC/global2"
+timeout 10 bash "$DEPLOY" --link "$SC/src" --dest "$SC/global2" >/dev/null 2>&1
+[ -L "$SC/global2/narrow" ] && [ -L "$SC/global2/wide" ] && [ -L "$SC/global2/other" ] \
+  && ok "no scope file: every skill is linked globally, as before" || bad "no scope file broke link mode"
+
+echo
 echo "summary: $pass passed, $fail failed"
 [ "$fail" -eq 0 ]

@@ -22,7 +22,11 @@ caught=0; missed=0; skipped=0
 # mut <label> <file: lint|adapter> <old> <new>
 mut() {
   local label="$1" which="$2" src dst
-  if [ "$which" = adapter ]; then src="$REPO_DIR/adapters/menu/claude-code.py"; else src="$SCRIPT_DIR/lint.py"; fi
+  case "$which" in
+    adapter) src="$REPO_DIR/adapters/menu/claude-code.py";;
+    index)   src="$SCRIPT_DIR/index.py";;
+    *)       src="$SCRIPT_DIR/lint.py";;
+  esac
   rm -rf "$S/m"; mkdir -p "$S/m"
   dst="$S/m/$(basename "$src")"
   if ! python3 - "$src" "$dst" "$3" "$4" <<'EOF'
@@ -37,7 +41,11 @@ EOF
     echo "  --  MUTATION DID NOT APPLY: $label"; skipped=$((skipped+1)); return
   fi
   local envs=()
-  if [ "$which" = adapter ]; then envs=(ADAPTER_UNDER_TEST="$dst"); else envs=(LINT_UNDER_TEST="$dst"); fi
+  case "$which" in
+    adapter) envs=(ADAPTER_UNDER_TEST="$dst");;
+    index)   cp "$SCRIPT_DIR/lint.py" "$S/m/lint.py"; envs=(INDEX_UNDER_TEST="$dst");;   # index imports its sibling lint
+    *)       envs=(LINT_UNDER_TEST="$dst");;
+  esac
   if env "${envs[@]}" timeout 180 bash "$SCRIPT_DIR/lint_selftest.sh" >/dev/null 2>&1; then
     echo "  MISS  $label"; missed=$((missed+1))
   else
@@ -97,6 +105,30 @@ mut "hidden: a manual-only skill in the snapshot is not reported" lint \
 mut "hidden: a manual-only skill in the snapshot is taken for a foreign entry" lint \
   'ours = {s["name"] for s in skills + hidden} | {s["dir"] for s in skills + hidden}' \
   'ours = {s["name"] for s in skills} | {s["dir"] for s in skills}'
+mut "router: it lists itself" index \
+  'skills = [s for s in skills if s["name"] != name]' 'skills = list(skills)'
+mut "router: a scoped skill does not say where it lives" index \
+  'if sk["name"] in scopes:' 'if False:'
+mut "router: trigger lead-ins are kept" index \
+  't = lead.sub("", t)' 'pass'
+mut "router: a description with a line break splits its entry" index \
+  'flat = " ".join(sk["desc"].split())' 'flat = sk["desc"]'
+mut "router: never splits into two levels" index \
+  'if len(skills) <= split_entries and len(flat_text) <= split_chars:' 'if True:'
+mut "router: old family pages are left behind" index \
+  'os.remove(os.path.join(old_fam, f))' 'pass'
+mut "router: a scoped skill missing from every --src is accepted" index \
+  'print(f"scoped skill(s) not found in any --src: {' 'return 0 or print(f"scoped skill(s) not found in any --src: {'
+mut "router: the marker lint looks for is not written" index \
+  '"---", "", ROUTER_MARK,' '"---", "",'
+mut "families: function words count as a shared topic" index \
+  'lint.trigger_tokens(by_name[n]["desc"]) - EDGE_STOP for n in names}' 'lint.trigger_tokens(by_name[n]["desc"]) for n in names}'
+mut "families: a family of any size is kept whole" index \
+  'return split_big(groups), by_name' 'return groups, by_name'
+mut "lint: the router is never checked" lint \
+  'issues = lint(skills) + router_check(skills)' 'issues = lint(skills)'
+mut "lint: family pages of a two-level router are not read" lint \
+  'if x.endswith(".md"))' 'if False)'
 mut "adapter: deltas are taken for the full menu" adapter \
   'or not att.get("isInitial") or' 'or'
 mut "adapter: the first menu found wins, not the newest" adapter \

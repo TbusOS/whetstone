@@ -18,6 +18,7 @@ REPO_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
 STAGE="$REPO_DIR/.lint-selftest"
 LINT="${LINT_UNDER_TEST:-$SCRIPT_DIR/lint.py}"
 ADAPTER="${ADAPTER_UNDER_TEST:-$REPO_DIR/adapters/menu/claude-code.py}"
+INDEX="${INDEX_UNDER_TEST:-$SCRIPT_DIR/index.py}"
 
 cleanup() { rm -rf "$STAGE"; }
 trap cleanup EXIT
@@ -283,6 +284,72 @@ out="$(CLAUDE_CODE_SESSION_ID=ev-session python3 "$ADAPTER" --projects "$E" --ev
 check "--events with CLAUDE_CODE_SESSION_ID: that session, not the newest" 'printf "%s\n" "$out" | tail -1 | grep -qx "loaded in this session: alpha, beta"'
 python3 "$ADAPTER" --projects "$E" --events --session nosuch >/dev/null 2>&1; rc=$?
 check "--events: an unknown session exits 2" '[ "$rc" = 2 ]'
+
+# ---------------------------------------------------------------- router
+echo
+echo "[router] index.py --router, and lint's check that the router is up to date"
+RT="$STAGE/rt"; mkdir -p "$RT/lib" "$RT/proj"
+cp -r "$M"/alpha "$M"/beta "$M"/gamma "$RT/lib/"
+skill "$RT/lib" lead "description: \"lead does a thing. TRIGGER when the user says 'foo 风格 / bar-thing / baz'\""
+printf 'beta\t%s\n' "$RT/proj" > "$RT/scopes.tsv"
+R="$RT/lib/experience-router/SKILL.md"
+python3 "$INDEX" --router --src "$RT/lib" --scopes "$RT/scopes.tsv" --out "$R" 2>/dev/null; rc=$?
+check "the router is written (exit 0)" '[ "$rc" = 0 ] && [ -f "$R" ]'
+python3 - "$R" > "$STAGE/rt.txt" <<'EOF'
+import re, sys
+t = open(sys.argv[1], encoding="utf-8").read()
+fm = t.split("\n---", 1)[0][4:]
+names = re.findall(r"^- \*\*([^*]+)\*\*", t, re.M)
+desc = re.search(r'^description: "(.*)"$', fm, re.M).group(1)
+bad = []
+if sorted(names) != ["alpha", "beta", "gamma", "lead"]: bad.append(f"names {names}")
+if "<!-- whetstone:router -->" not in t: bad.append("no marker")
+if len(desc) > 200: bad.append(f"description {len(desc)} chars")
+beta = [l for l in t.splitlines() if l.startswith("- **beta**")][0]
+if "只在 `" not in beta or "/beta/SKILL.md`" not in beta: bad.append("scoped line " + beta)
+lead = [l for l in t.splitlines() if l.startswith("- **lead**")][0]
+if "触发词:foo 风格 / bar-thing / baz" not in lead: bad.append("lead-in not cut: " + lead)
+print("ok" if not bad else "; ".join(bad))
+EOF
+check "every skill listed once, itself excluded, scoped one says where, lead-ins cut" '[ "$(cat "$STAGE/rt.txt")" = ok ]'
+check "its description is valid YAML" 'python3 -c "import sys,yaml; t=open(sys.argv[1],encoding=\"utf-8\").read(); yaml.safe_load(t.split(\"\n---\",1)[0][4:])" "$R" 2>/dev/null || python3 -c "import sys; sys.path.insert(0,sys.argv[2]); import lint; p={}; lint.parse_frontmatter(sys.argv[1],p); sys.exit(1 if p else 0)" "$R" "$(dirname "$LINT")"'
+python3 "$LINT" --src "$RT/lib" --json > "$STAGE/rt1.json"
+check "a fresh router: no out-of-date warning" '! grep -q "router is out of date" "$STAGE/rt1.json"'
+skill "$RT/lib" newcomer "description: \"newcomer arrived later. 触发词: newcomer, later.\""
+python3 "$LINT" --src "$RT/lib" --json > "$STAGE/rt2.json"
+check "a skill added after it: the router is out of date, and names it" 'grep -q "router is out of date: 1 skill(s) are not in its catalog (newcomer)" "$STAGE/rt2.json"'
+python3 "$INDEX" --router --src "$RT/lib" --out "$R" --split-entries 2 2>/dev/null
+check "over the split limit: two levels, SKILL.md lists names, families/ hold the lines" '[ -n "$(ls "$RT/lib/experience-router/families/" 2>/dev/null)" ] && ! grep -q "^- \*\*" "$R" && grep -q "newcomer" "$R"'
+python3 "$LINT" --src "$RT/lib" --json > "$STAGE/rt3.json"
+check "…and lint still finds every skill through families/" '! grep -q "router is out of date" "$STAGE/rt3.json"'
+python3 "$INDEX" --router --src "$RT/lib" --out "$R" 2>/dev/null
+check "back under the limit: one file again, old family pages removed" '[ -z "$(ls "$RT/lib/experience-router/families/" 2>/dev/null)" ] && grep -q "^- \*\*newcomer" "$R"'
+check "regenerated with the router itself in --src: it still does not list itself" '! grep -q "^- \*\*experience-router" "$R"'
+printf 'ghost\t%s\n' "$RT/proj" > "$RT/scopes2.tsv"
+python3 "$INDEX" --router --src "$RT/lib" --scopes "$RT/scopes2.tsv" --out "$STAGE/rt-x/SKILL.md" >/dev/null 2>&1; rc=$?
+check "a scoped skill found in no --src is refused (exit 2)" '[ "$rc" = 2 ]'
+python3 - "$(dirname "$INDEX")" > "$STAGE/fam.txt" <<'EOF'
+import sys; sys.path.insert(0, sys.argv[1]); import index
+# 13 members glued together: 5 *-design, 3 *-gate, the rest unrelated
+m = [f"s{i}-design" for i in range(5)] + [f"g{i}-gate" for i in range(3)] + [f"u{i}" for i in range(5)]
+out = index.split_big({"k": m})
+sizes = sorted(len(v) for v in out.values())
+ok1 = sizes == [1, 1, 1, 1, 1, 3, 5]
+small = index.split_big({"k": m[:12]})
+ok2 = list(small.values()) == [m[:12]]
+sk = [{"name": "one", "desc": "one thing. TRIGGER when the user asks for the report or a chart"},
+      {"name": "two", "desc": "two thing. TRIGGER when the user wants the spec for a page or form"}]
+groups, _ = index.build_families(sk)
+ok3 = len(groups) == 2
+# the same 13, glued into one family the way real ones are: a hub whose description names them all
+hub = {"name": "hub", "desc": "hub for " + ", ".join(m) + ". TRIGGER hub"}
+real, _ = index.build_families([hub] + [{"name": n, "desc": f"{n} thing. TRIGGER {n}"} for n in m])
+biggest = max(len(v) for v in real.values())
+ok4 = biggest <= index.FAMILY_MAX and sorted(len(v) for v in real.values() if len(v) > 1) == [3, 5]
+print("ok" if ok1 and ok2 and ok3 and ok4 else
+      f"split {sizes} small-kept {ok2} stopwords-kept-apart {ok3} through-build_families {sorted(len(v) for v in real.values())}")
+EOF
+check "families: over 12 split by shared name words; 12 kept; function words are no shared topic" '[ "$(cat "$STAGE/fam.txt")" = ok ]'
 
 # ---------------------------------------------------------------- the old checks
 echo

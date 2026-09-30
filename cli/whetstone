@@ -86,6 +86,24 @@ index hygiene (keep the selection menu clean as the library grows):
   lint-selftest                           run the lint selftest (both directions per check)
   lint-mutation                           break each menu check in turn; the selftest must go red
   index [--src D] [--out F]               generate a grouped INDEX.md catalog
+  router <library-repo>                   same as: route catalog <library-repo>
+
+routing (spec/routing.md; runtime-neutral, reads session events):
+  find <what you are about to do>         which skills fit: name / description / body / messages
+       [--src D] [--top N] [--json]       that led to them before; says so when none fits well
+  route catalog <library-repo>            (re)generate the library's routing skill: the whole
+                                          catalog behind one short menu entry; reads
+                                          <repo>/skill-scopes.tsv; lint says when it is stale
+  route events [--days N]                 this machine's sessions as neutral event lines
+                                          (Claude Code adapter; other runtimes: adapters/)
+  route learn --events F|-                messages that led to each skill -> the file find reads
+  route usage --events F|-                skill x project table (once per session, decayed)
+  route replay --events F|- [--sweep]     score find on past sessions in time order; checks
+                                          itself (random must lose, a peek must win)
+  route elsewhere --events F|- --project D  skills whose use sits in another project
+  route plan --project D [--write]        Claude Code: set those to name-only in D's
+                                          .claude/settings.local.json (merge; prints unless --write)
+  route-selftest / route-mutation         both directions per rule / break each rule in turn
 
 capture (optional, runtime-specific):
   capture [--clean]                       the Claude Code session journaler (see adapters/capture/)
@@ -143,6 +161,29 @@ autoupdate_cmd() {
   esac
 }
 
+router_cmd() {
+  # the routing skill of one library repo, from the standard places (spec/routing.md §4 ③)
+  local repo="${1:-}"
+  [ -n "$repo" ] && [ -d "$repo/skills" ] || { echo "usage: whetstone router <library-repo> [index.py options]" >&2; exit 2; }
+  shift
+  command -v python3 >/dev/null 2>&1 || { echo "router needs python3" >&2; exit 3; }
+  exec python3 "$REPO_DIR/bin/index.py" --router \
+    --src "${WHETSTONE_SKILLS_DIR:-$HOME/.claude/skills}" --src "$repo/skills" \
+    --scopes "$repo/skill-scopes.tsv" --out "$repo/skills/experience-router/SKILL.md" "$@"
+}
+
+route_cmd() {
+  local sub="${1:-}"; [ $# -gt 0 ] && shift
+  command -v python3 >/dev/null 2>&1 || { echo "route needs python3" >&2; exit 3; }
+  case "$sub" in
+    catalog)                    router_cmd "$@";;
+    events)                     exec python3 "$REPO_DIR/adapters/menu/claude-code.py" --export-events "$@";;
+    usage|learn|replay|find|elsewhere) exec python3 "$REPO_DIR/bin/route.py" "$sub" "$@";;
+    plan)                       exec python3 "$REPO_DIR/adapters/levers/claude-code.py" "$@";;
+    *) echo "usage: whetstone route [catalog|events|learn|usage|replay|find|elsewhere|plan]" >&2; exit 2;;
+  esac
+}
+
 distill_msg() {
   cat >&2 <<EOF
 distill runs inside an agent runtime, not the CLI.
@@ -170,6 +211,11 @@ case "$cmd" in
   lint-selftest)     exec bash "$REPO_DIR/bin/lint_selftest.sh" "$@";;
   lint-mutation)     exec bash "$REPO_DIR/bin/lint_mutation_test.sh" "$@";;
   index)             command -v python3 >/dev/null 2>&1 || { echo "index needs python3" >&2; exit 3; }; exec python3 "$REPO_DIR/bin/index.py" "$@";;
+  router)            router_cmd "$@";;
+  route)             route_cmd "$@";;
+  find)              command -v python3 >/dev/null 2>&1 || { echo "find needs python3" >&2; exit 3; }; exec python3 "$REPO_DIR/bin/route.py" find "$@";;
+  route-selftest)    exec bash "$REPO_DIR/bin/route_selftest.sh" "$@";;
+  route-mutation)    exec bash "$REPO_DIR/bin/route_mutation_test.sh" "$@";;
   capture)           exec bash "$REPO_DIR/adapters/capture/claude-code.sh" "$@";;
   selftest)          exec bash "$REPO_DIR/adapters/capture/selftest.sh" "$@";;
   journal)           journal_cmd "$@";;

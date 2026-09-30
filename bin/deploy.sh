@@ -7,6 +7,15 @@
 #   bin/deploy.sh --link <src-repo>          [--dest <skills-dir>] [--force]
 #       Link mode: symlink each skill under <src-repo>/skills/ into DEST.
 #       Source repo stays the single source of truth; edits are live, no drift.
+#       <src-repo>/skill-scopes.tsv (optional) scopes a skill to project dirs:
+#         <skill><TAB><dir>[<TAB><dir> ...]     ~ allowed; lines starting with # are comments
+#       A listed skill is linked into <dir>/.claude/skills/ for each dir and NOT
+#       into DEST; a link to it that this repo left in DEST is removed. The whole
+#       file is checked first — an unknown skill, a missing dir or a line without
+#       a dir stops the run before anything is linked. Why (spec/routing.md): a
+#       skill that only matters in one project should not take space in every
+#       session's menu; the runtime shows it when a session starts in that dir or
+#       reads a file there (Claude Code, measured 2026-09-29).
 #   bin/deploy.sh --gen-claudemd <src-repo>  [--dest-file <path>]
 #       Generate the always-on memory file (default ~/.claude/CLAUDE.md) from
 #       <src-repo>/base/conduct.md. Existing dest is backed up first, never
@@ -101,34 +110,90 @@ fi
 if [ -n "$LINK_SRC" ]; then
   SRC_SKILLS="$LINK_SRC/skills"
   [ -d "$SRC_SKILLS" ] || { echo "no skills/ under: $LINK_SRC" >&2; exit 1; }
-  mkdir -p "$DEST"
+  SCOPES="$LINK_SRC/skill-scopes.tsv"
   TS="$(date -u +%Y%m%d-%H%M%S)"
-  BAKROOT="$(cd "$(dirname "$DEST")" && pwd)/skills-linkbak-$TS"
-  linked=0; relinked=0; skipped=0; okc=0
+  linked=0; relinked=0; skipped=0; okc=0; scoped=0; unglobal=0
+
+  # every "name<TAB>dir" pair in the scope file, ~ expanded, prefixed by its line number
+  scope_pairs() {
+    [ -f "$SCOPES" ] || return 0
+    local n=0 line f i dir
+    while IFS= read -r line || [ -n "$line" ]; do
+      n=$((n+1)); line="${line%$'\r'}"
+      case "$line" in ''|'#'*) continue;; esac
+      IFS=$'\t' read -r -a f <<< "$line"
+      if [ "${#f[@]}" -lt 2 ]; then printf '%s\t%s\t\n' "$n" "${f[0]}"; continue; fi
+      for ((i=1; i<${#f[@]}; i++)); do
+        dir="${f[$i]}"; [ -z "$dir" ] && continue
+        case "$dir" in "~") dir="$HOME";; "~/"*) dir="$HOME/${dir#\~/}";; esac
+        printf '%s\t%s\t%s\n' "$n" "${f[0]}" "$dir"
+      done
+    done < "$SCOPES"
+  }
+  scope_dirs() { scope_pairs | awk -F'\t' -v s="$1" '$2 == s && $3 != "" {print $3}'; }
+
+  # check the whole scope file before linking anything
+  if [ -f "$SCOPES" ]; then
+    errs=0
+    while IFS=$'\t' read -r n name dir; do
+      if [ ! -f "$SRC_SKILLS/$name/SKILL.md" ]; then
+        echo "skill-scopes.tsv:$n: no such skill under $SRC_SKILLS: $name" >&2; errs=$((errs+1))
+      fi
+      if [ -z "$dir" ]; then
+        echo "skill-scopes.tsv:$n: $name has no directory after it (TAB-separated)" >&2; errs=$((errs+1))
+      elif [ ! -d "$dir" ]; then
+        echo "skill-scopes.tsv:$n: no such directory: $dir ($name)" >&2; errs=$((errs+1))
+      fi
+    done < <(scope_pairs)
+    [ "$errs" -gt 0 ] && { echo "whetstone deploy --link: $errs problem(s) in $SCOPES — nothing linked" >&2; exit 1; }
+  fi
+
+  # link_one <target path> <source dir> <name>: the link-or-skip rule, for any target
+  link_one() {
+    local tgt="$1" abs="$2" name="$3" bak
+    if [ -L "$tgt" ]; then
+      if [ "$(readlink "$tgt")" = "$abs" ]; then
+        echo "ok (already linked): $name → ${tgt%/*}"; okc=$((okc+1))
+      else
+        ln -sfn "$abs" "$tgt"; echo "relinked: $name → ${tgt%/*}"; relinked=$((relinked+1))
+      fi
+      return
+    fi
+    if [ -e "$tgt" ]; then
+      if [ "$FORCE" -ne 1 ]; then
+        echo "SKIP (real dir exists, use --force): $tgt"; skipped=$((skipped+1)); return
+      fi
+      bak="$(cd "$(dirname "$(dirname "$tgt")")" && pwd)/skills-linkbak-$TS"
+      mkdir -p "$bak"; mv "$tgt" "$bak/$name"
+      echo "backed up real dir → $bak/$name"
+    fi
+    ln -s "$abs" "$tgt"; echo "linked: $name → ${tgt%/*}"; linked=$((linked+1))
+  }
+
+  mkdir -p "$DEST"
   for d in "$SRC_SKILLS"/*/; do
     name="$(basename "$d")"
     [ -f "${d}SKILL.md" ] || continue
     abs="$(cd "$d" && pwd)"
-    tgt="$DEST/$name"
-    if [ -L "$tgt" ]; then
-      if [ "$(readlink "$tgt")" = "$abs" ]; then
-        echo "ok (already linked): $name"; okc=$((okc+1))
-      else
-        ln -sfn "$abs" "$tgt"; echo "relinked: $name"; relinked=$((relinked+1))
+    dirs="$(scope_dirs "$name")"
+    if [ -n "$dirs" ]; then
+      scoped=$((scoped+1))
+      while IFS= read -r pdir; do
+        mkdir -p "$pdir/.claude/skills"
+        link_one "$pdir/.claude/skills/$name" "$abs" "$name"
+      done <<< "$dirs"
+      g="$DEST/$name"
+      if [ -L "$g" ] && [ "$(readlink "$g")" = "$abs" ]; then
+        rm "$g"; echo "unlinked from $DEST (scoped): $name"; unglobal=$((unglobal+1))
+      elif [ -e "$g" ] || [ -L "$g" ]; then
+        echo "NOTE: $g is not this repo's link — left as is, so $name still shows in every session"
       fi
       continue
     fi
-    if [ -e "$tgt" ]; then
-      if [ "$FORCE" -ne 1 ]; then
-        echo "SKIP (real dir exists, use --force): $name"; skipped=$((skipped+1)); continue
-      fi
-      mkdir -p "$BAKROOT"; mv "$tgt" "$BAKROOT/$name"
-      echo "backed up real dir → $BAKROOT/$name"
-    fi
-    ln -s "$abs" "$tgt"; echo "linked: $name"; linked=$((linked+1))
+    link_one "$DEST/$name" "$abs" "$name"
   done
-  echo "whetstone deploy --link: $linked linked, $relinked relinked, $okc ok, $skipped skipped → $DEST"
-  [ -d "$BAKROOT" ] && echo "replaced real dirs backed up under: $BAKROOT"
+  echo "whetstone deploy --link: $linked linked, $relinked relinked, $okc ok, $skipped skipped → $DEST;" \
+       "$scoped scoped to project dirs ($unglobal removed from $DEST)"
   exit 0
 fi
 

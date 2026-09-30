@@ -66,6 +66,7 @@ SPEC_DESC_MAX = 1024    # Agent Skills limit (spec/skill-package.md) -> WARN. Cl
                         # heading instead of its description (2026-09-29, one case)
 MENU_BUDGET = 25000     # chars for the whole menu; see the module docstring for where it comes from
 MENU_TRIM_SHOWN = 8     # how many trim candidates the text report lists (JSON has all)
+ROUTER_MARK = "<!-- whetstone:router -->"   # written by `index.py --router` (spec/routing.md)
 OVERLAP_WARN = 0.40     # trigger-set Jaccard >= this between two skills -> WARN
 FAMILY_T = 0.12         # trigger Jaccard >= this means "same family" (boundary line expected)
 SEP = re.compile(r"[/、,，;；:：。.\s|·]+")
@@ -226,6 +227,10 @@ def load_skills(src, include_symlinks=True):
             continue
         problems = {}
         fm = parse_frontmatter(sk, problems)
+        try:
+            is_router = ROUTER_MARK in open(sk, encoding="utf-8", errors="replace").read()
+        except OSError:
+            is_router = False
         desc = fm.get("description", "") or ""
         extra = fm.get("when_to_use", "") or ""   # Claude Code shows it with the description
         skills.append({
@@ -238,6 +243,8 @@ def load_skills(src, include_symlinks=True):
             # description is not in the model's context (Claude Code docs), so it takes
             # no menu space
             "hidden": str(fm.get("disable-model-invocation", "")).strip().lower() in ("true", "yes", "on"),
+            "router": is_router,
+            "path": sk,
             "symlink": is_link,
         })
     return skills
@@ -273,6 +280,29 @@ def parse_listing(text):
 
 def _norm(s):
     return " ".join((s or "").split())
+
+
+def router_check(skills):
+    """The generated router must list every skill beside it; one that is missing can only
+    be found through the menu, which is the thing the router is there to get around."""
+    issues = []
+    for r in (s for s in skills if s.get("router")):
+        root = os.path.dirname(r["path"])
+        texts = []
+        for f in [r["path"]] + sorted(os.path.join(root, "families", x)
+                                      for x in (os.listdir(os.path.join(root, "families"))
+                                                if os.path.isdir(os.path.join(root, "families")) else [])
+                                      if x.endswith(".md")):
+            try:
+                texts.append(open(f, encoding="utf-8").read())
+            except OSError:
+                pass
+        listed = set(re.findall(r"^- \*\*([^*]+)\*\*", "\n".join(texts), re.M))
+        missing = sorted(s["name"] for s in skills if not s.get("router") and s["name"] not in listed)
+        if missing:
+            issues.append(("W", r["name"], f"the router is out of date: {len(missing)} skill(s) are not in its "
+                           f"catalog ({', '.join(missing)}) — regenerate with `whetstone index --router`"))
+    return issues
 
 
 def menu_check(skills, budget, reserve=None, listing=None):
@@ -342,6 +372,10 @@ def menu_check(skills, budget, reserve=None, listing=None):
                                f"than SKILL.md ({len(s['menu_desc'])} chars) — over a runtime's own cap, or a "
                                f"frontmatter the runtime parsed differently; the triggers in SKILL.md are not "
                                f"what the model saw"))
+        for s in skills:
+            if s.get("router") and s["name"] in name_only:
+                issues.append(("W", s["name"], "the router itself is shown as name only — keep its one line in the "
+                               "always-loaded rules file, which the menu budget does not touch (spec/routing.md §4 ③)"))
         if name_only:
             issues.append(("W", "(menu)", f"{len(name_only)} of {n} skills are shown as name only in the "
                            f"menu snapshot — their triggers never reached the model: {', '.join(name_only)}"))
@@ -505,7 +539,7 @@ def main():
     if not skills:
         print(f"no skills (no */SKILL.md) under {args.src}", file=sys.stderr)
         return 2
-    issues = lint(skills)
+    issues = lint(skills) + router_check(skills)
     m_issues, menu = menu_check(skills, args.menu_budget, args.menu_reserve, listing)
     issues += m_issues
     E = [x for x in issues if x[0] == "E"]
