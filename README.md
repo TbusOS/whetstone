@@ -173,6 +173,10 @@ whetstone sync engram <skill>       # optional: push one skill into a local engr
 whetstone decision add …            # record what you decided about a proposal, and why
 whetstone decision stats            # what those decisions have started to point at
 whetstone decision alias --from … --to …   # fold two spellings of one meaning together
+whetstone find "<what you are about to do>"  # which skills fit; says so plainly when none does
+whetstone route events | whetstone route learn --events -   # learn from past sessions how you ask
+whetstone route replay --events <file>      # score a routing change on past sessions, in time order
+whetstone route plan --project <dir>        # Claude Code: let skills used elsewhere yield (prints; --write merges)
 ```
 
 `lint` and `verify` guard different failures. `lint` guards **retrieval** — a library whose
@@ -186,6 +190,16 @@ only labels this tool gets for free, and the only raw material from which the fr
 could ever improve on its own evidence rather than on the next paper someone reads. It
 analyses nothing yet: see [`spec/review-decisions.md`](spec/review-decisions.md) for what
 it deliberately is not.
+
+`find` and `route` guard **reach**: past a certain size a library no longer fits the menu a
+runtime shows the model, and the entries that lose their descriptions stop being picked on
+topic (on one machine, 26% with a description, 1% without). Routing keeps the menu short with
+switches the runtime already has, answers the rest with one search command any agent can run,
+and learns from past sessions — no hooks. The core reads only a neutral event format, so each
+agent runtime needs an adapter: **Claude Code's is built and tested; Codex, opencode, pi,
+Gemini CLI and Cursor are designed from their source and not written yet.** See the
+[routing page](https://doc.tbusos.com/whetstone/routing.html) and
+[`spec/routing.md`](spec/routing.md).
 
 A tag only accumulates while the same meaning keeps getting the same string, so `add` shows
 the existing vocabulary the moment you introduce a new one, and `alias` folds two spellings
@@ -202,6 +216,7 @@ SKILL.md                            distiller entry point (Phase 0-5)
 references/extraction-framework.md  the L1-L4 schema — the actual core
 spec/skill-package.md               portable skill-package format (the deliverable)
 spec/review-decisions.md            what a recorded review decision looks like, and its limits
+spec/routing.md                     experience routing: three layers, the neutral event format, six runtimes
 commands/                           /distill and /promote slash-command definitions
 bin/verify.py                       evidence discipline, executable
 bin/verify_selftest.sh              124 assertions, both directions, coverage-enforced
@@ -209,14 +224,17 @@ bin/verify_mutation_test.sh         deletes each check in turn; the suite must g
 bin/decision.py                     the review-decision log (record only; 46 assertions)
 bin/decision_mutation_test.sh       deletes each decision check; the suite must go red
 bin/lint.py · bin/index.py          selection-menu hygiene, incl. whether the whole menu fits
-bin/lint_selftest.sh                50 assertions, both directions; lint_mutation_test.sh breaks 25 checks
+bin/lint_selftest.sh                65 assertions, both directions; lint_mutation_test.sh breaks 41 checks
+bin/route.py                        routing core: find / learn / usage / replay / elsewhere (runtime-neutral)
+bin/route_selftest.sh               73 assertions, both directions; route_mutation_test.sh breaks 57 rules
 bin/pack.sh · bin/deploy.sh · bin/promote.sh   move and install packages
 cli/whetstone                       runtime-agnostic CLI, pure bash
 templates/                          skeletons for a distilled skill / params / pitfalls
 examples/demo-skill/                deliberately flawed package behind the demo above
 inbox/ · journal/                   proposals awaiting review; mined source material
 adapters/capture · adapters/sync    optional: session capture, optional sinks
-adapters/menu                       optional: the menu a runtime actually sent (Claude Code)
+adapters/menu                       the menu a runtime actually sent, and its sessions as neutral events (Claude Code)
+adapters/levers                     a runtime's own menu switches, set from what routing learned (Claude Code)
 autoupdate/                         optional: multi-CLI update prompter
 docs/                               the project page at doc.tbusos.com/whetstone
 ```
