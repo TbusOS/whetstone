@@ -2,553 +2,317 @@
 <html lang="en" data-lang="en">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Experience routing — Whetstone</title>
 <meta name="description" content="A growing skill library cannot rely on one flat menu: keep it short, find the rest on demand, learn from past sessions, across agent runtimes.">
+<meta name="theme-color" content="#0f1113">
 <meta property="og:title" content="A growing library needs a finder, not a longer menu">
 <meta property="og:description" content="Always-on switches the runtime already has, one search command every agent can run, learning from past sessions with no hooks, and a replay that decides what to keep.">
 <meta property="og:url" content="https://doc.tbusos.com/whetstone/routing.html">
 <meta property="og:image" content="https://doc.tbusos.com/whetstone/assets/og-home.png">
 <meta property="og:image:width" content="2400">
 <meta property="og:image:height" content="1260">
+<meta property="og:type" content="article">
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:image" content="https://doc.tbusos.com/whetstone/assets/og-home.png">
-<meta property="og:type" content="article">
-<link rel="stylesheet" href="assets/fonts.css">
-<link rel="stylesheet" href="assets/anthropic.css">
+<script>(function(){var h=document.documentElement,l='en';h.classList.add('js');try{var q=new URLSearchParams(location.search).get('lang'),s=localStorage.getItem('whetstone-lang');l=(q==='zh'||q==='en')?q:(s==='zh'||s==='en')?s:((navigator.language||'').toLowerCase().indexOf('zh')===0?'zh':'en');}catch(e){}h.setAttribute('data-lang',l);})();</script>
+<link rel="stylesheet" href="assets/site.css">
 <style>
-  html[data-lang="en"] .lang-zh { display: none !important; }
-  html[data-lang="zh"] .lang-en { display: none !important; }
-  .lang-toggle {
-    background: transparent; border: 1px solid var(--anth-light-gray); color: var(--anth-text);
-    font-family: var(--font-heading); font-size: 13px; font-weight: 500;
-    padding: 6px 12px; border-radius: var(--radius-pill); cursor: pointer; letter-spacing: 0.05em;
-  }
-  .lang-toggle:hover { background: var(--anth-light-gray); }
+:root { --gold: var(--l3); --green: var(--ok); --blue: #6fb3e0; }
 
-  /* §H · Lora body → Noto Serif SC; Poppins display → Noto Sans SC */
-  html[data-lang="zh"] body, html[data-lang="zh"] p, html[data-lang="zh"] li,
-  html[data-lang="zh"] td, html[data-lang="zh"] .kind-card__body,
-  html[data-lang="zh"] .callout__body, html[data-lang="zh"] .detail-row__body,
-  html[data-lang="zh"] .ref-card p {
-    font-family: "Noto Serif SC", "Source Han Serif SC", "PingFang SC", serif;
-  }
-  html[data-lang="zh"] h1, html[data-lang="zh"] h2, html[data-lang="zh"] h3,
-  html[data-lang="zh"] th, html[data-lang="zh"] .anth-badge,
-  html[data-lang="zh"] .kind-card__title, html[data-lang="zh"] .kind-card__kicker,
-  html[data-lang="zh"] .detail-row__label, html[data-lang="zh"] .stat-trio .num,
-  html[data-lang="zh"] .stat-trio .lbl, html[data-lang="zh"] .ref-card h3,
-  html[data-lang="zh"] .ref-card .no, html[data-lang="zh"] figcaption {
-    font-family: "Noto Sans SC", "PingFang SC", sans-serif;
-  }
-  html[data-lang="zh"] .anth-quote { font-style: normal; }
-  html[data-lang="zh"] .kind-card__kicker, html[data-lang="zh"] .detail-row__label,
-  html[data-lang="zh"] .callout__kicker, html[data-lang="zh"] .ref-card .no { text-transform:none; letter-spacing:0.04em; }
+/* budget chart */
+.budget-wrap { position: relative; padding: 34px 120px 0 44px; }
+.budget-title { font-size: 13px; color: var(--muted); margin-bottom: 18px; }
+.budget { position: relative; height: 250px; display: grid; grid-template-columns: repeat(4, 1fr); align-items: end; border-bottom: 1px solid var(--line-2); }
+.budget::before { content: ""; position: absolute; inset: 0; background: repeating-linear-gradient(0deg, rgba(255,255,255,.05) 0 1px, transparent 1px 25%); pointer-events: none; }
+.bcol { position: relative; height: 100%; display: flex; flex-direction: column; justify-content: flex-end; align-items: center; }
+.bcol .bv { position: relative; z-index: 1; font: 600 14px/1 var(--mono); margin-bottom: 8px; padding: 2px 4px; border-radius: 4px; background: var(--panel); color: var(--text); }
+.bcol .bar { width: 62%; max-width: 110px; height: calc(var(--v) / 240 * 100%); border-radius: 8px 8px 0 0; background: linear-gradient(180deg, var(--ember-2), var(--ember)); box-shadow: 0 0 30px -10px var(--ember); }
+.bcol.low .bar { background: linear-gradient(180deg, #f3cf7a, var(--gold)); box-shadow: 0 0 30px -10px var(--gold); }
+.bcol.low .bv { color: var(--gold); }
+.bx { display: grid; grid-template-columns: repeat(4, 1fr); text-align: center; font: 600 13px/1 var(--mono); color: var(--text); padding-top: 10px; }
+.bx-t { text-align: center; font-size: 12.5px; color: var(--dim); margin-top: 8px; }
+.thresh { position: absolute; left: 0; right: -110px; bottom: calc(40 / 240 * 100%); border-top: 2px dashed var(--gold); }
+.thresh > span { position: absolute; right: 0; top: -40px; text-align: right; font-size: 12px; line-height: 1.4; color: var(--gold); width: 110px; }
+.thresh b { font-weight: 700; display: block; }
+.haiku { position: absolute; left: 40%; top: 46px; display: flex; gap: 10px; max-width: 46%; font-size: 12.5px; line-height: 1.5; color: var(--blue); }
+.haiku .dot { --dc: var(--blue); margin-top: 5px; }
+@media (max-width: 760px) {
+  .budget-wrap { padding: 10px 0 0 34px; }
+  .thresh { right: 0; } .thresh > span { top: -36px; width: auto; }
+  .haiku { position: static; max-width: none; margin: 0 0 14px -34px; }
+  .budget-wrap { padding-top: 0; }
+}
 
-  .eyebrow-link { font-family:var(--font-heading); font-size:12px; letter-spacing:0.14em; text-transform:uppercase; color:var(--anth-text-secondary); font-weight:600; text-decoration:none; }
+/* three layers */
+.lay { display: grid; gap: 12px; }
+.lay-band { display: grid; grid-template-columns: 190px 1fr; gap: 18px; align-items: stretch; padding: 18px; border-radius: 16px; border: 1px solid var(--line); background: color-mix(in srgb, var(--bc) 8%, var(--panel)); }
+.lay-band > .lbl b { display: block; font: 500 20px/1.2 var(--serif); color: var(--text); }
+.lay-band > .lbl span { display: block; margin-top: 8px; color: var(--muted); font-size: 13px; line-height: 1.5; }
+.lay-cards { display: grid; gap: 10px; }
+.lay-cards.c4 { grid-template-columns: repeat(4, 1fr); }
+.lay-cards.c3 { grid-template-columns: 2fr 1fr 1fr; }
+.lay-cards.c5 { grid-template-columns: repeat(5, 1fr); }
+.lc { position: relative; background: #121518; border: 1px solid var(--line); border-top: 3px solid var(--cc, var(--line-2)); border-radius: 12px; padding: 14px; min-width: 0; }
+.lc h4 { margin: 0; font: 600 14.5px/1.35 var(--sans); color: var(--text); padding-right: 4px; }
+.lc h4 code { font-size: 12.5px; white-space: normal; }
+.lc p { margin: 6px 0 0; color: var(--muted); font-size: 12.5px; line-height: 1.5; }
+.lc .pill { margin-top: 10px; }
+.lc.gold { --cc: var(--gold); } .lc.hot { --cc: var(--ember); background: color-mix(in srgb, var(--ember) 9%, #121518); } .lc.blue { --cc: var(--blue); }
+.c5 .lc:not(:last-child)::after { content: "→"; position: absolute; right: -10px; top: 50%; transform: translate(50%, -50%); color: var(--blue); font-size: 14px; z-index: 1; }
+.lay-foot { grid-column: 2; margin-top: 4px; font-size: 12.5px; color: var(--green); }
+@media (max-width: 1000px) { .lay-band { grid-template-columns: 1fr; } .lay-cards.c4, .lay-cards.c3 { grid-template-columns: 1fr 1fr; } .lay-cards.c5 { grid-template-columns: 1fr; } .c5 .lc:not(:last-child)::after { content: "↓"; right: 50%; top: auto; bottom: -12px; transform: translateX(50%); } .lay-foot { grid-column: 1; } }
+@media (max-width: 560px) { .lay-cards.c4, .lay-cards.c3 { grid-template-columns: 1fr; } }
 
-  .stat-trio { display:grid; grid-template-columns:repeat(3, 1fr); gap:var(--space-5); padding:var(--space-7) var(--space-5); background:#ffffff; border:1px solid var(--anth-light-gray); border-radius:var(--radius-md); }
-  .stat-trio > div { text-align:center; }
-  .stat-trio .num { display:block; font-family:var(--font-heading); font-size:48px; font-weight:600; color:var(--anth-text); letter-spacing:-0.02em; line-height:1; }
-  .stat-trio .lbl { display:block; font-family:var(--font-heading); font-size:12.5px; font-weight:500; color:var(--anth-text-secondary); margin-top:var(--space-3); letter-spacing:0.02em; line-height:1.45; }
+/* paths timeline */
+.ptl { display: grid; grid-template-columns: repeat(3, 1fr); gap: 18px; position: relative; padding-top: 40px; }
+.ptl::before { content: ""; position: absolute; left: 16%; right: 16%; top: 12px; height: 2px; background: var(--line-2); }
+.pst { position: relative; text-align: center; }
+.pst::before { content: ""; position: absolute; left: 50%; top: -34px; width: 14px; height: 14px; margin-left: -7px; border-radius: 50%; background: var(--blue); box-shadow: 0 0 0 5px var(--bg); }
+.pst.hit::before { background: var(--ember); box-shadow: 0 0 0 5px var(--bg), 0 0 18px var(--ember); }
+.pst h4 { margin: 0 0 12px; font: 600 14px/1.3 var(--mono); color: var(--text); }
+.menu-mock { text-align: left; background: #121518; border: 1px solid var(--line); border-radius: 12px; padding: 14px; }
+.pst.hit .menu-mock { border-color: var(--ember); }
+.menu-mock .t { font: 11px/1 var(--mono); color: var(--dim); margin-bottom: 10px; }
+.menu-mock i { display: block; height: 8px; border-radius: 4px; background: #2a3036; margin-bottom: 9px; }
+.menu-mock .add { margin-top: 4px; padding: 6px 8px; border-radius: 6px; font: 600 12px/1 var(--mono); color: var(--ember-2); background: rgba(255,122,61,.14); }
+.js .pst.hit .add { opacity: 0; transform: translateY(6px); transition: all .6s .9s; }
+.js .in .pst.hit .add { opacity: 1; transform: none; }
+.pst p { margin: 10px 0 0; font-size: 13px; color: var(--muted); }
+.pst.hit p { color: var(--ember-2); font-weight: 600; }
+@media (max-width: 720px) { .ptl { grid-template-columns: 1fr; padding-top: 0; } .ptl::before, .pst::before { display: none; } }
 
-  .prose p { font-family:var(--font-body); font-size:17px; line-height:1.75; margin:0 0 var(--space-5); color:var(--anth-text); }
+/* across runtimes */
+.rt-arch { display: grid; grid-template-columns: 1.7fr .95fr 1.05fr 1.25fr; gap: 26px; align-items: start; }
+.rt-col h5 { margin: 0 0 12px; font: 700 11px/1 var(--mono); letter-spacing: .12em; text-transform: uppercase; color: var(--dim); }
+html[data-lang="zh"] .rt-col h5 { letter-spacing: .04em; }
+.rt-col { position: relative; min-width: 0; }
+.rt-col + .rt-col::before { content: "→"; position: absolute; left: -19px; top: 120px; color: var(--ember); font-size: 16px; }
+.rtr { display: grid; grid-template-columns: 96px 1fr; gap: 10px; align-items: center; padding: 10px 12px; margin-bottom: 8px; border-radius: 10px; border: 1px dashed var(--line-2); }
+.rtr b { font: 600 13px/1.2 var(--sans); color: var(--muted); }
+.rtr span { font-size: 12px; line-height: 1.4; color: var(--dim); }
+.rtr span em { font-style: normal; display: block; font-weight: 600; color: var(--muted); }
+.rtr.built { border: 1px solid var(--green); background: rgba(122,212,140,.07); }
+.rtr.built b, .rtr.built span em { color: var(--text); }
+.rtr.built span { color: var(--green); }
+.box { border-radius: 14px; padding: 16px; border: 1px solid var(--line); background: #121518; }
+.box h4 { margin: 0; font: 600 15px/1.3 var(--mono); color: var(--text); }
+.box .sub { display: block; margin: 4px 0 10px; font-size: 12px; color: var(--muted); }
+.box ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; font-size: 12.5px; color: #d9d4cb; }
+.box ul small { display: block; color: var(--dim); font-size: 11.5px; margin-top: 2px; }
+.box.ev { border-color: var(--blue); background: color-mix(in srgb, var(--blue) 8%, #121518); }
+.box.ev ul { font-family: var(--mono); }
+.box.core { border-color: var(--ember); background: color-mix(in srgb, var(--ember) 9%, #121518); }
+.box.core ul li { padding-left: 14px; position: relative; }
+.box.core ul li::before { content: ""; position: absolute; left: 0; top: 6px; width: 6px; height: 6px; border-radius: 50%; background: var(--ember); }
+.box + .box { margin-top: 10px; }
+.box.out-find { border-color: var(--ember); }
+.sw { display: flex; gap: 8px; align-items: center; color: var(--dim); }
+.sw.built { color: var(--text); }
+.sw .dot { --dc: transparent; border: 1.5px solid var(--dim); }
+.sw.built .dot { --dc: var(--green); border-color: var(--green); }
+.install-strip { margin-top: 22px; padding: 14px 18px; border-radius: 12px; border: 1px solid color-mix(in srgb, var(--gold) 50%, transparent); background: color-mix(in srgb, var(--gold) 7%, transparent); font-size: 13px; color: var(--muted); line-height: 1.7; }
+.install-strip b { color: var(--gold); font-weight: 600; }
+.install-strip code { white-space: nowrap; }
+@media (max-width: 1060px) { .rt-arch { grid-template-columns: 1fr 1fr; } .rt-col + .rt-col::before { display: none; } }
+@media (max-width: 640px) { .rt-arch { grid-template-columns: 1fr; } }
+.rt-tbl { min-width: 900px; }
+.rt-tbl td:first-child { color: var(--muted); font: 600 12.5px/1.4 var(--sans); width: 150px; }
+.rt-tbl .built { color: var(--green); font-weight: 600; }
 
-  figure { margin:0; }
-  figcaption { font-family:var(--font-heading); font-size:13px; line-height:1.6; color:var(--anth-text-secondary); text-align:center; margin:var(--space-4) auto 0; max-width:880px; }
-
-  .kind-grid { display:grid; grid-template-columns:repeat(3, 1fr); gap:var(--space-5); }
-  .kind-card { background:#ffffff; border:1px solid var(--anth-light-gray); border-radius:var(--radius-lg); padding:var(--space-6); display:flex; flex-direction:column; gap:var(--space-3); }
-  .kind-card__kicker { font-family:var(--font-heading); font-size:11px; font-weight:700; letter-spacing:0.16em; color:var(--anth-orange-ink); text-transform:uppercase; display:flex; align-items:center; gap:8px; }
-  .kind-card__dot { width:8px; height:8px; border-radius:50%; display:inline-block; flex:none; }
-  .kind-card__title { font-family:var(--font-heading); font-size:21px; font-weight:600; letter-spacing:-0.01em; color:var(--anth-text); margin:0; line-height:1.25; }
-  .kind-card__body { font-family:var(--font-body); font-size:15.5px; line-height:1.65; color:var(--anth-text); margin:0; }
-  .kind-card__act { font-family:var(--font-heading); font-size:13px; font-weight:600; color:var(--anth-text-secondary); margin-top:auto; padding-top:var(--space-3); border-top:1px solid var(--anth-light-gray); }
-
-  .art-table { width:100%; border-collapse:collapse; font-family:var(--font-body); font-size:16px; background:#ffffff; border:1px solid var(--anth-light-gray); border-radius:var(--radius-md); overflow:hidden; }
-  .art-table th, .art-table td { text-align:left; padding:var(--space-4) var(--space-5); border-bottom:1px solid var(--anth-light-gray); vertical-align:top; line-height:1.6; }
-  .art-table th { font-family:var(--font-heading); font-size:13px; font-weight:600; color:var(--anth-text-secondary); background:var(--anth-bg); }
-  .art-table tbody tr:last-child td { border-bottom:none; }
-  .art-table code, .prose code, .kind-card__body code, .callout__body code, .ref-card p code, .palette-list code { font-family:'JetBrains Mono', monospace; font-size:13.5px; background:var(--anth-bg); padding:1px 6px; border-radius:4px; border:1px solid var(--anth-light-gray); }
-  .rt-wrap { overflow-x:auto; -webkit-overflow-scrolling:touch; border-radius:var(--radius-md); }
-  .rt-table { min-width:900px; font-size:14.5px; }
-  .rt-table th, .rt-table td { padding:var(--space-3) var(--space-4); }
-  .rt-table td:first-child { font-family:var(--font-heading); font-size:13px; font-weight:600; color:var(--anth-text-secondary); width:150px; }
-  .rt-table .is-built { color:#5d7045; font-weight:600; }
-  .st { font-family:var(--font-heading); font-weight:700; white-space:nowrap; font-size:13px; }
-  .st--built { color:#5d7045; } .st--planned { color:var(--anth-text-secondary); }
-
-  .palette-split { display:grid; grid-template-columns:2fr 3fr; gap:var(--space-7); align-items:start; }
-  .palette-split > * { min-width:0; }
-  .palette-list { list-style:none; padding:0; margin:var(--space-5) 0 0; display:flex; flex-direction:column; gap:var(--space-4); }
-  .palette-list li { font-family:var(--font-body); font-size:16px; line-height:1.6; color:var(--anth-text); padding-left:var(--space-5); position:relative; }
-  .palette-list li::before { content:''; position:absolute; left:0; top:10px; width:6px; height:6px; border-radius:50%; background:var(--anth-orange); }
-  .art-term { white-space:pre-wrap; overflow-wrap:anywhere; background:var(--anth-text); color:#e9e6dd; border-radius:var(--radius-md); padding:var(--space-5) var(--space-5); overflow-x:auto; font-size:12.5px; line-height:1.65; margin:0; border:1px solid var(--anth-light-gray); }
-  .art-term code { font-family:'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, monospace; background:none; color:inherit; padding:0; border:0; }
-  .art-term .t-dim { color:#8c8a7d; } .art-term .t-hi { color:#e8a184; font-weight:600; } .art-term .t-ok { color:#b5c49a; font-weight:600; }
-
-  .ref-grid { display:grid; grid-template-columns:repeat(2, 1fr); gap:var(--space-5); }
-  .ref-card { background:#ffffff; border:1px solid var(--anth-light-gray); border-radius:var(--radius-md); padding:var(--space-5) var(--space-6); }
-  .ref-card h3 { font-family:var(--font-heading); font-size:17px; font-weight:600; margin:var(--space-2) 0 var(--space-2); color:var(--anth-text); }
-  .ref-card h3 a { color:inherit; text-decoration:none; border-bottom:1px solid var(--anth-light-gray); }
-  .ref-card h3 a:hover { border-bottom-color:var(--anth-orange); }
-  .ref-card p { font-family:var(--font-body); font-size:15px; line-height:1.6; color:var(--anth-text-secondary); margin:0; }
-  .ref-card .no { font-family:var(--font-heading); font-size:11px; font-weight:700; letter-spacing:0.1em; text-transform:uppercase; color:var(--anth-orange-ink); }
-
-  .callout { background:var(--anth-bg); border:1px solid var(--anth-light-gray); border-left:3px solid var(--anth-orange); border-radius:var(--radius-md); padding:var(--space-6); }
-  .callout__kicker { font-family:var(--font-heading); font-size:11.5px; font-weight:700; letter-spacing:0.16em; text-transform:uppercase; color:var(--anth-orange-ink); margin:0; }
-  .callout__title { font-family:var(--font-heading); font-size:22px; font-weight:600; color:var(--anth-text); margin:var(--space-2) 0 var(--space-3); }
-  .callout__body { font-family:var(--font-body); font-size:16px; line-height:1.65; color:var(--anth-text); margin:0 0 var(--space-3); }
-  .callout__body:last-child { margin-bottom:0; }
-
-  .detail-row { display:grid; grid-template-columns:180px 1fr; gap:var(--space-5); padding:var(--space-5) 0; border-bottom:1px solid var(--anth-light-gray); }
-  .detail-row:last-child { border-bottom:none; }
-  .detail-row__label { font-family:var(--font-heading); font-size:11.5px; font-weight:700; letter-spacing:0.16em; text-transform:uppercase; color:var(--anth-orange-ink); padding-top:3px; }
-  .detail-row__body { font-family:var(--font-body); font-size:16px; line-height:1.6; color:var(--anth-text); margin:0; }
-  .detail-row__body code { font-family:'JetBrains Mono', monospace; font-size:14px; background:var(--anth-bg); padding:2px 8px; border-radius:4px; border:1px solid var(--anth-light-gray); }
-
-  .art-cta { background:var(--anth-bg-subtle); border-radius:var(--radius-lg); padding:var(--space-6); }
-  .art-cta p { font-family:var(--font-body); font-size:16px; line-height:1.65; margin:0 0 var(--space-4); }
-  .art-cta .anth-button { margin-right:var(--space-3); }
-
-  /* pan wrapper: below 1024px a figure keeps the width at which its smallest label is 9px */
-  @media (max-width:1024px) {
-    .anth-scroll { overflow-x:auto; overflow-y:hidden; -webkit-overflow-scrolling:touch; }
-    .anth-scroll > svg { display:block; min-width:var(--pan-w, 720px); height:auto; }
-  }
-  @media (max-width:768px) {
-    .anth-nav-inner > div:nth-child(2) { display:none; }
-  }
-  @media (max-width:960px) {
-    .kind-grid { grid-template-columns:repeat(2, 1fr); }
-    .palette-split { grid-template-columns:1fr; }
-  }
-  @media (max-width:720px) {
-    .kind-grid, .ref-grid, .stat-trio { grid-template-columns:1fr; }
-    .detail-row { grid-template-columns:1fr; gap:var(--space-2); }
-  }
+/* replay bars */
+.rp { display: grid; gap: 14px; }
+.rp-head { display: grid; grid-template-columns: 230px 1fr; font-size: 12.5px; color: var(--muted); }
+.rp-row { display: grid; grid-template-columns: 230px 1fr; gap: 0; align-items: center; }
+.rp-row .l { padding-right: 18px; text-align: right; }
+.rp-row .l b { display: block; font: 600 14px/1.3 var(--sans); color: var(--text); }
+.rp-row .l > span { display: block; font-size: 12px; color: var(--rc); margin-top: 2px; }
+.rp-track { position: relative; height: 30px; border-left: 1px solid var(--line-2); }
+.rp-track .fill { position: absolute; left: 0; top: 2px; bottom: 2px; width: calc(var(--v) / 34 * 100%); border-radius: 0 6px 6px 0; background: var(--rc); }
+.rp-track .n { position: absolute; top: 50%; transform: translateY(-50%); left: calc(var(--v) / 34 * 100% + 10px); font: 600 14px/1 var(--mono); color: var(--text); }
+.rp-track::after { content: ""; position: absolute; right: 0; top: -6px; bottom: -6px; border-right: 1px dashed var(--line-2); }
+.rp-axis { display: grid; grid-template-columns: 230px 1fr; font: 11.5px/1 var(--mono); color: var(--dim); }
+.rp-axis div { position: relative; height: 14px; }
+.rp-axis i { position: absolute; font-style: normal; transform: translateX(-50%); white-space: nowrap; }
+@media (max-width: 640px) { .rp-head, .rp-row, .rp-axis { grid-template-columns: 1fr; } .rp-row .l { text-align: left; padding: 0 0 6px; } .rp-axis > span { display: none; } }
 </style>
 </head>
 <body>
 
-<!-- Nav -->
-<nav class="anth-nav"><div class="anth-nav-inner">
-  <a href="index.html" style="font-family:var(--font-heading); font-weight:600; font-size:18px; text-decoration:none; color:var(--anth-text);">Whetstone · <span lang="zh-CN">磨刀石</span></a>
-  <div>
-    <a href="index.html#why"><span class="lang-en">Why</span><span class="lang-zh">为什么</span></a>
-    <a href="index.html#evidence"><span class="lang-en">Evidence</span><span class="lang-zh">证据</span></a>
-    <a href="use-time-conflicts.html"><span class="lang-en">Use-time check</span><span class="lang-zh">用时纠错</span></a>
-    <a href="routing.html" style="color:var(--anth-orange-ink); font-weight:600;"><span class="lang-en">Routing</span><span class="lang-zh">经验路由</span></a>
-    <a href="index.html#architecture"><span class="lang-en">Architecture</span><span class="lang-zh">架构</span></a>
-    <a href="skills.html"><span class="lang-en">Skills</span><span class="lang-zh">技能</span></a>
-    <a href="index.html#install"><span class="lang-en">Install</span><span class="lang-zh">安装</span></a>
+<nav class="nav" aria-label="Primary">
+  <div class="wrap">
+    <a class="brand" href="index.html">
+      <svg width="26" height="26" viewBox="0 0 32 32" aria-hidden="true"><rect x="3" y="12" width="26" height="9" rx="2.5" fill="#5a6068"/><rect x="3" y="12" width="26" height="3" rx="1.5" fill="#8a9098"/><path d="M8 9l3-5M16 8V3M24 9l-3-5" stroke="#ff7a3d" stroke-width="2" stroke-linecap="round"/><rect x="5" y="23" width="22" height="3" rx="1.5" fill="#8f96ff" opacity=".85"/></svg>
+      whetstone <small lang="zh-CN">· 磨刀石</small>
+    </a>
+    <div class="nav-links">
+      <a href="index.html#evidence"><span class="en">Evidence</span><span class="zh">证据纪律</span></a>
+      <a href="index.html#layers"><span class="en">Layers</span><span class="zh">分层</span></a>
+      <a href="use-time-conflicts.html"><span class="en">Use-time check</span><span class="zh">用时纠错</span></a>
+      <a href="routing.html" aria-current="page"><span class="en">Routing</span><span class="zh">经验路由</span></a>
+      <a href="skills.html"><span class="en">Skills</span><span class="zh">技能</span></a>
+      <a href="index.html#install"><span class="en">Install</span><span class="zh">安装</span></a>
+    </div>
+    <div class="nav-act">
+      <button type="button" class="lang" aria-label="Switch language / 切换语言">中 / EN</button>
+      <a class="gh" href="https://github.com/TbusOS/whetstone"><svg width="15" height="15" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/></svg>GitHub</a>
+    </div>
   </div>
-  <div style="display:flex; gap:var(--space-3); align-items:center;">
-    <button type="button" class="lang-toggle" aria-label="Switch language">中 / EN</button>
-    <a class="anth-button" href="https://github.com/TbusOS/whetstone">GitHub</a>
-  </div>
-</div></nav>
+</nav>
 
-<div style="padding:var(--space-5) var(--space-5) 0;">
-  <div class="anth-container">
-    <a href="index.html" class="eyebrow-link"><span class="lang-en">← Back · Whetstone overview</span><span class="lang-zh">← 返回 · Whetstone 总览</span></a>
-  </div>
-</div>
-
-<!-- Hero -->
-<section class="anth-hero" style="padding-top:var(--space-7);">
-  <div class="anth-container" style="max-width:860px;">
-    <span class="anth-badge" style="background:var(--anth-cta); color:#ffffff; font-weight:600;">
-      <span class="lang-en">Feature · Experience routing</span><span class="lang-zh">功能 · 经验路由</span>
-    </span>
-    <h1 style="margin-top:var(--space-4);">
-      <span class="lang-en">A growing library<br>needs a finder,<br>not a longer menu.</span>
-      <span class="lang-zh">经验越攒越多，<br>靠的是会找，<br>不是菜单更长。</span>
-    </h1>
-    <p style="font-size:20px; color:var(--anth-text-secondary); margin:var(--space-5) auto var(--space-6); line-height:1.6; max-width:720px; font-family:var(--font-body);">
-      <span class="lang-en">An agent picks a skill by reading a menu of names and descriptions, and that menu has a fixed budget. Past it, descriptions are cut and the trigger words go with them. whetstone keeps the menu short with switches the runtime already has, finds the rest with one command any agent can run, and learns from past sessions how you ask. No hooks. Built for Claude Code first, <em>designed</em> for the other runtimes.</span>
-      <span class="lang-zh">agent 挑 skill 靠读一张「名字 + 描述」的菜单，这张菜单有固定预算，超了就砍描述，触发词跟着没了。whetstone 用运行时自带的开关让菜单保持精简，其余的用一条任何 agent 都能跑的命令去找，再从历史会话里学你平时怎么说。不装钩子。先在 Claude Code 上做完，其他运行时按同一套<em>设计</em>接入。</span>
+<header class="page-hero">
+  <div class="wrap">
+    <a class="back" href="index.html" style="margin:0 0 22px;display:inline-flex"><span class="en">← Whetstone overview</span><span class="zh">← 返回 Whetstone 总览</span></a><br>
+    <span class="feat-tag"><span class="en">Feature · Experience routing</span><span class="zh">功能 · 经验路由</span></span>
+    <h1><span class="en">A growing library needs a finder, not a longer menu.</span><span class="zh">经验越攒越多，靠的是会找，不是菜单更长。</span></h1>
+    <p class="lede">
+      <span class="en">An agent picks a skill by reading a menu of names and descriptions, and that menu has a fixed budget. Past it, descriptions are cut and the trigger words go with them. whetstone keeps the menu short with switches the runtime already has, finds the rest with one command any agent can run, and learns from past sessions how you ask. No hooks. Built for Claude Code first, <em class="hl">designed</em> for the other runtimes.</span>
+      <span class="zh">agent 挑 skill 靠读一张「名字 + 描述」的菜单，这张菜单有固定预算，超了就砍描述，触发词跟着没了。whetstone 用运行时自带的开关让菜单保持精简，其余的用一条任何 agent 都能跑的命令去找，再从历史会话里学你平时怎么说。不装钩子。先在 Claude Code 上做完，其他运行时按同一套<em class="hl">设计</em>接入。</span>
     </p>
-    <div style="display:flex; gap:var(--space-3); justify-content:center; flex-wrap:wrap;">
-      <a class="anth-button" href="#layers"><span class="lang-en">See the three layers</span><span class="lang-zh">看三层结构</span></a>
-      <a class="anth-button anth-button--ghost" href="#agents"><span class="lang-en">How it spans runtimes</span><span class="lang-zh">怎么支持多种 agent</span></a>
+    <div class="cta">
+      <a class="btn btn--hot" href="#layers"><span class="en">See the three layers</span><span class="zh">看三层结构</span></a>
+      <a class="btn btn--ghost" href="#agents"><span class="en">How it spans runtimes</span><span class="zh">怎么支持多种 agent</span> →</a>
+    </div>
+    <div class="stats3 rv">
+      <div><b class="hot">35/65</b><span class="en">skills on one machine’s menu shown as a bare name, description cut</span><span class="zh">个 skill 在一台机器的菜单里只剩名字，描述被砍掉</span></div>
+      <div><b class="hot">1%</b><span class="en">how often a trigger word still led to the skill once its description was cut; 26% while it was there</span><span class="zh">描述被砍后，触发词出现时 skill 还被用上的比例；有描述时是 26%</span></div>
+      <div><b>0</b><span class="en">hooks installed; everything learned is read from past sessions afterwards</span><span class="zh">个钩子；学的东西全部事后从历史会话里读</span></div>
     </div>
   </div>
-</section>
+</header>
 
-<!-- Stat trio -->
-<section class="anth-section">
-  <div class="anth-container anth-container--narrow">
-    <div class="stat-trio">
-      <div>
-        <span class="num">35/65</span>
-        <span class="lbl"><span class="lang-en">skills on one machine’s menu shown as a bare name, description cut</span><span class="lang-zh">个 skill 在一台机器的菜单里只剩名字，描述被砍掉</span></span>
+<main>
+  <!-- premise -->
+  <section class="sec alt">
+    <div class="wrap">
+      <div class="sec-head rv">
+        <span class="kicker"><span class="en">The premise</span><span class="zh">前提</span></span>
+        <h2><span class="en">The budget is fixed. The library is not.</span><span class="zh">预算是固定的，库是一直长的。</span></h2>
       </div>
-      <div>
-        <span class="num">1%</span>
-        <span class="lbl"><span class="lang-en">how often a trigger word still led to the skill once its description was cut; 26% while it was there</span><span class="lang-zh">描述被砍后，触发词出现时 skill 还被用上的比例；有描述时是 26%</span></span>
+      <div class="prose rv">
+        <p><span class="en">Claude Code gives the skill menu roughly one percent of the context window. When the library outgrows it, no skill is removed; the least-used ones lose their descriptions and stay as a bare name. That is where a skill stops being picked on topic: on one machine over 30 days, a trigger word in a message led to the skill 26% of the time when its description was on the menu, and 1% of the time when only its name was (98 and 99 matching messages).</span><span class="zh">Claude Code 给 skill 菜单大约上下文的百分之一。库超出这个预算时，它不删 skill，而是把用得最少的那些描述去掉，只留名字。skill 从这一步开始就很难按话题被挑中：一台机器上 30 天的记录里，消息里出现触发词时，菜单上有描述的 skill 被用上 26%，只剩名字的 1%（分别 98 条、99 条命中消息）。</span></p>
+        <p><span class="en">Shortening descriptions only delays the outcome. Split a fixed budget over more skills and every share shrinks, until a description is too short to match anything. The entry point cannot grow with the library. It has to be a fixed-size entry plus a search, or a signal that brings a skill out without going through the menu at all: the folder you are working in, the file you just opened.</span><span class="zh">缩短描述只是推迟这个结局。固定的预算分给越来越多的 skill，每条的份额越来越小，直到短得什么都匹配不上。入口不能跟着库一起变长，只能是「固定大小的入口 + 查找」，或者干脆不经过菜单，由确定的信号直接带出来：你在哪个目录干活，你刚打开了哪个文件。</span></p>
       </div>
-      <div>
-        <span class="num">0</span>
-        <span class="lbl"><span class="lang-en">hooks installed; everything learned is read from past sessions afterwards</span><span class="lang-zh">个钩子；学的东西全部事后从历史会话里读</span></span>
+
+      <figure class="fig rv" style="margin-top:28px" role="img" aria-label="Bar chart of characters of description each skill can get as the library grows, in an Opus session with about 16,000 characters for the library: about 226 at 65 skills, 140 at 100, 60 at 200 and 33 at 300, below the 40 characters a description needs to still match. In a Haiku 4.5 session the same 65-skill library got a 7,978-character menu and every skill was a bare name. 库变大时每条描述能分到的字数(Opus 会话,留给库约 16,000 字符):65 个约 226,100 个 140,200 个 60,300 个 33,低于还能被匹配的 40;同一个库在 Haiku 4.5 会话里菜单只有 7,978 字符,65 个全部只剩名字。">
+        <div class="budget-title"><span class="en">characters of description per skill · Opus session, about 16,000 characters for the library</span><span class="zh">每条描述能分到的字符数 · Opus 会话，留给库约 16,000 字符</span></div>
+        <div class="budget-wrap" style="padding-top:0">
+          <div class="haiku"><span class="dot"></span><span><span class="en">Haiku 4.5 session, same 65 skills: a 7,978-character menu, every skill a bare name</span><span class="zh">同一个库在 Haiku 4.5 会话里：菜单只有 7,978 字符，65 个全部只剩名字</span></span></div>
+          <div class="budget">
+            <div class="bcol" style="--v:226"><span class="bv">≈226</span><span class="bar grow"></span></div>
+            <div class="bcol" style="--v:140"><span class="bv">≈140</span><span class="bar grow"></span></div>
+            <div class="bcol" style="--v:60"><span class="bv">≈60</span><span class="bar grow"></span></div>
+            <div class="bcol low" style="--v:33"><span class="bv">≈33</span><span class="bar grow"></span></div>
+            <div class="thresh"><span><b><span class="en">40 characters</span><span class="zh">40 字符</span></b><span class="en">too short to match</span><span class="zh">短到匹配不上</span></span></div>
+          </div>
+          <div class="bx"><span>65</span><span>100</span><span>200</span><span>300</span></div>
+          <div class="bx-t"><span class="en">skills in the library</span><span class="zh">库里的 skill 数</span></div>
+        </div>
+      </figure>
+      <p class="cap rv" style="font-size:13.5px;color:var(--dim);max-width:88ch;margin-top:14px"><span class="en">Shares are the library’s part of the budget divided evenly, after about 20 characters of name and punctuation per entry. The budget follows the model: a smaller context gets a smaller menu, so the same library runs out sooner.</span><span class="zh">份额 = 留给库的预算平均分，每条先扣掉约 20 字符的名字和格式。预算跟着模型走：上下文小，菜单就小，同一个库更早装不下。</span></p>
+
+      <blockquote class="quote rv">
+        <p><span class="en">“I don’t want them called by hand. There are so many skills that nobody knows which ones exist.”</span><span class="zh">「不希望手动调用呀，因为 skills 非常多，根本不知道有哪些 skills 的。」</span></p>
+        <cite><span class="en">The library’s owner, on why manual-only skills were ruled out, 2026-09-29</span><span class="zh">库的主人，解释为什么不用「只许手动调用」，2026-09-29</span></cite>
+      </blockquote>
+    </div>
+  </section>
+
+  <!-- three layers -->
+  <section class="sec" id="layers">
+    <div class="wrap">
+      <div class="sec-head rv">
+        <span class="kicker"><span class="en">Three layers</span><span class="zh">三层结构</span></span>
+        <h2><span class="en">Keep the menu short, ask when unsure, learn afterwards.</span><span class="zh">菜单保持精简，拿不准就查，事后再学。</span></h2>
+        <p class="lede"><span class="en">Certain signals come first: the folder and the file are facts, “the model read a description and thought it fit” is a guess. On one machine, a rule tied to the working folder led to the right skill in 8 of 10 sessions; trigger words in descriptions, in 5 of 38.</span><span class="zh">确定的信号优先：目录、文件是事实，「模型读了描述觉得相关」是推断。一台机器上，按工作目录写的规则 10 个会话里 8 个用上了对应 skill；按描述里的触发词，38 组里 5 组。</span></p>
+      </div>
+      <figure class="lay rv" style="margin:0" role="img" aria-label="Three layers. Always on, using the runtime's own switches: a routing skill that puts the whole catalog behind one entry, yielding by project so skills used elsewhere show only a name, skills that appear when a matching file is read, and skills that live in one project's folder. On demand: whetstone find ranks skills by name, description, body and learned messages, says none fits below a threshold, and can be run by any agent with a shell. Learning offline: session logs go through a per-runtime adapter into neutral events, then learn and usage, and a replay keeps a change only if it wins. 三层:常驻层用运行时自带的开关(路由 skill、按项目让位、按文件出现、项目专属);按需层 whetstone find 按名字、描述、正文、学到的原话打分,够不上门槛就说没有,任何有 shell 的 agent 都能跑;离线学习层把会话记录经适配器转成统一事件,学原话和使用表,改动要在回放里赢了才保留。">
+        <div class="lay-band" style="--bc:var(--gold)">
+          <div class="lbl"><b><span class="en">① Always on</span><span class="zh">① 常驻</span></b><span><span class="en">the menu, using switches the runtime already has</span><span class="zh">菜单，只用运行时自带的开关</span></span></div>
+          <div class="lay-cards c4">
+            <div class="lc gold"><h4><span class="en">Routing skill</span><span class="zh">路由 skill</span></h4><p><span class="en">one short entry; the whole catalog sits behind it</span><span class="zh">菜单里只占一条，整个库的目录在它后面</span></p></div>
+            <div class="lc gold"><h4><span class="en">Yield by project</span><span class="zh">按项目让位</span></h4><p><span class="en">used elsewhere, never here: name only, still callable</span><span class="zh">用在别处、本项目没用过：只留名字，照样能调用</span></p><span class="pill" style="--cc:var(--green)"><span class="en">from usage</span><span class="zh">来自使用</span></span></div>
+            <div class="lc gold"><h4><span class="en">Appear by file</span><span class="zh">按文件出现</span></h4><p><span class="en">joins the menu when a matching file is read</span><span class="zh">读到匹配的文件，才加进菜单</span></p><span class="pill" style="--cc:var(--blue)"><span class="en">measured</span><span class="zh">已实测</span></span></div>
+            <div class="lc gold"><h4><span class="en">Project-only</span><span class="zh">项目专属</span></h4><p><span class="en">lives in that project’s own skills folder</span><span class="zh">放在那个项目自己的 skill 目录里</span></p></div>
+          </div>
+        </div>
+        <div class="lay-band" style="--bc:var(--ember)">
+          <div class="lbl"><b><span class="en">② On demand</span><span class="zh">② 按需</span></b><span><span class="en">when unsure, search</span><span class="zh">拿不准，就查</span></span></div>
+          <div class="lay-cards c3">
+            <div class="lc hot"><h4><code>whetstone find "<span class="en">&lt;what you are about to do&gt;</span><span class="zh">&lt;要做的事&gt;</span>"</code></h4><p><span class="en">name ×3 · description ×2 · body ×1 · learned messages ×2</span><span class="zh">名字 ×3 · 描述 ×2 · 正文 ×1 · 学到的原话 ×2</span></p><span class="pill" style="--cc:var(--green)"><span class="en">learned</span><span class="zh">学来的</span></span></div>
+            <div class="lc"><h4><span class="en">Below the threshold</span><span class="zh">够不上门槛</span></h4><p><span class="en">says “no skill fits”</span><span class="zh">直说「没有合适的」</span></p></div>
+            <div class="lc blue"><h4><span class="en">Any agent, a shell</span><span class="zh">有 shell 就能跑</span></h4><p><span class="en">the one entry all can run</span><span class="zh">各家 agent 都能用的入口</span></p></div>
+          </div>
+        </div>
+        <div class="lay-band" style="--bc:var(--green)">
+          <div class="lbl"><b><span class="en">③ Learns offline</span><span class="zh">③ 离线学习</span></b><span><span class="en">from past sessions; nothing runs live</span><span class="zh">读历史会话，不在干活时跑</span></span></div>
+          <div class="lay-cards c5">
+            <div class="lc blue"><h4><span class="en">Session logs</span><span class="zh">会话记录</span></h4><p><span class="en">each runtime’s format</span><span class="zh">各家自己的格式</span></p></div>
+            <div class="lc blue"><h4><span class="en">Adapter</span><span class="zh">适配器</span></h4><p><span class="en">one per runtime</span><span class="zh">每个运行时一个</span></p></div>
+            <div class="lc blue"><h4><span class="en">Neutral events</span><span class="zh">统一事件</span></h4><p><span class="en">6 kinds, one per line</span><span class="zh">6 种，一行一条</span></p></div>
+            <div class="lc" style="--cc:var(--green)"><h4><span class="en">learn · usage</span><span class="zh">学原话 · 使用表</span></h4><p><span class="en">what led to each skill</span><span class="zh">什么话引出了哪条</span></p></div>
+            <div class="lc hot"><h4><span class="en">replay</span><span class="zh">回放</span></h4><p><span class="en">kept only if it wins</span><span class="zh">赢了才保留改动</span></p></div>
+          </div>
+          <div class="lay-foot"><span class="en">learned messages go into find · usage suggests which skills yield in a project, and you confirm</span><span class="zh">学到的原话进 find · 使用表给出「本项目该让位的」建议，由你确认</span></div>
+        </div>
+      </figure>
+      <p class="rv" style="font-size:13.5px;color:var(--dim);max-width:88ch;margin-top:14px"><span class="en">Gold cards are the runtime’s own switches, so they cost nothing to run; the orange card is the part whetstone adds; green tags mark what the learning layer feeds. The two “always on” switches in the middle were checked in real sessions, not only read from the program.</span><span class="zh">金色卡片是运行时自带的开关，本身不花任何运行成本；橙色卡片是 whetstone 加的部分；绿色小标签标出学习层喂给谁。中间两个常驻开关都在真实会话里验过，不只是读程序得出的。</span></p>
+    </div>
+  </section>
+
+  <!-- six parts -->
+  <section class="sec alt" id="parts">
+    <div class="wrap">
+      <div class="sec-head rv">
+        <span class="kicker"><span class="en">Six parts</span><span class="zh">六个部分</span></span>
+        <h2><span class="en">What each part does, and why it is built that way.</span><span class="zh">每个部分做什么，为什么这样做。</span></h2>
+      </div>
+      <div class="kcards">
+        <div class="kcard rv" style="--dc:var(--gold)"><span class="k"><span class="dot"></span><span class="en">Always on</span><span class="zh">常驻</span></span><h3><span class="en">One entry for the whole library</span><span class="zh">整个库只占一条</span></h3><p><span class="en">A generated routing skill: a description under 200 characters, a catalog grouped by family behind it. A new skill has no usage, so the runtime cuts its description first; the same sentence also goes into the always-loaded rules file, which the menu budget does not touch.</span><span class="zh">自动生成的路由 skill：描述不到 200 字符，后面是按族分组的目录。新 skill 没有调用记录，超预算时最先被砍描述，所以同一句话也写进常驻规则文件，那里不受菜单预算影响。</span></p><span class="act"><code>whetstone route catalog</code></span></div>
+        <div class="kcard rv d1" style="--dc:var(--gold)"><span class="k"><span class="dot"></span><span class="en">Always on</span><span class="zh">常驻</span></span><h3><span class="en">Yield, don’t hide</span><span class="zh">让位，不藏起来</span></h3><p><span class="en">A skill whose use sits in another project (at least 3 sessions, two thirds of them elsewhere, none here) is set to name-only for this project. It stays callable by name. The rule was fixed before looking at the data; on one machine it currently suggests nothing.</span><span class="zh">用得集中在别的项目（至少 3 个会话、三分之二在别处、本项目一次没用）的 skill，在本项目里设成只留名字，照样能按名字调用。规则是看数据之前定的；一台机器上目前一条建议都没有。</span></p><span class="act"><code>whetstone route plan</code> · <span class="en">prints unless --write</span><span class="zh">不加 --write 只打印</span></span></div>
+        <div class="kcard rv d2" style="--dc:var(--gold)"><span class="k"><span class="dot"></span><span class="en">Always on</span><span class="zh">常驻</span></span><h3><span class="en">Appear when the file does</span><span class="zh">碰到文件才出现</span></h3><p><span class="en">A skill tied to a kind of file gets a <code>paths</code> glob. It is absent from the menu at the start, and joins it the moment a matching file is read, so it costs nothing until then. The trade: a conversation that never touches such a file will not see it.</span><span class="zh">和某类文件绑定的 skill 加上 <code>paths</code>。开局不在菜单里，读到匹配的文件那一刻才加进去，在那之前不占预算。代价：从头到尾没碰这类文件的对话，看不到它。</span></p><span class="act"><span class="en">Claude Code, Cursor (docs)</span><span class="zh">Claude Code、Cursor（文档）</span></span></div>
+        <div class="kcard rv" style="--dc:var(--ember)"><span class="k"><span class="dot"></span><span class="en">On demand</span><span class="zh">按需</span></span><h3><span class="en">Search the body, not just the name</span><span class="zh">正文也要搜</span></h3><p><span class="en">BM25F over four fields. The body counts because the menu text alone is not enough: dropping skill bodies took top-1 accuracy from 56.0% to 18.7% in SkillRouter. Chinese is split into pairs of characters, because it has no spaces and single characters match almost anything.</span><span class="zh">四个字段的 BM25F。正文要算进去，因为只看菜单那点文字不够：SkillRouter 去掉正文后首位命中从 56.0% 掉到 18.7%。中文按相邻两个字切，因为中文没有空格，单字几乎什么都能配上。</span></p><span class="act"><code>whetstone find</code></span></div>
+        <div class="kcard rv d1" style="--dc:var(--green)"><span class="k"><span class="dot"></span><span class="en">Learns</span><span class="zh">学习</span></span><h3><span class="en">Learn how you actually ask</span><span class="zh">学你平时怎么说</span></h3><p><span class="en">The message you typed right before a skill was first used in a session is added to that skill’s index. How people phrase a request and how a tool describes itself share few words (0.06 overlap in ToolRet), so the words that led to a skill before are the best hint for next time.</span><span class="zh">每个会话里某条 skill 第一次被用之前你打的那句话，并进这条 skill 的索引。人的说法和工具的自我描述很少共用词（ToolRet 测的词面重合 0.06），所以以前引出过它的那句话，是下次最好的线索。</span></p><span class="act"><code>whetstone route learn</code></span></div>
+        <div class="kcard rv d2" style="--dc:var(--green)"><span class="k"><span class="dot"></span><span class="en">Learns</span><span class="zh">学习</span></span><h3><span class="en">A change must win the replay</span><span class="zh">改动要在回放里赢</span></h3><p><span class="en">Past sessions are replayed in time order, each scored only with what was learned before it. A change is kept at 5 wins and 0 losses, or 7 and 1, with wins from two projects or more. Otherwise the verdict is “not enough evidence”, which is not a failure.</span><span class="zh">历史会话按时间顺序回放，每个会话只用它之前学到的东西打分。5 胜 0 负或 7 胜 1 负、胜例来自至少 2 个项目，才保留；否则判「证据不足」，这不算失败。</span></p><span class="act"><code>whetstone route replay</code></span></div>
       </div>
     </div>
-  </div>
-</section>
+  </section>
 
-<!-- Premise -->
-<section class="anth-section anth-section--subtle">
-  <div class="anth-container anth-container--narrow prose">
-    <span class="anth-badge"><span class="lang-en">The premise</span><span class="lang-zh">前提</span></span>
-    <h2 style="margin-top:var(--space-3); margin-bottom:var(--space-5);">
-      <span class="lang-en">The budget is fixed. The library is not.</span>
-      <span class="lang-zh">预算是固定的，库是一直长的。</span>
-    </h2>
-    <p>
-      <span class="lang-en">Claude Code gives the skill menu roughly one percent of the context window. When the library outgrows it, no skill is removed; the least-used ones lose their descriptions and stay as a bare name. That is where a skill stops being picked on topic: on one machine over 30 days, a trigger word in a message led to the skill 26% of the time when its description was on the menu, and 1% of the time when only its name was (98 and 99 matching messages).</span>
-      <span class="lang-zh">Claude Code 给 skill 菜单大约上下文的百分之一。库超出这个预算时，它不删 skill，而是把用得最少的那些描述去掉，只留名字。skill 从这一步开始就很难按话题被挑中：一台机器上 30 天的记录里，消息里出现触发词时，菜单上有描述的 skill 被用上 26%，只剩名字的 1%（分别 98 条、99 条命中消息）。</span>
-    </p>
-    <p>
-      <span class="lang-en">Shortening descriptions only delays the outcome. Split a fixed budget over more skills and every share shrinks, until a description is too short to match anything. The entry point cannot grow with the library. It has to be a fixed-size entry plus a search, or a signal that brings a skill out without going through the menu at all: the folder you are working in, the file you just opened.</span>
-      <span class="lang-zh">缩短描述只是推迟这个结局。固定的预算分给越来越多的 skill，每条的份额越来越小，直到短得什么都匹配不上。入口不能跟着库一起变长，只能是「固定大小的入口 + 查找」，或者干脆不经过菜单，由确定的信号直接带出来：你在哪个目录干活，你刚打开了哪个文件。</span>
-    </p>
-  </div>
-  <div class="anth-container" style="margin:var(--space-6) auto;">
-    <figure>
-      <div class="anth-scroll" style="--pan-w:830px"><svg role="img" aria-label="Bar chart of characters of description each skill can get as the library grows, in an Opus session with about 16,000 characters for the library: about 226 at 65 skills, 140 at 100, 60 at 200 and 33 at 300, below the 40 characters a description needs to still match. In a Haiku 4.5 session the same 65-skill library got a 7,978-character menu and every skill was a bare name. 库变大时每条描述能分到的字数(Opus 会话,留给库约 16,000 字符):65 个约 226,100 个 140,200 个 60,300 个 33,低于还能被匹配的 40;同一个库在 Haiku 4.5 会话里菜单只有 7,978 字符,65 个全部只剩名字。" viewBox="0 0 960 320" style="display:block; width:100%; max-width:960px; height:auto; margin:0 auto;" font-family="Poppins, 'Noto Sans SC', 'Helvetica Neue', Arial, sans-serif">
-        <rect width="960" height="320" rx="14" fill="#faf9f5" stroke="#eceadf"/>
-        <g stroke="#e3e0d4" stroke-width="1">
-          <line x1="130" y1="50" x2="830" y2="50"/><line x1="130" y1="102.5" x2="830" y2="102.5"/>
-          <line x1="130" y1="155" x2="830" y2="155"/><line x1="130" y1="207.5" x2="830" y2="207.5"/>
-        </g>
-        <line x1="130" y1="260" x2="830" y2="260" stroke="#a8a496" stroke-width="1.2"/>
-        <g font-size="11" fill="#8c8a7d" text-anchor="end">
-          <text x="120" y="264">0</text><text x="120" y="211.5">60</text><text x="120" y="159">120</text><text x="120" y="106.5">180</text><text x="120" y="54">240</text>
-        </g>
-        <rect x="150" y="62.25" width="110" height="197.75" rx="4" fill="#d97757"/>
-        <rect x="335" y="137.5" width="110" height="122.5" rx="4" fill="#d97757" opacity="0.85"/>
-        <rect x="520" y="207.5" width="110" height="52.5" rx="4" fill="#d97757" opacity="0.7"/>
-        <rect x="705" y="231.1" width="110" height="28.9" rx="4" fill="#c9913f"/>
-        <line x1="130" y1="225" x2="830" y2="225" stroke="#c9913f" stroke-width="1.5" stroke-dasharray="5 4"/>
-        <g font-size="13" font-weight="600" fill="#141413" text-anchor="middle">
-          <text x="205" y="54">≈226</text><text x="390" y="129">≈140</text><text x="575" y="199">≈60</text><text x="760" y="222" fill="#8a5a2a">≈33</text>
-        </g>
-        <g font-size="12" font-weight="600" fill="#141413" text-anchor="middle">
-          <text x="205" y="282">65</text><text x="390" y="282">100</text><text x="575" y="282">200</text><text x="760" y="282">300</text>
-        </g>
-        <circle cx="366" cy="70" r="3.5" fill="#6a9bcc"/>
-        <g class="lang-en">
-          <text x="130" y="32" font-size="12" font-weight="600" fill="#6b6a5f">characters of description per skill · Opus session, about 16,000 characters for the library</text>
-          <text x="480" y="306" font-size="11.5" fill="#6b6a5f" text-anchor="middle">skills in the library</text>
-          <text x="842" y="222" font-size="11.5" font-weight="700" fill="#8a5a2a">40 characters</text>
-          <text x="842" y="238" font-size="10.5" fill="#8a5a2a">too short to match</text>
-          <text x="378" y="74" font-size="11" fill="#4a7bab">Haiku 4.5 session, same 65 skills:</text>
-          <text x="378" y="91" font-size="11" fill="#4a7bab">a 7,978-character menu, every skill a bare name</text>
-        </g>
-        <g class="lang-zh">
-          <text x="130" y="32" font-size="12" font-weight="600" fill="#6b6a5f">每条描述能分到的字符数 · Opus 会话，留给库约 16,000 字符</text>
-          <text x="480" y="306" font-size="11.5" fill="#6b6a5f" text-anchor="middle">库里的 skill 数</text>
-          <text x="842" y="222" font-size="11.5" font-weight="700" fill="#8a5a2a">40 字符</text>
-          <text x="842" y="238" font-size="10.5" fill="#8a5a2a">短到匹配不上</text>
-          <text x="378" y="74" font-size="11" fill="#4a7bab">同一个库在 Haiku 4.5 会话里：</text>
-          <text x="378" y="91" font-size="11" fill="#4a7bab">菜单只有 7,978 字符，65 个全部只剩名字</text>
-        </g>
-      </svg></div>
-      <figcaption>
-        <span class="lang-en">Shares are the library’s part of the budget divided evenly, after about 20 characters of name and punctuation per entry. The budget follows the model: a smaller context gets a smaller menu, so the same library runs out sooner.</span>
-        <span class="lang-zh">份额 = 留给库的预算平均分，每条先扣掉约 20 字符的名字和格式。预算跟着模型走：上下文小，菜单就小，同一个库更早装不下。</span>
-      </figcaption>
-    </figure>
-  </div>
-  <div class="anth-container anth-container--narrow prose">
-    <blockquote class="anth-quote">
-      <span class="lang-en">I don’t want them called by hand. There are so many skills that nobody knows which ones exist.</span>
-      <span class="lang-zh">不希望手动调用呀，因为 skills 非常多，根本不知道有哪些 skills 的。</span>
-    </blockquote>
-    <p class="anth-quote-cite" style="margin-top:var(--space-4);">
-      <span aria-hidden="true" style="display:inline-block; width:24px; height:24px; border-radius:50%; background:var(--anth-orange);"></span>
-      <span><span class="lang-en">The library’s owner, on why manual-only skills were ruled out, 2026-09-29</span><span class="lang-zh">库的主人，解释为什么不用「只许手动调用」，2026-09-29</span></span>
-    </p>
-  </div>
-</section>
-
-<!-- Three layers -->
-<section class="anth-section" id="layers">
-  <div class="anth-container anth-container--wide">
-    <div style="max-width:760px; margin:0 auto var(--space-7); text-align:center;">
-      <span class="anth-badge"><span class="lang-en">Three layers</span><span class="lang-zh">三层结构</span></span>
-      <h2 style="margin-top:var(--space-3);">
-        <span class="lang-en">Keep the menu short, ask when unsure, learn afterwards.</span>
-        <span class="lang-zh">菜单保持精简，拿不准就查，事后再学。</span>
-      </h2>
-      <p style="font-family:var(--font-body); font-size:17px; line-height:1.7; color:var(--anth-text-secondary); margin:var(--space-4) 0 0;">
-        <span class="lang-en">Certain signals come first: the folder and the file are facts, “the model read a description and thought it fit” is a guess. On one machine, a rule tied to the working folder led to the right skill in 8 of 10 sessions; trigger words in descriptions, in 5 of 38.</span>
-        <span class="lang-zh">确定的信号优先：目录、文件是事实，「模型读了描述觉得相关」是推断。一台机器上，按工作目录写的规则 10 个会话里 8 个用上了对应 skill；按描述里的触发词，38 组里 5 组。</span>
-      </p>
+  <!-- paths measured -->
+  <section class="sec">
+    <div class="wrap">
+      <div class="sec-head rv">
+        <span class="kicker"><span class="en">Measured, not read</span><span class="zh">实测，不是读来的</span></span>
+        <h2><span class="en">A skill that waits for its file.</span><span class="zh">一条等文件出现的 skill。</span></h2>
+      </div>
+      <figure class="fig rv" role="img" aria-label="Timeline of two test sessions. When the session starts, the menu does not list the conditional skill. After reading an unrelated notes file the menu is unchanged. After reading a device tree file that matches the skill's paths glob, the menu gains the skill mid-session. 两个测试会话的时间线:会话开始时菜单里没有这条条件 skill;读一个无关的笔记文件,菜单不变;读到匹配 paths 的设备树文件后,菜单中途加进这条 skill。">
+        <div class="ptl">
+          <div class="pst"><h4><span class="en">session starts</span><span class="zh">会话开始</span></h4><div class="menu-mock"><div class="t"><span class="en">menu</span><span class="zh">菜单</span></div><i style="width:86%"></i><i style="width:70%"></i><i style="width:78%"></i><i style="width:58%"></i></div><p><span class="en">the conditional skill is not listed</span><span class="zh">这条条件 skill 不在菜单里</span></p></div>
+          <div class="pst"><h4><span class="en">reads notes.txt</span><span class="zh">读 notes.txt</span></h4><div class="menu-mock"><div class="t"><span class="en">menu</span><span class="zh">菜单</span></div><i style="width:86%"></i><i style="width:70%"></i><i style="width:78%"></i><i style="width:58%"></i></div><p><span class="en">unchanged: the glob does not match</span><span class="zh">不变：路径不匹配</span></p></div>
+          <div class="pst hit"><h4><span class="en">reads board/x.dts</span><span class="zh">读 board/x.dts</span></h4><div class="menu-mock"><div class="t"><span class="en">menu</span><span class="zh">菜单</span></div><i style="width:86%"></i><i style="width:70%"></i><i style="width:78%"></i><i style="width:58%"></i><div class="add">+ dts-helper</div></div><p><span class="en">added mid-session</span><span class="zh">会话中途加进来</span></p></div>
+        </div>
+      </figure>
+      <p class="rv" style="font-size:13.5px;color:var(--dim);max-width:88ch;margin-top:14px"><span class="en">Two headless Claude Code sessions with hooks off, 2026-09-30, skill frontmatter <code>paths: ["**/*.dts"]</code>. A third check found where the per-project switch is read: inside a git repo, from its top level, subfolders included; outside one, only in the folder the session starts in.</span><span class="zh">两个无交互的 Claude Code 测试会话（关掉钩子），2026-09-30，skill 的 frontmatter 写 <code>paths: ["**/*.dts"]</code>。另一组实测查了按项目的开关从哪读：在 git 仓里读仓根，子目录启动也生效；不在 git 仓，只读启动的那个目录。</span></p>
     </div>
-    <figure>
-      <div class="anth-scroll" style="--pan-w:1050px"><svg role="img" aria-label="Three layers. Always on, using the runtime's own switches: a routing skill that puts the whole catalog behind one entry, yielding by project so skills used elsewhere show only a name, skills that appear when a matching file is read, and skills that live in one project's folder. On demand: whetstone find ranks skills by name, description, body and learned messages, says none fits below a threshold, and can be run by any agent with a shell. Learning offline: session logs go through a per-runtime adapter into neutral events, then learn and usage, and a replay keeps a change only if it wins. 三层:常驻层用运行时自带的开关(路由 skill、按项目让位、按文件出现、项目专属);按需层 whetstone find 按名字、描述、正文、学到的原话打分,够不上门槛就说没有,任何有 shell 的 agent 都能跑;离线学习层把会话记录经适配器转成统一事件,学原话和使用表,改动要在回放里赢了才保留。" viewBox="0 0 1160 420" style="display:block; width:100%; max-width:1160px; height:auto;" font-family="Poppins, 'Noto Sans SC', 'Helvetica Neue', Arial, sans-serif">
-        <defs>
-          <filter id="f2-sh" x="-20%" y="-20%" width="140%" height="140%"><feDropShadow dx="0" dy="1" stdDeviation="2" flood-color="#141413" flood-opacity="0.06"/></filter>
-          <marker id="f2-arrB" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0.5 L7.5,4 L0,7.5 Z" fill="#6a9bcc"/></marker>
-        </defs>
-        <rect x="16" y="16" width="1128" height="128" rx="12" fill="#f0e4d8"/>
-        <rect x="16" y="156" width="1128" height="104" rx="12" fill="#f7e4dc"/>
-        <rect x="16" y="272" width="1128" height="132" rx="12" fill="#e5e9dd"/>
+  </section>
 
-        <g filter="url(#f2-sh)">
-          <rect x="216" y="40" width="215" height="80" rx="10" fill="#ffffff" stroke="#d8d4c8"/>
-          <rect x="451" y="40" width="215" height="80" rx="10" fill="#ffffff" stroke="#d8d4c8"/>
-          <rect x="686" y="40" width="215" height="80" rx="10" fill="#ffffff" stroke="#d8d4c8"/>
-          <rect x="921" y="40" width="215" height="80" rx="10" fill="#ffffff" stroke="#d8d4c8"/>
-          <rect x="216" y="180" width="450" height="64" rx="10" fill="#fbf1ec" stroke="#d97757" stroke-width="1.5"/>
-          <rect x="686" y="180" width="215" height="64" rx="10" fill="#ffffff" stroke="#d8d4c8"/>
-          <rect x="921" y="180" width="215" height="64" rx="10" fill="#ffffff" stroke="#d8d4c8"/>
-          <rect x="216" y="300" width="168" height="64" rx="10" fill="#ffffff" stroke="#d8d4c8"/>
-          <rect x="404" y="300" width="168" height="64" rx="10" fill="#ffffff" stroke="#d8d4c8"/>
-          <rect x="592" y="300" width="168" height="64" rx="10" fill="#ffffff" stroke="#d8d4c8"/>
-          <rect x="780" y="300" width="168" height="64" rx="10" fill="#ffffff" stroke="#d8d4c8"/>
-          <rect x="968" y="300" width="168" height="64" rx="10" fill="#ffffff" stroke="#d97757" stroke-width="1.5"/>
-        </g>
-        <g fill="none" stroke="#6a9bcc" stroke-width="1.8">
-          <line x1="384" y1="332" x2="400" y2="332" marker-end="url(#f2-arrB)"/>
-          <line x1="572" y1="332" x2="588" y2="332" marker-end="url(#f2-arrB)"/>
-          <line x1="760" y1="332" x2="776" y2="332" marker-end="url(#f2-arrB)"/>
-          <line x1="948" y1="332" x2="964" y2="332" marker-end="url(#f2-arrB)"/>
-        </g>
-        <!-- dots -->
-        <circle cx="232" cy="64" r="3.5" fill="#c9913f"/><circle cx="467" cy="64" r="3.5" fill="#c9913f"/>
-        <circle cx="702" cy="64" r="3.5" fill="#c9913f"/><circle cx="937" cy="64" r="3.5" fill="#c9913f"/>
-        <circle cx="232" cy="202" r="3.5" fill="#d97757"/><circle cx="702" cy="202" r="3.5" fill="#c9913f"/><circle cx="937" cy="202" r="3.5" fill="#6a9bcc"/>
-        <circle cx="232" cy="322" r="3.5" fill="#6a9bcc"/><circle cx="420" cy="322" r="3.5" fill="#6a9bcc"/><circle cx="608" cy="322" r="3.5" fill="#6a9bcc"/>
-        <circle cx="796" cy="322" r="3.5" fill="#788c5d"/><circle cx="984" cy="322" r="3.5" fill="#d97757"/>
-        <!-- chips -->
-        <rect x="588" y="31" width="68" height="18" rx="9" fill="#788c5d"/>
-        <rect x="830" y="31" width="62" height="18" rx="9" fill="#6a9bcc"/>
-        <rect x="590" y="190" width="68" height="18" rx="9" fill="#788c5d"/>
-
-        <g class="lang-en">
-          <text x="36" y="58" font-size="15" font-weight="600" fill="#141413">① Always on</text>
-          <text x="36" y="80" font-size="11" fill="#6b6a5f">the menu, using switches</text>
-          <text x="36" y="96" font-size="11" fill="#6b6a5f">the runtime already has</text>
-          <text x="244" y="68" font-size="13.5" font-weight="600" fill="#141413">Routing skill</text>
-          <text x="232" y="92" font-size="11" fill="#6b6a5f">one short entry; the whole</text>
-          <text x="232" y="108" font-size="11" fill="#6b6a5f">catalog sits behind it</text>
-          <text x="479" y="68" font-size="13.5" font-weight="600" fill="#141413">Yield by project</text>
-          <text x="467" y="92" font-size="11" fill="#6b6a5f">used elsewhere, never here:</text>
-          <text x="467" y="108" font-size="11" fill="#6b6a5f">name only, still callable</text>
-          <text x="714" y="68" font-size="13.5" font-weight="600" fill="#141413">Appear by file</text>
-          <text x="702" y="92" font-size="11" fill="#6b6a5f">joins the menu when a</text>
-          <text x="702" y="108" font-size="11" fill="#6b6a5f">matching file is read</text>
-          <text x="949" y="68" font-size="13.5" font-weight="600" fill="#141413">Project-only</text>
-          <text x="937" y="92" font-size="11" fill="#6b6a5f">lives in that project’s own</text>
-          <text x="937" y="108" font-size="11" fill="#6b6a5f">skills folder</text>
-          <text x="622" y="44" font-size="10" font-weight="600" fill="#ffffff" text-anchor="middle">from usage</text>
-          <text x="861" y="44" font-size="10" font-weight="600" fill="#ffffff" text-anchor="middle">measured</text>
-          <text x="36" y="198" font-size="15" font-weight="600" fill="#141413">② On demand</text>
-          <text x="36" y="220" font-size="11" fill="#6b6a5f">when unsure, search</text>
-          <text x="244" y="206" font-size="13.5" font-weight="600" fill="#141413">whetstone find "&lt;what you are about to do&gt;"</text>
-          <text x="232" y="229" font-size="11" fill="#6b6a5f">name ×3 · description ×2 · body ×1 · learned messages ×2</text>
-          <text x="624" y="203" font-size="10" font-weight="600" fill="#ffffff" text-anchor="middle">learned</text>
-          <text x="714" y="206" font-size="13.5" font-weight="600" fill="#141413">Below the threshold</text>
-          <text x="702" y="229" font-size="11" fill="#6b6a5f">says “no skill fits”</text>
-          <text x="949" y="206" font-size="13.5" font-weight="600" fill="#141413">Any agent, a shell</text>
-          <text x="937" y="229" font-size="11" fill="#6b6a5f">the one entry all can run</text>
-          <text x="36" y="316" font-size="15" font-weight="600" fill="#141413">③ Learns offline</text>
-          <text x="36" y="338" font-size="11" fill="#6b6a5f">from past sessions;</text>
-          <text x="36" y="354" font-size="11" fill="#6b6a5f">nothing runs live</text>
-          <text x="244" y="326" font-size="13" font-weight="600" fill="#141413">Session logs</text>
-          <text x="232" y="348" font-size="11" fill="#6b6a5f">each runtime’s format</text>
-          <text x="432" y="326" font-size="13" font-weight="600" fill="#141413">Adapter</text>
-          <text x="420" y="348" font-size="11" fill="#6b6a5f">one per runtime</text>
-          <text x="620" y="326" font-size="13" font-weight="600" fill="#141413">Neutral events</text>
-          <text x="608" y="348" font-size="11" fill="#6b6a5f">6 kinds, one per line</text>
-          <text x="808" y="326" font-size="13" font-weight="600" fill="#141413">learn · usage</text>
-          <text x="796" y="348" font-size="11" fill="#6b6a5f">what led to each skill</text>
-          <text x="996" y="326" font-size="13" font-weight="600" fill="#141413">replay</text>
-          <text x="984" y="348" font-size="11" fill="#6b6a5f">kept only if it wins</text>
-          <text x="216" y="390" font-size="11" fill="#5d7045">learned messages go into find · usage suggests which skills yield in a project, and you confirm</text>
-        </g>
-        <g class="lang-zh">
-          <text x="36" y="58" font-size="15" font-weight="600" fill="#141413">① 常驻</text>
-          <text x="36" y="80" font-size="11" fill="#6b6a5f">菜单，只用运行时</text>
-          <text x="36" y="96" font-size="11" fill="#6b6a5f">自带的开关</text>
-          <text x="244" y="68" font-size="13.5" font-weight="600" fill="#141413">路由 skill</text>
-          <text x="232" y="92" font-size="11" fill="#6b6a5f">菜单里只占一条，</text>
-          <text x="232" y="108" font-size="11" fill="#6b6a5f">整个库的目录在它后面</text>
-          <text x="479" y="68" font-size="13.5" font-weight="600" fill="#141413">按项目让位</text>
-          <text x="467" y="92" font-size="11" fill="#6b6a5f">用在别处、本项目没用过：</text>
-          <text x="467" y="108" font-size="11" fill="#6b6a5f">只留名字，照样能调用</text>
-          <text x="714" y="68" font-size="13.5" font-weight="600" fill="#141413">按文件出现</text>
-          <text x="702" y="92" font-size="11" fill="#6b6a5f">读到匹配的文件，</text>
-          <text x="702" y="108" font-size="11" fill="#6b6a5f">才加进菜单</text>
-          <text x="949" y="68" font-size="13.5" font-weight="600" fill="#141413">项目专属</text>
-          <text x="937" y="92" font-size="11" fill="#6b6a5f">放在那个项目自己的</text>
-          <text x="937" y="108" font-size="11" fill="#6b6a5f">skill 目录里</text>
-          <text x="622" y="44" font-size="10" font-weight="600" fill="#ffffff" text-anchor="middle">来自使用</text>
-          <text x="861" y="44" font-size="10" font-weight="600" fill="#ffffff" text-anchor="middle">已实测</text>
-          <text x="36" y="198" font-size="15" font-weight="600" fill="#141413">② 按需</text>
-          <text x="36" y="220" font-size="11" fill="#6b6a5f">拿不准，就查</text>
-          <text x="244" y="206" font-size="13.5" font-weight="600" fill="#141413">whetstone find "&lt;要做的事&gt;"</text>
-          <text x="232" y="229" font-size="11" fill="#6b6a5f">名字 ×3 · 描述 ×2 · 正文 ×1 · 学到的原话 ×2</text>
-          <text x="624" y="203" font-size="10" font-weight="600" fill="#ffffff" text-anchor="middle">学来的</text>
-          <text x="714" y="206" font-size="13.5" font-weight="600" fill="#141413">够不上门槛</text>
-          <text x="702" y="229" font-size="11" fill="#6b6a5f">直说「没有合适的」</text>
-          <text x="949" y="206" font-size="13.5" font-weight="600" fill="#141413">有 shell 就能跑</text>
-          <text x="937" y="229" font-size="11" fill="#6b6a5f">各家 agent 都能用的入口</text>
-          <text x="36" y="316" font-size="15" font-weight="600" fill="#141413">③ 离线学习</text>
-          <text x="36" y="338" font-size="11" fill="#6b6a5f">读历史会话，</text>
-          <text x="36" y="354" font-size="11" fill="#6b6a5f">不在干活时跑</text>
-          <text x="244" y="326" font-size="13" font-weight="600" fill="#141413">会话记录</text>
-          <text x="232" y="348" font-size="11" fill="#6b6a5f">各家自己的格式</text>
-          <text x="432" y="326" font-size="13" font-weight="600" fill="#141413">适配器</text>
-          <text x="420" y="348" font-size="11" fill="#6b6a5f">每个运行时一个</text>
-          <text x="620" y="326" font-size="13" font-weight="600" fill="#141413">统一事件</text>
-          <text x="608" y="348" font-size="11" fill="#6b6a5f">6 种，一行一条</text>
-          <text x="808" y="326" font-size="13" font-weight="600" fill="#141413">学原话 · 使用表</text>
-          <text x="796" y="348" font-size="11" fill="#6b6a5f">什么话引出了哪条</text>
-          <text x="996" y="326" font-size="13" font-weight="600" fill="#141413">回放</text>
-          <text x="984" y="348" font-size="11" fill="#6b6a5f">赢了才保留改动</text>
-          <text x="216" y="390" font-size="11" fill="#5d7045">学到的原话进 find · 使用表给出「本项目该让位的」建议，由你确认</text>
-        </g>
-      </svg></div>
-      <figcaption>
-        <span class="lang-en">Gold cards are the runtime’s own switches, so they cost nothing to run; the orange card is the part whetstone adds; olive chips mark what the learning layer feeds. The two “always on” switches in the middle were checked in real sessions, not only read from the program.</span>
-        <span class="lang-zh">金色卡片是运行时自带的开关，本身不花任何运行成本；橙色卡片是 whetstone 加的部分；绿色小标签标出学习层喂给谁。中间两个常驻开关都在真实会话里验过，不只是读程序得出的。</span>
-      </figcaption>
-    </figure>
-  </div>
-</section>
-
-<!-- Six parts -->
-<section class="anth-section anth-section--subtle" id="parts">
-  <div class="anth-container anth-container--wide">
-    <div style="max-width:760px; margin:0 auto var(--space-7); text-align:center;">
-      <span class="anth-badge"><span class="lang-en">Six parts</span><span class="lang-zh">六个部分</span></span>
-      <h2 style="margin-top:var(--space-3);">
-        <span class="lang-en">What each part does, and why it is built that way.</span>
-        <span class="lang-zh">每个部分做什么，为什么这样做。</span>
-      </h2>
-    </div>
-    <div class="kind-grid">
-      <div class="kind-card">
-        <span class="kind-card__kicker"><span class="kind-card__dot" style="background:var(--anth-gold, #c9913f);"></span><span class="lang-en">Always on</span><span class="lang-zh">常驻</span></span>
-        <h3 class="kind-card__title"><span class="lang-en">One entry for the whole library</span><span class="lang-zh">整个库只占一条</span></h3>
-        <p class="kind-card__body"><span class="lang-en">A generated routing skill: a description under 200 characters, a catalog grouped by family behind it. A new skill has no usage, so the runtime cuts its description first; the same sentence also goes into the always-loaded rules file, which the menu budget does not touch.</span><span class="lang-zh">自动生成的路由 skill：描述不到 200 字符，后面是按族分组的目录。新 skill 没有调用记录，超预算时最先被砍描述，所以同一句话也写进常驻规则文件，那里不受菜单预算影响。</span></p>
-        <p class="kind-card__act"><code>whetstone route catalog</code></p>
-      </div>
-      <div class="kind-card">
-        <span class="kind-card__kicker"><span class="kind-card__dot" style="background:var(--anth-gold, #c9913f);"></span><span class="lang-en">Always on</span><span class="lang-zh">常驻</span></span>
-        <h3 class="kind-card__title"><span class="lang-en">Yield, don’t hide</span><span class="lang-zh">让位，不藏起来</span></h3>
-        <p class="kind-card__body"><span class="lang-en">A skill whose use sits in another project (at least 3 sessions, two thirds of them elsewhere, none here) is set to name-only for this project. It stays callable by name. The rule was fixed before looking at the data; on one machine it currently suggests nothing.</span><span class="lang-zh">用得集中在别的项目（至少 3 个会话、三分之二在别处、本项目一次没用）的 skill，在本项目里设成只留名字，照样能按名字调用。规则是看数据之前定的；一台机器上目前一条建议都没有。</span></p>
-        <p class="kind-card__act"><code>whetstone route plan</code> · <span class="lang-en">prints unless --write</span><span class="lang-zh">不加 --write 只打印</span></p>
-      </div>
-      <div class="kind-card">
-        <span class="kind-card__kicker"><span class="kind-card__dot" style="background:var(--anth-gold, #c9913f);"></span><span class="lang-en">Always on</span><span class="lang-zh">常驻</span></span>
-        <h3 class="kind-card__title"><span class="lang-en">Appear when the file does</span><span class="lang-zh">碰到文件才出现</span></h3>
-        <p class="kind-card__body"><span class="lang-en">A skill tied to a kind of file gets a <code>paths</code> glob. It is absent from the menu at the start, and joins it the moment a matching file is read, so it costs nothing until then. The trade: a conversation that never touches such a file will not see it.</span><span class="lang-zh">和某类文件绑定的 skill 加上 <code>paths</code>。开局不在菜单里，读到匹配的文件那一刻才加进去，在那之前不占预算。代价：从头到尾没碰这类文件的对话，看不到它。</span></p>
-        <p class="kind-card__act"><span class="lang-en">Claude Code, Cursor (docs)</span><span class="lang-zh">Claude Code、Cursor（文档）</span></p>
-      </div>
-      <div class="kind-card">
-        <span class="kind-card__kicker"><span class="kind-card__dot" style="background:var(--anth-orange);"></span><span class="lang-en">On demand</span><span class="lang-zh">按需</span></span>
-        <h3 class="kind-card__title"><span class="lang-en">Search the body, not just the name</span><span class="lang-zh">正文也要搜</span></h3>
-        <p class="kind-card__body"><span class="lang-en">BM25F over four fields. The body counts because the menu text alone is not enough: dropping skill bodies took top-1 accuracy from 56.0% to 18.7% in SkillRouter. Chinese is split into pairs of characters, because it has no spaces and single characters match almost anything.</span><span class="lang-zh">四个字段的 BM25F。正文要算进去，因为只看菜单那点文字不够：SkillRouter 去掉正文后首位命中从 56.0% 掉到 18.7%。中文按相邻两个字切，因为中文没有空格，单字几乎什么都能配上。</span></p>
-        <p class="kind-card__act"><code>whetstone find</code></p>
-      </div>
-      <div class="kind-card">
-        <span class="kind-card__kicker"><span class="kind-card__dot" style="background:var(--anth-green);"></span><span class="lang-en">Learns</span><span class="lang-zh">学习</span></span>
-        <h3 class="kind-card__title"><span class="lang-en">Learn how you actually ask</span><span class="lang-zh">学你平时怎么说</span></h3>
-        <p class="kind-card__body"><span class="lang-en">The message you typed right before a skill was first used in a session is added to that skill’s index. How people phrase a request and how a tool describes itself share few words (0.06 overlap in ToolRet), so the words that led to a skill before are the best hint for next time.</span><span class="lang-zh">每个会话里某条 skill 第一次被用之前你打的那句话，并进这条 skill 的索引。人的说法和工具的自我描述很少共用词（ToolRet 测的词面重合 0.06），所以以前引出过它的那句话，是下次最好的线索。</span></p>
-        <p class="kind-card__act"><code>whetstone route learn</code></p>
-      </div>
-      <div class="kind-card">
-        <span class="kind-card__kicker"><span class="kind-card__dot" style="background:var(--anth-green);"></span><span class="lang-en">Learns</span><span class="lang-zh">学习</span></span>
-        <h3 class="kind-card__title"><span class="lang-en">A change must win the replay</span><span class="lang-zh">改动要在回放里赢</span></h3>
-        <p class="kind-card__body"><span class="lang-en">Past sessions are replayed in time order, each scored only with what was learned before it. A change is kept at 5 wins and 0 losses, or 7 and 1, with wins from two projects or more. Otherwise the verdict is “not enough evidence”, which is not a failure.</span><span class="lang-zh">历史会话按时间顺序回放，每个会话只用它之前学到的东西打分。5 胜 0 负或 7 胜 1 负、胜例来自至少 2 个项目，才保留；否则判「证据不足」，这不算失败。</span></p>
-        <p class="kind-card__act"><code>whetstone route replay</code></p>
-      </div>
-    </div>
-  </div>
-</section>
-
-<!-- paths measured -->
-<section class="anth-section">
-  <div class="anth-container">
-    <div style="max-width:760px; margin:0 auto var(--space-6); text-align:center;">
-      <span class="anth-badge"><span class="lang-en">Measured, not read</span><span class="lang-zh">实测，不是读来的</span></span>
-      <h2 style="margin-top:var(--space-3);">
-        <span class="lang-en">A skill that waits for its file.</span>
-        <span class="lang-zh">一条等文件出现的 skill。</span>
-      </h2>
-    </div>
-    <figure>
-      <div class="anth-scroll" style="--pan-w:780px"><svg role="img" aria-label="Timeline of two test sessions. When the session starts, the menu does not list the conditional skill. After reading an unrelated notes file the menu is unchanged. After reading a device tree file that matches the skill's paths glob, the menu gains the skill mid-session. 两个测试会话的时间线:会话开始时菜单里没有这条条件 skill;读一个无关的笔记文件,菜单不变;读到匹配 paths 的设备树文件后,菜单中途加进这条 skill。" viewBox="0 0 900 262" style="display:block; width:100%; max-width:900px; height:auto; margin:0 auto;" font-family="Poppins, 'Noto Sans SC', 'Helvetica Neue', Arial, sans-serif">
-        <rect width="900" height="262" rx="14" fill="#faf9f5" stroke="#eceadf"/>
-        <line x1="60" y1="62" x2="840" y2="62" stroke="#a8a496" stroke-width="1.2"/>
-        <circle cx="150" cy="62" r="7" fill="#6a9bcc"/>
-        <circle cx="450" cy="62" r="7" fill="#6a9bcc"/>
-        <circle cx="750" cy="62" r="7" fill="#d97757"/>
-        <g>
-          <rect x="50" y="90" width="200" height="118" rx="10" fill="#ffffff" stroke="#d8d4c8"/>
-          <rect x="350" y="90" width="200" height="118" rx="10" fill="#ffffff" stroke="#d8d4c8"/>
-          <rect x="650" y="90" width="200" height="118" rx="10" fill="#ffffff" stroke="#d97757" stroke-width="1.5"/>
-          <g fill="#e7e4d9">
-            <rect x="66" y="120" width="150" height="8" rx="4"/><rect x="66" y="138" width="120" height="8" rx="4"/><rect x="66" y="156" width="138" height="8" rx="4"/><rect x="66" y="174" width="104" height="8" rx="4"/>
-            <rect x="366" y="120" width="150" height="8" rx="4"/><rect x="366" y="138" width="120" height="8" rx="4"/><rect x="366" y="156" width="138" height="8" rx="4"/><rect x="366" y="174" width="104" height="8" rx="4"/>
-            <rect x="666" y="120" width="150" height="8" rx="4"/><rect x="666" y="138" width="120" height="8" rx="4"/><rect x="666" y="156" width="138" height="8" rx="4"/><rect x="666" y="174" width="104" height="8" rx="4"/>
-          </g>
-          <rect x="660" y="187" width="176" height="16" rx="5" fill="#f7e4dc"/>
-          <text x="668" y="199" font-size="11" font-weight="600" fill="#c2613f" font-family="'JetBrains Mono', monospace">+ dts-helper</text>
-        </g>
-        <g class="lang-en">
-          <text x="150" y="40" font-size="12.5" font-weight="600" fill="#141413" text-anchor="middle">session starts</text>
-          <text x="450" y="40" font-size="12.5" font-weight="600" fill="#141413" text-anchor="middle">reads notes.txt</text>
-          <text x="750" y="40" font-size="12.5" font-weight="600" fill="#141413" text-anchor="middle">reads board/x.dts</text>
-          <text x="66" y="110" font-size="10.5" fill="#8c8a7d">menu</text><text x="366" y="110" font-size="10.5" fill="#8c8a7d">menu</text><text x="666" y="110" font-size="10.5" fill="#8c8a7d">menu</text>
-          <text x="150" y="232" font-size="11" fill="#6b6a5f" text-anchor="middle">the conditional skill is not listed</text>
-          <text x="450" y="232" font-size="11" fill="#6b6a5f" text-anchor="middle">unchanged: the glob does not match</text>
-          <text x="750" y="232" font-size="11" font-weight="600" fill="#c2613f" text-anchor="middle">added mid-session</text>
-        </g>
-        <g class="lang-zh">
-          <text x="150" y="40" font-size="12.5" font-weight="600" fill="#141413" text-anchor="middle">会话开始</text>
-          <text x="450" y="40" font-size="12.5" font-weight="600" fill="#141413" text-anchor="middle">读 notes.txt</text>
-          <text x="750" y="40" font-size="12.5" font-weight="600" fill="#141413" text-anchor="middle">读 board/x.dts</text>
-          <text x="66" y="110" font-size="10.5" fill="#8c8a7d">菜单</text><text x="366" y="110" font-size="10.5" fill="#8c8a7d">菜单</text><text x="666" y="110" font-size="10.5" fill="#8c8a7d">菜单</text>
-          <text x="150" y="232" font-size="11" fill="#6b6a5f" text-anchor="middle">这条条件 skill 不在菜单里</text>
-          <text x="450" y="232" font-size="11" fill="#6b6a5f" text-anchor="middle">不变：路径不匹配</text>
-          <text x="750" y="232" font-size="11" font-weight="600" fill="#c2613f" text-anchor="middle">会话中途加进来</text>
-        </g>
-      </svg></div>
-      <figcaption>
-        <span class="lang-en">Two headless Claude Code sessions with hooks off, 2026-09-30, skill frontmatter <code>paths: ["**/*.dts"]</code>. A third check found where the per-project switch is read: inside a git repo, from its top level, subfolders included; outside one, only in the folder the session starts in.</span>
-        <span class="lang-zh">两个无交互的 Claude Code 测试会话（关掉钩子），2026-09-30，skill 的 frontmatter 写 <code>paths: ["**/*.dts"]</code>。另一组实测查了按项目的开关从哪读：在 git 仓里读仓根，子目录启动也生效；不在 git 仓，只读启动的那个目录。</span>
-      </figcaption>
-    </figure>
-  </div>
-</section>
-
-<!-- find in the terminal -->
-<section class="anth-section anth-section--subtle">
-  <div class="anth-container anth-container--wide">
-    <div class="palette-split">
-      <div>
-        <span class="anth-badge"><span class="lang-en">On demand</span><span class="lang-zh">按需</span></span>
-        <h2 style="margin-top:var(--space-3);">
-          <span class="lang-en">An answer, or a plain “no”.</span>
-          <span class="lang-zh">要么给答案，要么直说没有。</span>
-        </h2>
-        <p style="font-family:var(--font-body); font-size:17px; line-height:1.7; color:var(--anth-text); margin:var(--space-4) 0 0;">
-          <span class="lang-en">Handing an agent the wrong skill is worse than handing it none: in SkillLens a quarter of the pairings transferred negatively, and in SkillsBench 16 of 84 tasks got worse with a skill added. So find prints at most three, and only those that cover enough of the question.</span>
-          <span class="lang-zh">给 agent 一条错的 skill，比什么都不给更糟：SkillLens 里四分之一的组合是负迁移，SkillsBench 84 个任务里有 16 个加了 skill 反而变差。所以 find 最多给三条，而且只给覆盖了足够多问题的那些。</span>
-        </p>
-        <ul class="palette-list">
-          <li><span class="lang-en"><strong>Cover</strong> is the share of the question’s weight a skill matches. A word no skill contains still counts, or one lucky word would read as a full match.</span><span class="lang-zh"><strong>覆盖率</strong> = 这条 skill 配上的查询词权重占全部查询词的比例。库里没有的词也要算进去，不然碰巧配上一个词就成了百分之百。</span></li>
-          <li><span class="lang-en">The threshold, 0.3, is a <strong>starting value</strong>. The second query on the right is a real miss: “screen” and “tune” appear nowhere in that skill’s text.</span><span class="lang-zh">门槛 0.3 只是<strong>起点值</strong>。右边第二条是真实的漏判：「屏幕」「调参」在那条 skill 的文字里都没出现。</span></li>
-          <li><span class="lang-en">From now on the adapter records every query an agent writes to find. Those, not your raw messages, are what the threshold will be set on.</span><span class="lang-zh">从现在起，适配器会记下 agent 每次给 find 写的查询。门槛以后用这些来定，而不是用你的原话。</span></li>
-        </ul>
-      </div>
-      <figure>
-<pre class="art-term" lang="zh-CN" tabindex="0" aria-label="Terminal output of whetstone find on a five-skill demo library: one match, one near miss below the threshold, and one query nothing matches. whetstone find 在 5 个 skill 的演示库上的输出:一条命中,一条差一点没过门槛,一条什么都没配上。"><code><span class="t-dim">$</span> whetstone find <span class="t-hi">"AVB 签名 验签怎么配置"</span>
+  <!-- find -->
+  <section class="sec alt">
+    <div class="wrap">
+      <div class="split">
+        <div class="rv">
+          <span class="kicker"><span class="en">On demand</span><span class="zh">按需</span></span>
+          <h2 style="font-size:clamp(30px,3.6vw,44px)"><span class="en">An answer, or a plain “no”.</span><span class="zh">要么给答案，要么直说没有。</span></h2>
+          <p class="lede" style="font-size:16px"><span class="en">Handing an agent the wrong skill is worse than handing it none: in SkillLens a quarter of the pairings transferred negatively, and in SkillsBench 16 of 84 tasks got worse with a skill added. So find prints at most three, and only those that cover enough of the question.</span><span class="zh">给 agent 一条错的 skill，比什么都不给更糟：SkillLens 里四分之一的组合是负迁移，SkillsBench 84 个任务里有 16 个加了 skill 反而变差。所以 find 最多给三条，而且只给覆盖了足够多问题的那些。</span></p>
+          <ul class="blist">
+            <li><span class="en"><strong>Cover</strong> is the share of the question’s weight a skill matches. A word no skill contains still counts, or one lucky word would read as a full match.</span><span class="zh"><strong>覆盖率</strong> = 这条 skill 配上的查询词权重占全部查询词的比例。库里没有的词也要算进去，不然碰巧配上一个词就成了百分之百。</span></li>
+            <li><span class="en">The threshold, 0.3, is a <strong>starting value</strong>. The second query on the right is a real miss: “screen” and “tune” appear nowhere in that skill’s text.</span><span class="zh">门槛 0.3 只是<strong>起点值</strong>。右边第二条是真实的漏判：「屏幕」「调参」在那条 skill 的文字里都没出现。</span></li>
+            <li><span class="en">From now on the adapter records every query an agent writes to find. Those, not your raw messages, are what the threshold will be set on.</span><span class="zh">从现在起，适配器会记下 agent 每次给 find 写的查询。门槛以后用这些来定，而不是用你的原话。</span></li>
+          </ul>
+        </div>
+        <figure class="rv d2" style="margin:0">
+          <div class="term-out"><div class="bar"><i></i><i></i><i></i></div>
+<pre lang="zh-CN" tabindex="0" aria-label="Terminal output of whetstone find on a five-skill demo library: one match, one near miss below the threshold, and one query nothing matches. whetstone find 在 5 个 skill 的演示库上的输出:一条命中,一条差一点没过门槛,一条什么都没配上。"><code><span class="t-dim">$</span> whetstone find <span class="t-hi">"AVB 签名 验签怎么配置"</span>
 <span class="t-ok">1. secure-boot</span>  (covers 50%: avb 签名 验签)  ~/skills/secure-boot/SKILL.md
    Secure boot chain: signing, verification, AVB, fastboot flash checks. 触发词:验签, 签名, AVB.
 <span class="t-dim">find: 5 skills searched</span>
@@ -559,457 +323,177 @@ no skill fits well enough (best: panel-tuning covers 25%, needs 30%); go ahead w
 
 <span class="t-dim">$</span> whetstone find <span class="t-hi">"今天天气怎么样"</span>
 no skill fits well enough (nothing matched, needs 30%); go ahead without one
-<span class="t-dim">find: 5 skills searched</span></code></pre>
-        <figcaption>
-          <span class="lang-en">Real output on a five-skill demo library written for this page (secure boot, partition table, panel tuning, git workflow, release archive), with <code>--src</code> pointed at it and learned messages off. Paths shortened.</span>
-          <span class="lang-zh">在为本页写的 5 个 skill 演示库上的真实输出（安全启动、分区表、屏幕调参、git 流程、版本归档），<code>--src</code> 指向它，关掉学到的原话。路径做了缩短。</span>
-        </figcaption>
+<span class="t-dim">find: 5 skills searched</span></code></pre></div>
+          <figcaption style="margin-top:12px;font-size:13px;color:var(--dim)"><span class="en">Real output on a five-skill demo library written for this page (secure boot, partition table, panel tuning, git workflow, release archive), with <code>--src</code> pointed at it and learned messages off. Paths shortened.</span><span class="zh">在为本页写的 5 个 skill 演示库上的真实输出（安全启动、分区表、屏幕调参、git 流程、版本归档），<code>--src</code> 指向它，关掉学到的原话。路径做了缩短。</span></figcaption>
+        </figure>
+      </div>
+    </div>
+  </section>
+
+  <!-- across runtimes -->
+  <section class="sec" id="agents">
+    <div class="wrap">
+      <div class="sec-head rv">
+        <span class="kicker"><span class="en">Across runtimes</span><span class="zh">多种 agent</span></span>
+        <h2><span class="en">One core that never reads a runtime’s format.</span><span class="zh">核心只有一份，不读任何一家的格式。</span></h2>
+        <p class="lede"><span class="en">Six runtimes store sessions six different ways and switch skills with six different settings. What they all have is the same three facts: what the user said, which files were touched, which skill was used. The core learns, searches and scores from those facts alone; each runtime gets an adapter that extracts them and translates the results back into its own switches. Claude Code’s adapter is built and tested. The other five are designed from reading their source, and <em class="hl">not written yet</em>.</span><span class="zh">六家运行时存会话的方式各不相同，开关 skill 的设置也各不相同。它们共有的是同样三件事：用户说了什么、碰了哪些文件、用了哪条 skill。核心只拿这三件事来学习、查找和打分；每个运行时配一个适配器，负责把这三件事取出来，再把结果翻译回它自己的开关。Claude Code 的适配器已经做好并测过；另外五家是读了它们的源码之后设计的，<em class="hl">还没写</em>。</span></p>
+      </div>
+      <figure class="fig rv" style="margin:0" role="img" aria-label="Architecture across runtimes. Six runtimes on the left, each with an adapter: Claude Code's adapter is built; the Codex, opencode, pi, Gemini CLI and Cursor adapters are designed but not written, each with its main obstacle noted. Adapters produce neutral session events, which the runtime-neutral core bin/route.py reads for learn, usage and elsewhere, find, and replay. The core's outputs are the find command every agent with a shell can run, menu switches per runtime of which only Claude Code's is built, and a pointer line in CLAUDE.md, AGENTS.md or GEMINI.md. Installing into two folders covers all six runtimes; linking into the second is not done yet. 多运行时架构:左边六家运行时各配一个适配器,Claude Code 的已实现,Codex、opencode、pi、Gemini CLI、Cursor 已设计未写,并注明各自的主要难点;适配器产出统一会话事件,由与运行时无关的核心 bin/route.py 读取,做学原话、使用表、查找、回放;输出是任何有 shell 的 agent 都能跑的 find、各家的菜单开关(只有 Claude Code 的已实现)、以及 CLAUDE.md / AGENTS.md / GEMINI.md 里的一行指针。装到两个目录就能覆盖六家,第二个目录尚未接上。">
+        <div class="rt-arch">
+          <div class="rt-col">
+            <h5><span class="en">Runtime · adapter</span><span class="zh">运行时 · 适配器</span></h5>
+            <div class="rtr built"><b>Claude Code</b><span><em><span class="en">built · claude-code.py</span><span class="zh">已实现 · claude-code.py</span></em><span class="en">tested, 73 checks</span><span class="zh">已测，73 项自检</span></span></div>
+            <div class="rtr"><b>Codex</b><span><em><span class="en">not written</span><span class="zh">未写</span></em><span class="en">file reads only via shell</span><span class="zh">读文件只能从 shell 命令里解析</span></span></div>
+            <div class="rtr"><b>opencode</b><span><em><span class="en">not written</span><span class="zh">未写</span></em><span class="en">SQLite; menu not stored</span><span class="zh">存在 SQLite；不记菜单</span></span></div>
+            <div class="rtr"><b>pi</b><span><em><span class="en">not written</span><span class="zh">未写</span></em><span class="en">JSONL tree; menu stored</span><span class="zh">JSONL 树；记了菜单</span></span></div>
+            <div class="rtr"><b>Gemini CLI</b><span><em><span class="en">not written</span><span class="zh">未写</span></em><span class="en">no cwd; 30-day cleanup</span><span class="zh">不记工作目录；30 天清理</span></span></div>
+            <div class="rtr"><b>Cursor</b><span><em><span class="en">not written</span><span class="zh">未写</span></em><span class="en">no timestamps</span><span class="zh">没有时间戳</span></span></div>
+          </div>
+          <div class="rt-col">
+            <h5><span class="en">Neutral events</span><span class="zh">统一事件</span></h5>
+            <div class="box ev"><h4><span class="en">Neutral events</span><span class="zh">统一事件</span></h4><span class="sub"><span class="en">one JSON object per line</span><span class="zh">一行一个 JSON 对象</span></span>
+              <ul><li>session · user</li><li>file {path, op}</li><li>load {via, use}</li><li>menu · find</li></ul></div>
+          </div>
+          <div class="rt-col">
+            <h5><span class="en">Core</span><span class="zh">核心</span></h5>
+            <div class="box core"><h4>bin/route.py</h4><span class="sub" style="color:var(--ember-2)"><span class="en">reads only the events</span><span class="zh">只读统一事件</span></span>
+              <ul>
+                <li><span class="en">learn</span><span class="zh">learn 学原话</span><small><span class="en">what was said → which skill</span><span class="zh">什么话 → 用了哪条</span></small></li>
+                <li>usage · elsewhere<small><span class="en">who uses what, per project</span><span class="zh">各项目用了哪些</span></small></li>
+                <li><span class="en">find</span><span class="zh">find 查找</span><small><span class="en">rank, then a threshold</span><span class="zh">打分，再过门槛</span></small></li>
+                <li><span class="en">replay</span><span class="zh">replay 回放</span><small><span class="en">keep only what wins</span><span class="zh">赢了才保留</span></small></li>
+              </ul></div>
+          </div>
+          <div class="rt-col">
+            <h5><span class="en">Outputs</span><span class="zh">产出</span></h5>
+            <div class="box out-find"><h4>whetstone find</h4><span class="sub" style="margin-bottom:0"><span class="en">a shell command, so any of the six can run it</span><span class="zh">一条 shell 命令，六家都能跑</span></span></div>
+            <div class="box"><h4 style="font-family:var(--sans)"><span class="en">Menu switches</span><span class="zh">各家的菜单开关</span></h4>
+              <ul style="margin-top:10px">
+                <li class="sw built"><span class="dot"></span><span class="en">Claude Code: overrides · paths</span><span class="zh">Claude Code：overrides · paths</span></li>
+                <li class="sw"><span class="dot"></span><span class="en">opencode: permission.skill</span><span class="zh">opencode：permission.skill</span></li>
+                <li class="sw"><span class="dot"></span><span class="en">pi: .pi/settings.json skills</span><span class="zh">pi：.pi/settings.json 的 skills</span></li>
+                <li class="sw"><span class="dot"></span><span class="en">Gemini CLI: skills.disabled</span><span class="zh">Gemini CLI：skills.disabled</span></li>
+                <li class="sw"><span class="dot"></span><span class="en">Codex: no per-project switch</span><span class="zh">Codex：没有项目级开关</span></li>
+              </ul></div>
+            <div class="box"><h4 style="font-family:var(--sans)"><span class="en">Pointer line</span><span class="zh">常驻指针</span></h4><span class="sub" style="margin-bottom:0">CLAUDE.md · AGENTS.md · GEMINI.md</span></div>
+          </div>
+        </div>
+        <div class="install-strip"><b><span class="en">Install into two folders, seen by all six:</span><span class="zh">装到两个目录，六家都看得到：</span></b><br><code>~/.claude/skills</code> → Claude Code · opencode · Cursor &nbsp;&nbsp; <code>~/.agents/skills</code> → Codex · opencode · pi · Gemini CLI · Cursor &nbsp;&nbsp; <span class="en">(linking into the second: not done yet)</span><span class="zh">（第二个目录还没接上）</span></div>
+        <div class="legend-row">
+          <span><span class="dot" style="--dc:var(--green)"></span><span class="en">built and tested</span><span class="zh">已实现并测过</span></span>
+          <span><span class="dot" style="--dc:transparent;border:1.5px solid var(--dim)"></span><span class="en">designed from source, not built</span><span class="zh">读源码设计好，还没做</span></span>
+          <span><span style="color:var(--ember)">→</span><span class="en">event flow</span><span class="zh">事件流向</span></span>
+          <span><span class="dot" style="--dc:var(--ember)"></span><span class="en">runtime-neutral core</span><span class="zh">与运行时无关的核心</span></span>
+        </div>
       </figure>
-    </div>
-  </div>
-</section>
+      <p class="rv" style="font-size:13.5px;color:var(--dim);max-width:88ch;margin-top:14px"><span class="en">The grey notes under each unbuilt adapter are the main obstacle found in that runtime’s source, dated 2026-09-29/30. <code>use</code> is decided by the adapter because runtimes differ: in Claude Code, reading a SKILL.md is usually someone editing it; in Codex or pi, reading it is how a skill gets used.</span><span class="zh">每个未实现适配器下面的灰字，是读那家源码（2026-09-29/30 的版本）时找到的主要难点。<code>use</code>（算不算在用）交给适配器判断，因为各家不同：Claude Code 里读 SKILL.md 多半是在改它，Codex 和 pi 里读 SKILL.md 就是在用。</span></p>
 
-<!-- Multi-agent -->
-<section class="anth-section" id="agents">
-  <div class="anth-container anth-container--wide">
-    <div style="max-width:780px; margin:0 auto var(--space-7); text-align:center;">
-      <span class="anth-badge"><span class="lang-en">Across runtimes</span><span class="lang-zh">多种 agent</span></span>
-      <h2 style="margin-top:var(--space-3);">
-        <span class="lang-en">One core that never reads a runtime’s format.</span>
-        <span class="lang-zh">核心只有一份，不读任何一家的格式。</span>
-      </h2>
-      <p style="font-family:var(--font-body); font-size:17px; line-height:1.7; color:var(--anth-text-secondary); margin:var(--space-4) 0 0;">
-        <span class="lang-en">Six runtimes store sessions six different ways and switch skills with six different settings. What they all have is the same three facts: what the user said, which files were touched, which skill was used. The core learns, searches and scores from those facts alone; each runtime gets an adapter that extracts them and translates the results back into its own switches. Claude Code’s adapter is built and tested. The other five are designed from reading their source, and <em>not written yet</em>.</span>
-        <span class="lang-zh">六家运行时存会话的方式各不相同，开关 skill 的设置也各不相同。它们共有的是同样三件事：用户说了什么、碰了哪些文件、用了哪条 skill。核心只拿这三件事来学习、查找和打分；每个运行时配一个适配器，负责把这三件事取出来，再把结果翻译回它自己的开关。Claude Code 的适配器已经做好并测过；另外五家是读了它们的源码之后设计的，<em>还没写</em>。</span>
-      </p>
-    </div>
-    <figure>
-      <div class="anth-scroll" style="--pan-w:1040px"><svg role="img" aria-label="Architecture across runtimes. Six runtimes on the left, each with an adapter: Claude Code's adapter is built; the Codex, opencode, pi, Gemini CLI and Cursor adapters are designed but not written, each with its main obstacle noted. Adapters produce neutral session events, which the runtime-neutral core bin/route.py reads for learn, usage and elsewhere, find, and replay. The core's outputs are the find command every agent with a shell can run, menu switches per runtime of which only Claude Code's is built, and a pointer line in CLAUDE.md, AGENTS.md or GEMINI.md. Installing into two folders covers all six runtimes; linking into the second is not done yet. 多运行时架构:左边六家运行时各配一个适配器,Claude Code 的已实现,Codex、opencode、pi、Gemini CLI、Cursor 已设计未写,并注明各自的主要难点;适配器产出统一会话事件,由与运行时无关的核心 bin/route.py 读取,做学原话、使用表、查找、回放;输出是任何有 shell 的 agent 都能跑的 find、各家的菜单开关(只有 Claude Code 的已实现)、以及 CLAUDE.md / AGENTS.md / GEMINI.md 里的一行指针。装到两个目录就能覆盖六家,第二个目录尚未接上。" viewBox="0 0 1160 494" style="display:block; width:100%; max-width:1160px; height:auto;" font-family="Poppins, 'Noto Sans SC', 'Helvetica Neue', Arial, sans-serif">
-        <defs>
-          <filter id="f4-sh" x="-20%" y="-20%" width="140%" height="140%"><feDropShadow dx="0" dy="1" stdDeviation="2" flood-color="#141413" flood-opacity="0.06"/></filter>
-          <marker id="f4-arrB" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0.5 L7.5,4 L0,7.5 Z" fill="#6a9bcc"/></marker>
-          <marker id="f4-arrO" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0.5 L7.5,4 L0,7.5 Z" fill="#d97757"/></marker>
-          <marker id="f4-arrG" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0.5 L7.5,4 L0,7.5 Z" fill="#788c5d"/></marker>
-          <marker id="f4-arrN" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0.5 L7.5,4 L0,7.5 Z" fill="#a8a496"/></marker>
-        </defs>
-        <rect width="1160" height="494" rx="16" fill="#faf9f5" stroke="#eceadf"/>
-
-        <!-- runtime boxes -->
-        <g filter="url(#f4-sh)">
-          <rect x="24" y="56" width="160" height="44" rx="8" fill="#ffffff" stroke="#788c5d" stroke-width="1.5"/>
-          <rect x="224" y="56" width="176" height="44" rx="8" fill="#ffffff" stroke="#788c5d" stroke-width="1.5"/>
-        </g>
-        <g fill="#faf9f5" stroke="#a8a496" stroke-dasharray="4 3">
-          <rect x="24" y="112" width="160" height="44" rx="8"/><rect x="24" y="168" width="160" height="44" rx="8"/>
-          <rect x="24" y="224" width="160" height="44" rx="8"/><rect x="24" y="280" width="160" height="44" rx="8"/>
-          <rect x="24" y="336" width="160" height="44" rx="8"/>
-          <rect x="224" y="112" width="176" height="44" rx="8"/><rect x="224" y="168" width="176" height="44" rx="8"/>
-          <rect x="224" y="224" width="176" height="44" rx="8"/><rect x="224" y="280" width="176" height="44" rx="8"/>
-          <rect x="224" y="336" width="176" height="44" rx="8"/>
-        </g>
-        <circle cx="40" cy="78" r="4" fill="#788c5d"/>
-        <g fill="none" stroke="#a8a496" stroke-width="1.5">
-          <circle cx="40" cy="134" r="4"/><circle cx="40" cy="190" r="4"/><circle cx="40" cy="246" r="4"/><circle cx="40" cy="302" r="4"/><circle cx="40" cy="358" r="4"/>
-        </g>
-        <!-- runtime -> adapter -->
-        <line x1="184" y1="78" x2="220" y2="78" stroke="#788c5d" stroke-width="1.8" marker-end="url(#f4-arrG)"/>
-        <g stroke="#a8a496" stroke-width="1.2" stroke-dasharray="4 3" fill="none">
-          <line x1="184" y1="134" x2="220" y2="134"/><line x1="184" y1="190" x2="220" y2="190"/><line x1="184" y1="246" x2="220" y2="246"/>
-          <line x1="184" y1="302" x2="220" y2="302"/><line x1="184" y1="358" x2="220" y2="358"/>
-          <line x1="400" y1="134" x2="420" y2="134"/><line x1="400" y1="190" x2="420" y2="190"/><line x1="400" y1="246" x2="420" y2="246"/>
-          <line x1="400" y1="302" x2="420" y2="302"/><line x1="400" y1="358" x2="420" y2="358"/>
-          <line x1="420" y1="134" x2="420" y2="358"/>
-        </g>
-        <path d="M400,78 H420 V218 H444" fill="none" stroke="#788c5d" stroke-width="1.8" marker-end="url(#f4-arrG)"/>
-
-        <!-- events -->
-        <rect x="448" y="146" width="168" height="144" rx="10" fill="#e2ecf5" stroke="#6a9bcc" stroke-width="1.2"/>
-        <line x1="616" y1="218" x2="652" y2="218" stroke="#6a9bcc" stroke-width="1.8" marker-end="url(#f4-arrB)"/>
-        <!-- core -->
-        <rect x="656" y="100" width="208" height="236" rx="12" fill="#f7e4dc" stroke="#d97757" stroke-width="1.5"/>
-        <g fill="#d97757"><circle cx="676" cy="172" r="3.5"/><circle cx="676" cy="214" r="3.5"/><circle cx="676" cy="256" r="3.5"/><circle cx="676" cy="298" r="3.5"/></g>
-        <!-- core -> outputs -->
-        <g fill="none" stroke="#d97757" stroke-width="1.8">
-          <path d="M864,140 H880 V92 H896" marker-end="url(#f4-arrO)"/>
-          <path d="M864,218 H896" marker-end="url(#f4-arrO)"/>
-          <path d="M864,300 H880 V342 H896" marker-end="url(#f4-arrO)"/>
-        </g>
-        <!-- outputs -->
-        <g filter="url(#f4-sh)">
-          <rect x="900" y="56" width="236" height="72" rx="10" fill="#ffffff" stroke="#d97757" stroke-width="1.5"/>
-          <rect x="900" y="144" width="236" height="150" rx="10" fill="#ffffff" stroke="#d8d4c8"/>
-          <rect x="900" y="310" width="236" height="64" rx="10" fill="#ffffff" stroke="#d8d4c8"/>
-        </g>
-        <circle cx="918" cy="198" r="3.5" fill="#788c5d"/>
-        <g fill="none" stroke="#a8a496" stroke-width="1.3">
-          <circle cx="918" cy="218" r="3.5"/><circle cx="918" cy="238" r="3.5"/><circle cx="918" cy="258" r="3.5"/><circle cx="918" cy="278" r="3.5"/>
-        </g>
-        <!-- install strip -->
-        <rect x="24" y="398" width="1112" height="48" rx="10" fill="#f0e4d8" stroke="#c9913f" stroke-width="1"/>
-        <!-- legend marks -->
-        <circle cx="32" cy="472" r="4" fill="#788c5d"/>
-        <circle cx="250" cy="472" r="4" fill="none" stroke="#a8a496" stroke-width="1.5"/>
-        <line x1="480" y1="472" x2="504" y2="472" stroke="#6a9bcc" stroke-width="1.8"/>
-        <rect x="660" y="465" width="14" height="14" rx="3" fill="#f7e4dc" stroke="#d97757"/>
-
-        <g class="lang-en">
-          <text x="24" y="38" font-size="11" font-weight="700" fill="#8c8a7d" letter-spacing="0.08em">RUNTIME</text>
-          <text x="224" y="38" font-size="11" font-weight="700" fill="#8c8a7d" letter-spacing="0.08em">ADAPTER</text>
-          <text x="448" y="38" font-size="11" font-weight="700" fill="#8c8a7d" letter-spacing="0.08em">NEUTRAL EVENTS</text>
-          <text x="656" y="38" font-size="11" font-weight="700" fill="#8c8a7d" letter-spacing="0.08em">CORE</text>
-          <text x="900" y="38" font-size="11" font-weight="700" fill="#8c8a7d" letter-spacing="0.08em">OUTPUTS</text>
-          <text x="52" y="83" font-size="13" font-weight="600" fill="#141413">Claude Code</text>
-          <text x="52" y="139" font-size="13" font-weight="600" fill="#6b6a5f">Codex</text>
-          <text x="52" y="195" font-size="13" font-weight="600" fill="#6b6a5f">opencode</text>
-          <text x="52" y="251" font-size="13" font-weight="600" fill="#6b6a5f">pi</text>
-          <text x="52" y="307" font-size="13" font-weight="600" fill="#6b6a5f">Gemini CLI</text>
-          <text x="52" y="363" font-size="13" font-weight="600" fill="#6b6a5f">Cursor</text>
-          <text x="238" y="75" font-size="12" font-weight="600" fill="#141413">built · claude-code.py</text>
-          <text x="238" y="91" font-size="10.5" fill="#5d7045">tested, 73 checks</text>
-          <text x="238" y="131" font-size="11.5" font-weight="600" fill="#8c8a7d">not written</text>
-          <text x="238" y="147" font-size="10.5" fill="#8c8a7d">file reads only via shell</text>
-          <text x="238" y="187" font-size="11.5" font-weight="600" fill="#8c8a7d">not written</text>
-          <text x="238" y="203" font-size="10.5" fill="#8c8a7d">SQLite; menu not stored</text>
-          <text x="238" y="243" font-size="11.5" font-weight="600" fill="#8c8a7d">not written</text>
-          <text x="238" y="259" font-size="10.5" fill="#8c8a7d">JSONL tree; menu stored</text>
-          <text x="238" y="299" font-size="11.5" font-weight="600" fill="#8c8a7d">not written</text>
-          <text x="238" y="315" font-size="10.5" fill="#8c8a7d">no cwd; 30-day cleanup</text>
-          <text x="238" y="355" font-size="11.5" font-weight="600" fill="#8c8a7d">not written</text>
-          <text x="238" y="371" font-size="10.5" fill="#8c8a7d">no timestamps</text>
-          <text x="464" y="172" font-size="13.5" font-weight="600" fill="#141413">Neutral events</text>
-          <text x="464" y="190" font-size="10.5" fill="#4a7bab">one JSON object per line</text>
-          <text x="464" y="216" font-size="11" fill="#141413">session · user</text>
-          <text x="464" y="236" font-size="11" fill="#141413">file {path, op}</text>
-          <text x="464" y="256" font-size="11" fill="#141413">load {via, use}</text>
-          <text x="464" y="276" font-size="11" fill="#141413">menu · find</text>
-          <text x="672" y="128" font-size="14" font-weight="600" fill="#141413">bin/route.py</text>
-          <text x="672" y="146" font-size="10.5" fill="#c2613f">reads only the events</text>
-          <text x="688" y="176" font-size="12" font-weight="600" fill="#141413">learn</text>
-          <text x="688" y="192" font-size="10.5" fill="#6b6a5f">what was said → which skill</text>
-          <text x="688" y="218" font-size="12" font-weight="600" fill="#141413">usage · elsewhere</text>
-          <text x="688" y="234" font-size="10.5" fill="#6b6a5f">who uses what, per project</text>
-          <text x="688" y="260" font-size="12" font-weight="600" fill="#141413">find</text>
-          <text x="688" y="276" font-size="10.5" fill="#6b6a5f">rank, then a threshold</text>
-          <text x="688" y="302" font-size="12" font-weight="600" fill="#141413">replay</text>
-          <text x="688" y="318" font-size="10.5" fill="#6b6a5f">keep only what wins</text>
-          <text x="916" y="82" font-size="13" font-weight="600" fill="#141413">whetstone find</text>
-          <text x="916" y="100" font-size="10.5" fill="#6b6a5f">a shell command, so any of</text>
-          <text x="916" y="116" font-size="10.5" fill="#6b6a5f">the six can run it</text>
-          <text x="916" y="170" font-size="13" font-weight="600" fill="#141413">Menu switches</text>
-          <text x="930" y="202" font-size="10.5" fill="#141413">Claude Code: overrides · paths</text>
-          <text x="930" y="222" font-size="10.5" fill="#8c8a7d">opencode: permission.skill</text>
-          <text x="930" y="242" font-size="10.5" fill="#8c8a7d">pi: .pi/settings.json skills</text>
-          <text x="930" y="262" font-size="10.5" fill="#8c8a7d">Gemini CLI: skills.disabled</text>
-          <text x="930" y="282" font-size="10.5" fill="#8c8a7d">Codex: no per-project switch</text>
-          <text x="916" y="336" font-size="13" font-weight="600" fill="#141413">Pointer line</text>
-          <text x="916" y="356" font-size="10.5" fill="#6b6a5f">CLAUDE.md · AGENTS.md · GEMINI.md</text>
-          <text x="40" y="418" font-size="11.5" font-weight="600" fill="#8a5a2a">Install into two folders, seen by all six:</text>
-          <text x="40" y="436" font-size="11" fill="#6b6a5f">~/.claude/skills → Claude Code · opencode · Cursor     ~/.agents/skills → Codex · opencode · pi · Gemini CLI · Cursor     (linking into the second: not done yet)</text>
-          <text x="42" y="476" font-size="11" fill="#6b6a5f">built and tested</text>
-          <text x="260" y="476" font-size="11" fill="#6b6a5f">designed from source, not built</text>
-          <text x="512" y="476" font-size="11" fill="#6b6a5f">event flow</text>
-          <text x="682" y="476" font-size="11" fill="#6b6a5f">runtime-neutral core</text>
-        </g>
-        <g class="lang-zh">
-          <text x="24" y="38" font-size="11" font-weight="700" fill="#8c8a7d">运行时</text>
-          <text x="224" y="38" font-size="11" font-weight="700" fill="#8c8a7d">适配器</text>
-          <text x="448" y="38" font-size="11" font-weight="700" fill="#8c8a7d">统一事件</text>
-          <text x="656" y="38" font-size="11" font-weight="700" fill="#8c8a7d">核心</text>
-          <text x="900" y="38" font-size="11" font-weight="700" fill="#8c8a7d">产出</text>
-          <text x="52" y="83" font-size="13" font-weight="600" fill="#141413">Claude Code</text>
-          <text x="52" y="139" font-size="13" font-weight="600" fill="#6b6a5f">Codex</text>
-          <text x="52" y="195" font-size="13" font-weight="600" fill="#6b6a5f">opencode</text>
-          <text x="52" y="251" font-size="13" font-weight="600" fill="#6b6a5f">pi</text>
-          <text x="52" y="307" font-size="13" font-weight="600" fill="#6b6a5f">Gemini CLI</text>
-          <text x="52" y="363" font-size="13" font-weight="600" fill="#6b6a5f">Cursor</text>
-          <text x="238" y="75" font-size="12" font-weight="600" fill="#141413">已实现 · claude-code.py</text>
-          <text x="238" y="91" font-size="10.5" fill="#5d7045">已测，73 项自检</text>
-          <text x="238" y="131" font-size="11.5" font-weight="600" fill="#8c8a7d">未写</text>
-          <text x="238" y="147" font-size="10.5" fill="#8c8a7d">读文件只能从 shell 命令里解析</text>
-          <text x="238" y="187" font-size="11.5" font-weight="600" fill="#8c8a7d">未写</text>
-          <text x="238" y="203" font-size="10.5" fill="#8c8a7d">存在 SQLite；不记菜单</text>
-          <text x="238" y="243" font-size="11.5" font-weight="600" fill="#8c8a7d">未写</text>
-          <text x="238" y="259" font-size="10.5" fill="#8c8a7d">JSONL 树；记了菜单</text>
-          <text x="238" y="299" font-size="11.5" font-weight="600" fill="#8c8a7d">未写</text>
-          <text x="238" y="315" font-size="10.5" fill="#8c8a7d">不记工作目录；30 天清理</text>
-          <text x="238" y="355" font-size="11.5" font-weight="600" fill="#8c8a7d">未写</text>
-          <text x="238" y="371" font-size="10.5" fill="#8c8a7d">没有时间戳</text>
-          <text x="464" y="172" font-size="13.5" font-weight="600" fill="#141413">统一事件</text>
-          <text x="464" y="190" font-size="10.5" fill="#4a7bab">一行一个 JSON 对象</text>
-          <text x="464" y="216" font-size="11" fill="#141413">session · user</text>
-          <text x="464" y="236" font-size="11" fill="#141413">file {path, op}</text>
-          <text x="464" y="256" font-size="11" fill="#141413">load {via, use}</text>
-          <text x="464" y="276" font-size="11" fill="#141413">menu · find</text>
-          <text x="672" y="128" font-size="14" font-weight="600" fill="#141413">bin/route.py</text>
-          <text x="672" y="146" font-size="10.5" fill="#c2613f">只读统一事件</text>
-          <text x="688" y="176" font-size="12" font-weight="600" fill="#141413">learn 学原话</text>
-          <text x="688" y="192" font-size="10.5" fill="#6b6a5f">什么话 → 用了哪条</text>
-          <text x="688" y="218" font-size="12" font-weight="600" fill="#141413">usage · elsewhere</text>
-          <text x="688" y="234" font-size="10.5" fill="#6b6a5f">各项目用了哪些</text>
-          <text x="688" y="260" font-size="12" font-weight="600" fill="#141413">find 查找</text>
-          <text x="688" y="276" font-size="10.5" fill="#6b6a5f">打分，再过门槛</text>
-          <text x="688" y="302" font-size="12" font-weight="600" fill="#141413">replay 回放</text>
-          <text x="688" y="318" font-size="10.5" fill="#6b6a5f">赢了才保留</text>
-          <text x="916" y="82" font-size="13" font-weight="600" fill="#141413">whetstone find</text>
-          <text x="916" y="100" font-size="10.5" fill="#6b6a5f">一条 shell 命令，</text>
-          <text x="916" y="116" font-size="10.5" fill="#6b6a5f">六家都能跑</text>
-          <text x="916" y="170" font-size="13" font-weight="600" fill="#141413">各家的菜单开关</text>
-          <text x="930" y="202" font-size="10.5" fill="#141413">Claude Code：overrides · paths</text>
-          <text x="930" y="222" font-size="10.5" fill="#8c8a7d">opencode：permission.skill</text>
-          <text x="930" y="242" font-size="10.5" fill="#8c8a7d">pi：.pi/settings.json 的 skills</text>
-          <text x="930" y="262" font-size="10.5" fill="#8c8a7d">Gemini CLI：skills.disabled</text>
-          <text x="930" y="282" font-size="10.5" fill="#8c8a7d">Codex：没有项目级开关</text>
-          <text x="916" y="336" font-size="13" font-weight="600" fill="#141413">常驻指针</text>
-          <text x="916" y="356" font-size="10.5" fill="#6b6a5f">CLAUDE.md · AGENTS.md · GEMINI.md</text>
-          <text x="40" y="418" font-size="11.5" font-weight="600" fill="#8a5a2a">装到两个目录，六家都看得到：</text>
-          <text x="40" y="436" font-size="11" fill="#6b6a5f">~/.claude/skills → Claude Code · opencode · Cursor     ~/.agents/skills → Codex · opencode · pi · Gemini CLI · Cursor     （第二个目录还没接上）</text>
-          <text x="42" y="476" font-size="11" fill="#6b6a5f">已实现并测过</text>
-          <text x="260" y="476" font-size="11" fill="#6b6a5f">读源码设计好，还没做</text>
-          <text x="512" y="476" font-size="11" fill="#6b6a5f">事件流向</text>
-          <text x="682" y="476" font-size="11" fill="#6b6a5f">与运行时无关的核心</text>
-        </g>
-      </svg></div>
-      <figcaption>
-        <span class="lang-en">The grey notes under each unbuilt adapter are the main obstacle found in that runtime’s source, dated 2026-09-29/30. <code>use</code> is decided by the adapter because runtimes differ: in Claude Code, reading a SKILL.md is usually someone editing it; in Codex or pi, reading it is how a skill gets used.</span>
-        <span class="lang-zh">每个未实现适配器下面的灰字，是读那家源码（2026-09-29/30 的版本）时找到的主要难点。<code>use</code>（算不算在用）交给适配器判断，因为各家不同：Claude Code 里读 SKILL.md 多半是在改它，Codex 和 pi 里读 SKILL.md 就是在用。</span>
-      </figcaption>
-    </figure>
-
-    <div style="max-width:1120px; margin:var(--space-8) auto 0;">
-      <h3 style="font-family:var(--font-heading); font-size:21px; font-weight:600; margin:0 0 var(--space-4);"><span class="lang-en">What the six runtimes offer, side by side</span><span class="lang-zh">六家运行时能用上的东西，并排看</span></h3>
-      <div class="rt-wrap" tabindex="0" role="region" aria-label="Six runtimes compared · 六家运行时对照">
-        <table class="art-table rt-table">
-          <thead><tr>
-            <th></th><th>Claude Code</th><th>Codex</th><th>opencode</th><th>pi</th><th>Gemini CLI</th><th>Cursor</th>
-          </tr></thead>
+      <h3 class="rv" style="margin:48px 0 16px;font-size:22px"><span class="en">What the six runtimes offer, side by side</span><span class="zh">六家运行时能用上的东西，并排看</span></h3>
+      <div class="tbl-wrap rv" tabindex="0" role="region" aria-label="Six runtimes compared · 六家运行时对照">
+        <table class="tbl rt-tbl">
+          <thead><tr><th></th><th>Claude Code</th><th>Codex</th><th>opencode</th><th>pi</th><th>Gemini CLI</th><th>Cursor</th></tr></thead>
           <tbody>
-            <tr><td><span class="lang-en">Adapter</span><span class="lang-zh">适配器</span></td><td class="is-built"><span class="lang-en">built</span><span class="lang-zh">已实现</span></td><td><span class="lang-en">not written</span><span class="lang-zh">未写</span></td><td><span class="lang-en">not written</span><span class="lang-zh">未写</span></td><td><span class="lang-en">not written</span><span class="lang-zh">未写</span></td><td><span class="lang-en">not written</span><span class="lang-zh">未写</span></td><td><span class="lang-en">not written</span><span class="lang-zh">未写</span></td></tr>
-            <tr><td><span class="lang-en">Reads <code>~/.agents/skills</code></span><span class="lang-zh">读 <code>~/.agents/skills</code></span></td><td><span class="lang-en">no</span><span class="lang-zh">否</span></td><td><span class="lang-en">yes</span><span class="lang-zh">是</span></td><td><span class="lang-en">yes</span><span class="lang-zh">是</span></td><td><span class="lang-en">yes</span><span class="lang-zh">是</span></td><td><span class="lang-en">yes</span><span class="lang-zh">是</span></td><td><span class="lang-en">yes (docs)</span><span class="lang-zh">是（文档）</span></td></tr>
-            <tr><td><span class="lang-en">Menu limit</span><span class="lang-zh">菜单上限</span></td><td><span class="lang-en">~1% of context; cuts descriptions of the least used</span><span class="lang-zh">约 1% 上下文；砍用得最少的描述</span></td><td><span class="lang-en">2% of context, max 10k tokens; then drops whole entries</span><span class="lang-zh">2% 上下文、最多 1 万 token；再不够就整条删</span></td><td><span class="lang-en">none</span><span class="lang-zh">无</span></td><td><span class="lang-en">none</span><span class="lang-zh">无</span></td><td><span class="lang-en">none</span><span class="lang-zh">无</span></td><td><span class="lang-en">not documented</span><span class="lang-zh">文档没写</span></td></tr>
-            <tr><td><span class="lang-en">Per-project switch</span><span class="lang-zh">项目级开关</span></td><td><code>skillOverrides</code></td><td><span class="lang-en">project config ignored</span><span class="lang-zh">项目配置不生效</span></td><td><code>permission.skill</code></td><td><code>.pi/settings.json</code></td><td><code>skills.disabled</code></td><td><span class="lang-en">not found</span><span class="lang-zh">未查到</span></td></tr>
-            <tr><td><span class="lang-en">Appear by file</span><span class="lang-zh">按文件出现</span></td><td><code>paths</code></td><td>—</td><td>—</td><td>—</td><td>—</td><td><code>paths</code> <span class="lang-en">(docs)</span><span class="lang-zh">（文档）</span></td></tr>
-            <tr><td><span class="lang-en">Menu kept in the session log</span><span class="lang-zh">会话记录里有菜单</span></td><td><span class="lang-en">yes</span><span class="lang-zh">是</span></td><td><span class="lang-en">yes</span><span class="lang-zh">是</span></td><td><span class="lang-en">no</span><span class="lang-zh">否</span></td><td><span class="lang-en">yes</span><span class="lang-zh">是</span></td><td><span class="lang-en">no</span><span class="lang-zh">否</span></td><td><span class="lang-en">no</span><span class="lang-zh">否</span></td></tr>
-            <tr><td><span class="lang-en">Always-loaded file</span><span class="lang-zh">常驻指令文件</span></td><td>CLAUDE.md</td><td>AGENTS.md</td><td>AGENTS.md</td><td>AGENTS.md</td><td>GEMINI.md</td><td>AGENTS.md</td></tr>
+            <tr><td><span class="en">Adapter</span><span class="zh">适配器</span></td><td class="built"><span class="en">built</span><span class="zh">已实现</span></td><td><span class="en">not written</span><span class="zh">未写</span></td><td><span class="en">not written</span><span class="zh">未写</span></td><td><span class="en">not written</span><span class="zh">未写</span></td><td><span class="en">not written</span><span class="zh">未写</span></td><td><span class="en">not written</span><span class="zh">未写</span></td></tr>
+            <tr><td><span class="en">Reads <code>~/.agents/skills</code></span><span class="zh">读 <code>~/.agents/skills</code></span></td><td><span class="en">no</span><span class="zh">否</span></td><td><span class="en">yes</span><span class="zh">是</span></td><td><span class="en">yes</span><span class="zh">是</span></td><td><span class="en">yes</span><span class="zh">是</span></td><td><span class="en">yes</span><span class="zh">是</span></td><td><span class="en">yes (docs)</span><span class="zh">是（文档）</span></td></tr>
+            <tr><td><span class="en">Menu limit</span><span class="zh">菜单上限</span></td><td><span class="en">~1% of context; cuts descriptions of the least used</span><span class="zh">约 1% 上下文；砍用得最少的描述</span></td><td><span class="en">2% of context, max 10k tokens; then drops whole entries</span><span class="zh">2% 上下文、最多 1 万 token；再不够就整条删</span></td><td><span class="en">none</span><span class="zh">无</span></td><td><span class="en">none</span><span class="zh">无</span></td><td><span class="en">none</span><span class="zh">无</span></td><td><span class="en">not documented</span><span class="zh">文档没写</span></td></tr>
+            <tr><td><span class="en">Per-project switch</span><span class="zh">项目级开关</span></td><td><code>skillOverrides</code></td><td><span class="en">project config ignored</span><span class="zh">项目配置不生效</span></td><td><code>permission.skill</code></td><td><code>.pi/settings.json</code></td><td><code>skills.disabled</code></td><td><span class="en">not found</span><span class="zh">未查到</span></td></tr>
+            <tr><td><span class="en">Appear by file</span><span class="zh">按文件出现</span></td><td><code>paths</code></td><td>—</td><td>—</td><td>—</td><td>—</td><td><code>paths</code> <span class="en">(docs)</span><span class="zh">（文档）</span></td></tr>
+            <tr><td><span class="en">Menu kept in the session log</span><span class="zh">会话记录里有菜单</span></td><td><span class="en">yes</span><span class="zh">是</span></td><td><span class="en">yes</span><span class="zh">是</span></td><td><span class="en">no</span><span class="zh">否</span></td><td><span class="en">yes</span><span class="zh">是</span></td><td><span class="en">no</span><span class="zh">否</span></td><td><span class="en">no</span><span class="zh">否</span></td></tr>
+            <tr><td><span class="en">Always-loaded file</span><span class="zh">常驻指令文件</span></td><td>CLAUDE.md</td><td>AGENTS.md</td><td>AGENTS.md</td><td>AGENTS.md</td><td>GEMINI.md</td><td>AGENTS.md</td></tr>
           </tbody>
         </table>
       </div>
-      <p style="font-family:var(--font-heading); font-size:13px; line-height:1.6; color:var(--anth-text-secondary); margin:var(--space-4) 0 0;">
-        <span class="lang-en">From each runtime’s source at its 2026-09-29/30 head (Codex also from 14 local sessions); Cursor from its documentation only. The spec lists the file and line behind every cell.</span>
-        <span class="lang-zh">来自各家 2026-09-29/30 的源码（Codex 另有本机 14 份会话）；Cursor 只有文档。规范里给出了每一格对应的文件和行号。</span>
-      </p>
+      <p class="rv" style="font-size:13.5px;color:var(--dim);max-width:88ch;margin-top:14px"><span class="en">From each runtime’s source at its 2026-09-29/30 head (Codex also from 14 local sessions); Cursor from its documentation only. The spec lists the file and line behind every cell.</span><span class="zh">来自各家 2026-09-29/30 的源码（Codex 另有本机 14 份会话）；Cursor 只有文档。规范里给出了每一格对应的文件和行号。</span></p>
     </div>
-  </div>
-</section>
+  </section>
 
-<!-- Replay -->
-<section class="anth-section anth-section--subtle" id="replay">
-  <div class="anth-container">
-    <div style="max-width:760px; margin:0 auto var(--space-6); text-align:center;">
-      <span class="anth-badge"><span class="lang-en">The first replay</span><span class="lang-zh">第一次回放</span></span>
-      <h2 style="margin-top:var(--space-3);">
-        <span class="lang-en">More hits is not the test. Winning case by case is.</span>
-        <span class="lang-zh">不看命中多了几个，看逐例是赢是输。</span>
-      </h2>
-      <p style="font-family:var(--font-body); font-size:17px; line-height:1.7; color:var(--anth-text-secondary); margin:var(--space-4) 0 0;">
-        <span class="lang-en">83 sessions on one machine gave 34 cases: a skill used for the first time in a session, and the message typed just before. Two rankings exist only to check the scorer: a shuffled one must lose, and one allowed to peek at the answer must win.</span>
-        <span class="lang-zh">一台机器上 83 个会话，得到 34 个例子：某会话里某条 skill 第一次被用，和那之前打的那句话。有两个排序只用来检查打分脚本本身：打乱的必须输，偷看了答案的必须赢。</span>
-      </p>
+  <!-- replay -->
+  <section class="sec alt" id="replay">
+    <div class="wrap">
+      <div class="sec-head rv">
+        <span class="kicker"><span class="en">The first replay</span><span class="zh">第一次回放</span></span>
+        <h2><span class="en">More hits is not the test. Winning case by case is.</span><span class="zh">不看命中多了几个，看逐例是赢是输。</span></h2>
+        <p class="lede"><span class="en">83 sessions on one machine gave 34 cases: a skill used for the first time in a session, and the message typed just before. Two rankings exist only to check the scorer: a shuffled one must lose, and one allowed to peek at the answer must win.</span><span class="zh">一台机器上 83 个会话，得到 34 个例子：某会话里某条 skill 第一次被用，和那之前打的那句话。有两个排序只用来检查打分脚本本身：打乱的必须输，偷看了答案的必须赢。</span></p>
+      </div>
+      <figure class="fig rv" style="margin:0" role="img" aria-label="Bar chart of top-3 hits out of 34 cases: random order 3, a scorer check that must lose; text only 9, the baseline; with learned messages 12, kept with 9 better and 0 worse; with a project boost 13, dropped with 3 better and 4 worse; peeking at the answer 30, a scorer check that must win. 34 个例子里排进前 3 的个数:随机 3(自检,必须输);只看文字 9(基线);加学到的原话 12(保留,9 胜 0 负);加项目加分 13(不用,3 胜 4 负);偷看答案 30(自检,必须赢)。">
+        <div class="rp">
+          <div class="rp-head"><span></span><span><span class="en">cases where the skill used ranked in the top 3 · 34 cases, one machine</span><span class="zh">被用上的 skill 排进前 3 的例子数 · 共 34 例，一台机器</span></span></div>
+          <div class="rp-row" style="--rc:#7a8088;--v:3"><div class="l"><b><span class="en">Random order</span><span class="zh">随机排序</span></b><span style="color:var(--dim)"><span class="en">scorer check: must lose</span><span class="zh">自检：必须输</span></span></div><div class="rp-track"><span class="fill growx"></span><span class="n">3</span></div></div>
+          <div class="rp-row" style="--rc:var(--blue);--v:9"><div class="l"><b><span class="en">Text only</span><span class="zh">只看文字</span></b><span><span class="en">baseline</span><span class="zh">基线</span></span></div><div class="rp-track"><span class="fill growx"></span><span class="n">9</span></div></div>
+          <div class="rp-row" style="--rc:var(--green);--v:12"><div class="l"><b><span class="en">+ learned messages</span><span class="zh">+ 学到的原话</span></b><span><span class="en">kept · 9 better, 0 worse</span><span class="zh">保留 · 9 胜 0 负</span></span></div><div class="rp-track"><span class="fill growx"></span><span class="n">12</span></div></div>
+          <div class="rp-row" style="--rc:var(--gold);--v:13"><div class="l"><b><span class="en">+ project boost</span><span class="zh">+ 本项目用过就加分</span></b><span><span class="en">dropped · 3 better, 4 worse</span><span class="zh">不用 · 3 胜 4 负</span></span></div><div class="rp-track"><span class="fill growx"></span><span class="n">13</span></div></div>
+          <div class="rp-row" style="--rc:#4a5058;--v:30"><div class="l"><b><span class="en">Peeking at the answer</span><span class="zh">偷看答案</span></b><span style="color:var(--dim)"><span class="en">scorer check: must win</span><span class="zh">自检：必须赢</span></span></div><div class="rp-track"><span class="fill growx"></span><span class="n">30</span></div></div>
+          <div class="rp-axis"><span></span><div><i style="left:0">0</i><i style="left:29.4%">10</i><i style="left:58.8%">20</i><i style="left:88.2%">30</i><i style="left:100%"><span class="en">all 34</span><span class="zh">全部 34</span></i></div></div>
+        </div>
+      </figure>
+      <p class="rv" style="font-size:13.5px;color:var(--dim);max-width:88ch;margin-top:14px"><span class="en">The project boost has one more top-3 hit than learned messages alone, and was still dropped: compared case by case it moved the right skill down four times and up three. The learned messages won nine times, lost none, and the wins came from six projects. Each formula was written down before its first replay and tested once.</span><span class="zh">「本项目用过就加分」比单用学到的原话多一个前 3 命中，照样不用：逐例比，它把对的那条往下挤了四次、往上提了三次。学到的原话赢九次、一次没输，胜例来自六个项目。每个公式都是第一次回放前写下的，只测一次。</span></p>
     </div>
-    <figure>
-      <div class="anth-scroll" style="--pan-w:830px"><svg role="img" aria-label="Bar chart of top-3 hits out of 34 cases: random order 3, a scorer check that must lose; text only 9, the baseline; with learned messages 12, kept with 9 better and 0 worse; with a project boost 13, dropped with 3 better and 4 worse; peeking at the answer 30, a scorer check that must win. 34 个例子里排进前 3 的个数:随机 3(自检,必须输);只看文字 9(基线);加学到的原话 12(保留,9 胜 0 负);加项目加分 13(不用,3 胜 4 负);偷看答案 30(自检,必须赢)。" viewBox="0 0 960 306" style="display:block; width:100%; max-width:960px; height:auto; margin:0 auto;" font-family="Poppins, 'Noto Sans SC', 'Helvetica Neue', Arial, sans-serif">
-        <rect width="960" height="306" rx="14" fill="#faf9f5" stroke="#eceadf"/>
-        <g stroke="#e3e0d4" stroke-width="1">
-          <line x1="410" y1="44" x2="410" y2="270"/><line x1="570" y1="44" x2="570" y2="270"/><line x1="730" y1="44" x2="730" y2="270"/>
-        </g>
-        <line x1="250" y1="44" x2="250" y2="270" stroke="#a8a496" stroke-width="1.2"/>
-        <line x1="794" y1="44" x2="794" y2="270" stroke="#a8a496" stroke-width="1" stroke-dasharray="3 3"/>
-        <rect x="250" y="52" width="48" height="26" rx="4" fill="#a8a496"/>
-        <rect x="250" y="98" width="144" height="26" rx="4" fill="#6a9bcc"/>
-        <rect x="250" y="144" width="192" height="26" rx="4" fill="#788c5d"/>
-        <rect x="250" y="190" width="208" height="26" rx="4" fill="#c9913f"/>
-        <rect x="250" y="236" width="480" height="26" rx="4" fill="#d8d4c8"/>
-        <g font-size="13" font-weight="600" fill="#141413">
-          <text x="306" y="70">3</text><text x="402" y="116">9</text><text x="450" y="162">12</text><text x="466" y="208">13</text><text x="738" y="254">30</text>
-        </g>
-        <g font-size="11" fill="#8c8a7d" text-anchor="middle">
-          <text x="250" y="288">0</text><text x="410" y="288">10</text><text x="570" y="288">20</text><text x="730" y="288">30</text><text x="794" y="288">34</text>
-        </g>
-        <g class="lang-en">
-          <text x="250" y="30" font-size="12" font-weight="600" fill="#6b6a5f">cases where the skill used ranked in the top 3 · 34 cases, one machine</text>
-          <text x="232" y="64" font-size="12.5" font-weight="600" fill="#141413" text-anchor="end">Random order</text>
-          <text x="232" y="79" font-size="10.5" fill="#8c8a7d" text-anchor="end">scorer check: must lose</text>
-          <text x="232" y="110" font-size="12.5" font-weight="600" fill="#141413" text-anchor="end">Text only</text>
-          <text x="232" y="125" font-size="10.5" fill="#4a7bab" text-anchor="end">baseline</text>
-          <text x="232" y="156" font-size="12.5" font-weight="600" fill="#141413" text-anchor="end">+ learned messages</text>
-          <text x="232" y="171" font-size="10.5" fill="#5d7045" text-anchor="end">kept · 9 better, 0 worse</text>
-          <text x="232" y="202" font-size="12.5" font-weight="600" fill="#141413" text-anchor="end">+ project boost</text>
-          <text x="232" y="217" font-size="10.5" fill="#8a5a2a" text-anchor="end">dropped · 3 better, 4 worse</text>
-          <text x="232" y="248" font-size="12.5" font-weight="600" fill="#141413" text-anchor="end">Peeking at the answer</text>
-          <text x="232" y="263" font-size="10.5" fill="#8c8a7d" text-anchor="end">scorer check: must win</text>
-          <text x="800" y="60" font-size="10.5" fill="#8c8a7d">all 34</text>
-        </g>
-        <g class="lang-zh">
-          <text x="250" y="30" font-size="12" font-weight="600" fill="#6b6a5f">被用上的 skill 排进前 3 的例子数 · 共 34 例，一台机器</text>
-          <text x="232" y="64" font-size="12.5" font-weight="600" fill="#141413" text-anchor="end">随机排序</text>
-          <text x="232" y="79" font-size="10.5" fill="#8c8a7d" text-anchor="end">自检：必须输</text>
-          <text x="232" y="110" font-size="12.5" font-weight="600" fill="#141413" text-anchor="end">只看文字</text>
-          <text x="232" y="125" font-size="10.5" fill="#4a7bab" text-anchor="end">基线</text>
-          <text x="232" y="156" font-size="12.5" font-weight="600" fill="#141413" text-anchor="end">+ 学到的原话</text>
-          <text x="232" y="171" font-size="10.5" fill="#5d7045" text-anchor="end">保留 · 9 胜 0 负</text>
-          <text x="232" y="202" font-size="12.5" font-weight="600" fill="#141413" text-anchor="end">+ 本项目用过就加分</text>
-          <text x="232" y="217" font-size="10.5" fill="#8a5a2a" text-anchor="end">不用 · 3 胜 4 负</text>
-          <text x="232" y="248" font-size="12.5" font-weight="600" fill="#141413" text-anchor="end">偷看答案</text>
-          <text x="232" y="263" font-size="10.5" fill="#8c8a7d" text-anchor="end">自检：必须赢</text>
-          <text x="800" y="60" font-size="10.5" fill="#8c8a7d">全部 34</text>
-        </g>
-      </svg></div>
-      <figcaption>
-        <span class="lang-en">The project boost has one more top-3 hit than learned messages alone, and was still dropped: compared case by case it moved the right skill down four times and up three. The learned messages won nine times, lost none, and the wins came from six projects. Each formula was written down before its first replay and tested once.</span>
-        <span class="lang-zh">「本项目用过就加分」比单用学到的原话多一个前 3 命中，照样不用：逐例比，它把对的那条往下挤了四次、往上提了三次。学到的原话赢九次、一次没输，胜例来自六个项目。每个公式都是第一次回放前写下的，只测一次。</span>
-      </figcaption>
-    </figure>
-  </div>
-</section>
+  </section>
 
-<!-- Sources -->
-<section class="anth-section" id="sources">
-  <div class="anth-container anth-container--wide">
-    <div style="max-width:760px; margin:0 auto var(--space-7); text-align:center;">
-      <span class="anth-badge"><span class="lang-en">Where the ideas came from</span><span class="lang-zh">思路从哪来</span></span>
-      <h2 style="margin-top:var(--space-3);">
-        <span class="lang-en">Borrowed where it held up, left behind where it did not.</span>
-        <span class="lang-zh">能用的借过来，用不上的不借。</span>
-      </h2>
-    </div>
-    <div class="ref-grid">
-      <div class="ref-card">
-        <span class="no"><span class="lang-en">Took</span><span class="lang-zh">借了</span></span>
-        <h3><a href="https://github.com/karpathy/autoresearch">karpathy/autoresearch</a></h3>
-        <p><span class="lang-en">Keep a change only when the frozen score improves. What it lacks was added: splitting by time, a paired case-by-case test, “not enough evidence” as its own verdict, and a scorer that has to beat a shuffle and lose to a peek.</span><span class="lang-zh">只在冻结的评分变好时保留改动。它缺的几样补上了：按时间切分、逐例配对比较、「证据不足」单独算一种结论、打分脚本必须赢过打乱的、输给偷看的。</span></p>
+  <!-- sources -->
+  <section class="sec" id="sources">
+    <div class="wrap">
+      <div class="sec-head rv">
+        <span class="kicker"><span class="en">Where the ideas came from</span><span class="zh">思路从哪来</span></span>
+        <h2><span class="en">Borrowed where it held up, left behind where it did not.</span><span class="zh">能用的借过来，用不上的不借。</span></h2>
       </div>
-      <div class="ref-card">
-        <span class="no"><span class="lang-en">Read</span><span class="lang-zh">读了</span></span>
-        <h3><a href="https://github.com/openai/codex">openai/codex</a></h3>
-        <p><span class="lang-en">Its skill selector runs a dozen cheap rankings (BM25F, character n-grams, recently used) in shadow mode each turn, logging where the skill the model really called would have ranked, without changing the prompt. Marked temporary in its source.</span><span class="lang-zh">它的 skill 选择实验每轮在后台跑十几种便宜的排序（BM25F、字符 n-gram、最近用过），只记录模型真正调用的那条会排第几，不改提示词。源码里标着是临时实验。</span></p>
-      </div>
-      <div class="ref-card">
-        <span class="no"><span class="lang-en">Left behind</span><span class="lang-zh">没借</span></span>
-        <h3><a href="https://github.com/lomeshdutta/skill-router">lomeshdutta/skill-router</a></h3>
-        <p><span class="lang-en">A hook on every message was tried there and withdrawn in v0.2 for once per session: good evaluation scores, too noisy in real sessions (paraphrased). Here the hook count is zero unless a replay shows a median of one prompt per session or less.</span><span class="lang-zh">那里试过每条消息都跑的钩子，v0.2 撤回，改成每会话一次：评测分数好，真实会话里太吵（大意）。这里钩子数为零，除非回放证明每个会话提示次数的中位数不超过一次。</span></p>
-      </div>
-      <div class="ref-card">
-        <span class="no"><span class="lang-en">Measured</span><span class="lang-zh">实测依据</span></span>
-        <h3><span class="lang-en">Picking the right tool</span><span class="lang-zh">怎么挑准工具</span></h3>
-        <p><span class="lang-en">SkillRouter (arXiv 2603.22455): bodies matter, 56.0% → 18.7% top-1 without them. ToolRet: requests and tool docs share little wording, 0.06 overlap. SkillLens (arXiv 2605.23899) and SkillsBench: a wrong skill can do harm. All figures as reported by the authors.</span><span class="lang-zh">SkillRouter（arXiv 2603.22455）：正文要紧，去掉后首位命中 56.0% → 18.7%。ToolRet：请求和工具文档很少共用词，重合 0.06。SkillLens（arXiv 2605.23899）与 SkillsBench：错的 skill 会帮倒忙。数字均为作者自报。</span></p>
+      <div class="refs">
+        <div class="ref rv"><span class="no"><span class="en">Took</span><span class="zh">借了</span></span><h3><a href="https://github.com/karpathy/autoresearch">karpathy/autoresearch</a></h3><p><span class="en">Keep a change only when the frozen score improves. What it lacks was added: splitting by time, a paired case-by-case test, “not enough evidence” as its own verdict, and a scorer that has to beat a shuffle and lose to a peek.</span><span class="zh">只在冻结的评分变好时保留改动。它缺的几样补上了：按时间切分、逐例配对比较、「证据不足」单独算一种结论、打分脚本必须赢过打乱的、输给偷看的。</span></p></div>
+        <div class="ref rv d1" style="--rc:var(--blue)"><span class="no"><span class="en">Read</span><span class="zh">读了</span></span><h3><a href="https://github.com/openai/codex">openai/codex</a></h3><p><span class="en">Its skill selector runs a dozen cheap rankings (BM25F, character n-grams, recently used) in shadow mode each turn, logging where the skill the model really called would have ranked, without changing the prompt. Marked temporary in its source.</span><span class="zh">它的 skill 选择实验每轮在后台跑十几种便宜的排序（BM25F、字符 n-gram、最近用过），只记录模型真正调用的那条会排第几，不改提示词。源码里标着是临时实验。</span></p></div>
+        <div class="ref rv" style="--rc:var(--dim)"><span class="no"><span class="en">Left behind</span><span class="zh">没借</span></span><h3><a href="https://github.com/lomeshdutta/skill-router">lomeshdutta/skill-router</a></h3><p><span class="en">A hook on every message was tried there and withdrawn in v0.2 for once per session: good evaluation scores, too noisy in real sessions (paraphrased). Here the hook count is zero unless a replay shows a median of one prompt per session or less.</span><span class="zh">那里试过每条消息都跑的钩子，v0.2 撤回，改成每会话一次：评测分数好，真实会话里太吵（大意）。这里钩子数为零，除非回放证明每个会话提示次数的中位数不超过一次。</span></p></div>
+        <div class="ref rv d1" style="--rc:var(--green)"><span class="no"><span class="en">Measured</span><span class="zh">实测依据</span></span><h3><span class="en">Picking the right tool</span><span class="zh">怎么挑准工具</span></h3><p><span class="en">SkillRouter (arXiv 2603.22455): bodies matter, 56.0% → 18.7% top-1 without them. ToolRet: requests and tool docs share little wording, 0.06 overlap. SkillLens (arXiv 2605.23899) and SkillsBench: a wrong skill can do harm. All figures as reported by the authors.</span><span class="zh">SkillRouter（arXiv 2603.22455）：正文要紧，去掉后首位命中 56.0% → 18.7%。ToolRet：请求和工具文档很少共用词，重合 0.06。SkillLens（arXiv 2605.23899）与 SkillsBench：错的 skill 会帮倒忙。数字均为作者自报。</span></p></div>
       </div>
     </div>
-  </div>
-</section>
+  </section>
 
-<!-- Honest caveat -->
-<section class="anth-section anth-section--subtle">
-  <div class="anth-container anth-container--narrow">
-    <div class="callout">
-      <p class="callout__kicker"><span class="lang-en">Honest caveat</span><span class="lang-zh">坦诚的边界</span></p>
-      <h3 class="callout__title"><span class="lang-en">What is not done, and what the numbers cannot say.</span><span class="lang-zh">哪些还没做，数字说明不了什么。</span></h3>
-      <p class="callout__body"><span class="lang-en">Only Claude Code is wired up. The adapters for Codex, opencode, pi, Gemini CLI and Cursor are designed from their source and not written; linking the library into <code>~/.agents/skills</code> and checking Codex’s menu limit at install time are not done either. <code>whetstone find</code> itself runs anywhere there is a shell and Python.</span><span class="lang-zh">目前只接好了 Claude Code。Codex、opencode、pi、Gemini CLI、Cursor 的适配器是按源码设计的，还没写；把库链接到 <code>~/.agents/skills</code>、装库时按 Codex 的规则算菜单上限，也都还没做。<code>whetstone find</code> 本身在任何有 shell 和 Python 的地方都能跑。</span></p>
-      <p class="callout__body"><span class="lang-en">Every number comes from one machine and one user. The replay uses today’s skill text, and some descriptions gained trigger words only after they were missed, so “text only” reads high. The threshold is not set yet.</span><span class="lang-zh">所有数字来自一台机器、一个使用者。回放用的是 skill 现在的文字，有些描述是在当时没被用上之后才补的触发词，所以「只看文字」那一行偏高。门槛还没定下来。</span></p>
-      <p class="callout__body"><span class="lang-en">And find still depends on the agent remembering to run it. The always-loaded line and the <code>paths</code> switch make that likelier; nothing makes it certain, and a replay cannot measure it.</span><span class="lang-zh">另外，find 还是要靠 agent 想起来去跑。常驻那一行和 <code>paths</code> 让它更可能被想起来，但没有办法保证，回放也测不出这一步。</span></p>
-    </div>
-  </div>
-</section>
+  <!-- caveat + details -->
+  <section class="sec alt">
+    <div class="wrap">
+      <div class="caveat rv">
+        <span class="kicker"><span class="en">Honest caveat</span><span class="zh">坦诚的边界</span></span>
+        <h3><span class="en">What is not done, and what the numbers cannot say.</span><span class="zh">哪些还没做，数字说明不了什么。</span></h3>
+        <p><span class="en">Only Claude Code is wired up. The adapters for Codex, opencode, pi, Gemini CLI and Cursor are designed from their source and not written; linking the library into <code>~/.agents/skills</code> and checking Codex’s menu limit at install time are not done either. <code>whetstone find</code> itself runs anywhere there is a shell and Python.</span><span class="zh">目前只接好了 Claude Code。Codex、opencode、pi、Gemini CLI、Cursor 的适配器是按源码设计的，还没写；把库链接到 <code>~/.agents/skills</code>、装库时按 Codex 的规则算菜单上限，也都还没做。<code>whetstone find</code> 本身在任何有 shell 和 Python 的地方都能跑。</span></p>
+        <p><span class="en">Every number comes from one machine and one user. The replay uses today’s skill text, and some descriptions gained trigger words only after they were missed, so “text only” reads high. The threshold is not set yet.</span><span class="zh">所有数字来自一台机器、一个使用者。回放用的是 skill 现在的文字，有些描述是在当时没被用上之后才补的触发词，所以「只看文字」那一行偏高。门槛还没定下来。</span></p>
+        <p><span class="en">And find still depends on the agent remembering to run it. The always-loaded line and the <code>paths</code> switch make that likelier; nothing makes it certain, and a replay cannot measure it.</span><span class="zh">另外，find 还是要靠 agent 想起来去跑。常驻那一行和 <code>paths</code> 让它更可能被想起来，但没有办法保证，回放也测不出这一步。</span></p>
+      </div>
 
-<!-- Technical details -->
-<section class="anth-section">
-  <div class="anth-container anth-container--narrow">
-    <span class="anth-badge"><span class="lang-en">Technical details</span><span class="lang-zh">技术细节</span></span>
-    <h2 style="margin-top:var(--space-3); margin-bottom:var(--space-5);"><span class="lang-en">The parts you can check.</span><span class="lang-zh">能核对的那些部分。</span></h2>
-    <div class="detail-row">
-      <span class="detail-row__label"><span class="lang-en">Commands</span><span class="lang-zh">命令</span></span>
-      <p class="detail-row__body" style="line-height:2;"><code style="white-space:nowrap;">whetstone find</code> · <code style="white-space:nowrap;">route events</code> · <code style="white-space:nowrap;">route learn</code> · <code style="white-space:nowrap;">route usage</code> · <code style="white-space:nowrap;">route replay</code> · <code style="white-space:nowrap;">route elsewhere</code> · <code style="white-space:nowrap;">route plan</code> · <code style="white-space:nowrap;">route catalog</code></p>
-    </div>
-    <div class="detail-row">
-      <span class="detail-row__label"><span class="lang-en">Event line</span><span class="lang-zh">事件行</span></span>
-      <p class="detail-row__body"><span class="lang-en">Every line carries <code>v</code>, <code>runtime</code>, <code>session</code>, <code>ts</code>, and optionally <code>src</code> (log file and line). Kinds: <code>session</code>, <code>user</code>, <code>file</code>, <code>load</code>, <code>menu</code>, <code>find</code>. A new runtime needs only an adapter that writes these.</span><span class="lang-zh">每行都带 <code>v</code>、<code>runtime</code>、<code>session</code>、<code>ts</code>，可选 <code>src</code>（会话文件和行号）。种类：<code>session</code>、<code>user</code>、<code>file</code>、<code>load</code>、<code>menu</code>、<code>find</code>。接一个新运行时，只要写一个产出这些行的适配器。</span></p>
-    </div>
-    <div class="detail-row">
-      <span class="detail-row__label"><span class="lang-en">Privacy</span><span class="lang-zh">隐私</span></span>
-      <p class="detail-row__body"><span class="lang-en">Learned messages are your own words. They stay on your machine (<code>~/.local/share/whetstone/</code>) and never go into a portable skill package.</span><span class="lang-zh">学到的原话是你自己打的字，只存在本机（<code>~/.local/share/whetstone/</code>），不进可移植的 skill 包。</span></p>
-    </div>
-    <div class="detail-row">
-      <span class="detail-row__label"><span class="lang-en">Tests</span><span class="lang-zh">测试</span></span>
-      <p class="detail-row__body"><span class="lang-en">73 selftest checks, each rule in both directions, plus a final check that nothing outside the test folder was written. 57 mutations: each removes one rule and the suite must go red.</span><span class="lang-zh">73 项自检，每条规则正反两个方向都测，最后还查测试目录以外有没有文件被写。57 条故意改坏：每条拿掉一条规则，整套测试必须报红。</span></p>
-    </div>
-    <div class="detail-row">
-      <span class="detail-row__label"><span class="lang-en">Spec</span><span class="lang-zh">规范</span></span>
-      <p class="detail-row__body"><a class="anth-link" href="https://github.com/TbusOS/whetstone/blob/main/spec/routing.md"><code>spec/routing.md</code></a> <span class="lang-en">— the three layers, the event format, the six-runtime table with file and line, the replay rules, and what may never be done.</span><span class="lang-zh">—— 三层结构、事件格式、带文件和行号的六家对照、回放规则和禁止清单。</span></p>
-    </div>
+      <div class="details" style="margin-top:56px">
+        <div class="sec-head rv" style="margin-bottom:20px">
+          <span class="kicker"><span class="en">Technical details</span><span class="zh">技术细节</span></span>
+          <h2 style="font-size:clamp(28px,3.2vw,40px)"><span class="en">The parts you can check.</span><span class="zh">能核对的那些部分。</span></h2>
+        </div>
+        <div class="drow rv"><span><span class="en">Commands</span><span class="zh">命令</span></span><p style="line-height:2"><code>whetstone find</code> · <code>route events</code> · <code>route learn</code> · <code>route usage</code> · <code>route replay</code> · <code>route elsewhere</code> · <code>route plan</code> · <code>route catalog</code></p></div>
+        <div class="drow rv"><span><span class="en">Event line</span><span class="zh">事件行</span></span><p><span class="en">Every line carries <code>v</code>, <code>runtime</code>, <code>session</code>, <code>ts</code>, and optionally <code>src</code> (log file and line). Kinds: <code>session</code>, <code>user</code>, <code>file</code>, <code>load</code>, <code>menu</code>, <code>find</code>. A new runtime needs only an adapter that writes these.</span><span class="zh">每行都带 <code>v</code>、<code>runtime</code>、<code>session</code>、<code>ts</code>，可选 <code>src</code>（会话文件和行号）。种类：<code>session</code>、<code>user</code>、<code>file</code>、<code>load</code>、<code>menu</code>、<code>find</code>。接一个新运行时，只要写一个产出这些行的适配器。</span></p></div>
+        <div class="drow rv"><span><span class="en">Privacy</span><span class="zh">隐私</span></span><p><span class="en">Learned messages are your own words. They stay on your machine (<code>~/.local/share/whetstone/</code>) and never go into a portable skill package.</span><span class="zh">学到的原话是你自己打的字，只存在本机（<code>~/.local/share/whetstone/</code>），不进可移植的 skill 包。</span></p></div>
+        <div class="drow rv"><span><span class="en">Tests</span><span class="zh">测试</span></span><p><span class="en">73 selftest checks, each rule in both directions, plus a final check that nothing outside the test folder was written. 57 mutations: each removes one rule and the suite must go red.</span><span class="zh">73 项自检，每条规则正反两个方向都测，最后还查测试目录以外有没有文件被写。57 条故意改坏：每条拿掉一条规则，整套测试必须报红。</span></p></div>
+        <div class="drow rv"><span><span class="en">Spec</span><span class="zh">规范</span></span><p><a href="https://github.com/TbusOS/whetstone/blob/main/spec/routing.md" style="color:var(--ember-2)"><code>spec/routing.md</code></a> <span class="en">— the three layers, the event format, the six-runtime table with file and line, the replay rules, and what may never be done.</span><span class="zh">—— 三层结构、事件格式、带文件和行号的六家对照、回放规则和禁止清单。</span></p></div>
+      </div>
 
-    <div class="art-cta" style="margin-top:var(--space-7);">
-      <p><span class="lang-en">whetstone is MIT, standard library only. Routing ships in the same command line as distilling, verifying and the use-time check.</span><span class="lang-zh">whetstone 是 MIT 协议，只用标准库。经验路由和蒸馏、校验、用时纠错在同一个命令行里。</span></p>
-      <a class="anth-button" href="https://github.com/TbusOS/whetstone"><span class="lang-en">whetstone on GitHub</span><span class="lang-zh">在 GitHub 上看 whetstone</span></a>
-      <a class="anth-button anth-button--ghost" href="use-time-conflicts.html"><span class="lang-en">Checking a note when it is used</span><span class="lang-zh">用的时候再核一次经验</span></a>
+      <div class="endcard rv">
+        <p><span class="en">whetstone is MIT, standard library only. Routing ships in the same command line as distilling, verifying and the use-time check.</span><span class="zh">whetstone 是 MIT 协议，只用标准库。经验路由和蒸馏、校验、用时纠错在同一个命令行里。</span></p>
+        <div class="cta">
+          <a class="btn btn--hot" href="https://github.com/TbusOS/whetstone"><span class="en">whetstone on GitHub</span><span class="zh">在 GitHub 上看 whetstone</span></a>
+          <a class="btn btn--ghost" href="use-time-conflicts.html"><span class="en">Checking a note when it is used</span><span class="zh">用的时候再核一次经验</span></a>
+        </div>
+      </div>
     </div>
-  </div>
-</section>
+  </section>
+</main>
 
-<footer class="anth-footer">
-  <div class="anth-footer-grid">
-    <div class="anth-footer-group"><h5>Whetstone</h5><a href="index.html#why"><span class="lang-en">Why</span><span class="lang-zh">为什么</span></a><a href="use-time-conflicts.html"><span class="lang-en">Use-time check</span><span class="lang-zh">用时纠错</span></a><a href="routing.html"><span class="lang-en">Routing</span><span class="lang-zh">经验路由</span></a><a href="index.html#install"><span class="lang-en">Install</span><span class="lang-zh">安装</span></a></div>
-    <div class="anth-footer-group"><h5><span class="lang-en">Output</span><span class="lang-zh">产物</span></h5><a href="index.html#architecture"><span class="lang-en">Skill package</span><span class="lang-zh">Skill 包</span></a><a href="index.html#flow">L1–L4</a><a href="why-verify.html"><span class="lang-en">Evidence</span><span class="lang-zh">证据纪律</span></a></div>
-    <div class="anth-footer-group"><h5><span class="lang-en">Ideas from</span><span class="lang-zh">思路来源</span></h5><a href="https://github.com/karpathy/autoresearch">autoresearch</a><a href="https://github.com/openai/codex">codex</a><a href="https://github.com/lomeshdutta/skill-router">skill-router</a><a href="https://github.com/TbusOS/ai-doc">ai-doc</a></div>
-    <div class="anth-footer-group"><h5><span class="lang-en">Credits</span><span class="lang-zh">致谢</span></h5><a href="https://github.com/alchaincyf/nuwa-skill">nuwa-skill</a><a href="https://github.com/alchaincyf/darwin-skill">darwin-skill</a><a href="https://github.com/TbusOS">TbusOS</a></div>
-  </div>
-  <div class="anth-footer-legal">
-    <span>© 2026 Whetstone · <span lang="zh-CN">磨刀石</span> · MIT</span>
-    <span><span class="lang-en">Distillation architecture inspired by nuwa-skill · ratchet discipline by darwin-skill (3rd-party). Theory: EvolveR · AgentFactory · MemoryBank · SkillLens.</span><span class="lang-zh">蒸馏架构借鉴 nuwa-skill · 棘轮纪律借鉴 darwin-skill（第三方）。理论：EvolveR · AgentFactory · MemoryBank · SkillLens。</span></span>
+<footer>
+  <div class="wrap">
+    <div class="foot">
+      <div>
+        <a class="brand" href="index.html" style="padding:0">whetstone <small lang="zh-CN">· 磨刀石</small></a>
+        <p><span class="en">MIT · © 2026. Distillation structure inspired by nuwa-skill; ratchet discipline by darwin-skill (3rd-party). Theory: EvolveR · AgentFactory · MemoryBank · SkillLens.</span><span class="zh">MIT · © 2026。蒸馏结构借鉴 nuwa-skill；棘轮纪律借鉴 darwin-skill（第三方）。理论：EvolveR · AgentFactory · MemoryBank · SkillLens。</span></p>
+      </div>
+      <div><h5><span class="en">Home</span><span class="zh">首页</span></h5><a href="index.html#why"><span class="en">Why</span><span class="zh">为什么</span></a><a href="index.html#evidence"><span class="en">Evidence</span><span class="zh">证据纪律</span></a><a href="index.html#layers"><span class="en">Layers</span><span class="zh">分层</span></a><a href="index.html#install"><span class="en">Install</span><span class="zh">安装</span></a></div>
+      <div><h5><span class="en">Read</span><span class="zh">延伸阅读</span></h5><a href="skills.html"><span class="en">Skills</span><span class="zh">技能</span></a><a href="use-time-conflicts.html"><span class="en">Use-time check</span><span class="zh">用时纠错</span></a><a href="routing.html"><span class="en">Routing</span><span class="zh">经验路由</span></a><a href="why-verify.html"><span class="en">Why verify</span><span class="zh">为什么要 verify</span></a></div>
+      <div><h5><span class="en">Ideas from</span><span class="zh">思路来源</span></h5><a href="https://github.com/karpathy/autoresearch">autoresearch</a><a href="https://github.com/openai/codex">codex</a><a href="https://github.com/lomeshdutta/skill-router">skill-router</a><a href="https://github.com/TbusOS/ai-doc">ai-doc</a></div>
+    </div>
   </div>
 </footer>
 
-<script>
-(function () {
-  var html = document.documentElement;
-  var queryLang = new URLSearchParams(location.search).get('lang');
-  var saved;
-  if (queryLang === 'zh' || queryLang === 'en') { saved = queryLang; }
-  else {
-    try { saved = localStorage.getItem('whetstone-lang'); } catch (e) {}
-    if (!saved) { saved = (navigator.language || 'en').toLowerCase().indexOf('zh') === 0 ? 'zh' : 'en'; }
-  }
-  function apply(lang) {
-    html.setAttribute('data-lang', lang);
-    html.setAttribute('lang', lang === 'zh' ? 'zh-CN' : 'en');
-    try { localStorage.setItem('whetstone-lang', lang); } catch (e) {}
-    document.querySelectorAll('.lang-toggle').forEach(function (btn) { btn.textContent = lang === 'zh' ? 'EN / 中' : '中 / EN'; });
-  }
-  apply(saved);
-  document.addEventListener('DOMContentLoaded', function () {
-    document.querySelectorAll('.lang-toggle').forEach(function (btn) {
-      btn.addEventListener('click', function () { apply(html.getAttribute('data-lang') === 'zh' ? 'en' : 'zh'); });
-    });
-  });
-})();
-</script>
-
-<!-- design-review:self-diff v1
-Skill: anthropic
-Page-type: feature-deep
-Created: 2026-09-30 · feature page for experience routing (spec/routing.md, second edition)
-
-Decisions (7):
-1. [hero-noun-phrase-contrast] "A growing library / needs a finder, / not a longer menu." — the whole design is a refusal of the obvious fix (keep shortening descriptions), so the headline names the refusal. One <em> in the subtitle, on "designed", because the honest status (built for one runtime, designed for the others) is the sentence a reader must not miss.
-2. [stat-trio-as-evidence] 35/65, 1% (26% with the description), 0 — the first two are the measured problem (descriptions cut, and what that costs), the third is the design rule (no hooks). No adoption metrics: the feature is new.
-3. [premise-chart-inline] the budget chart sits inside the narrow premise column because it IS the premise (a fixed budget split over a growing library); gold marks the one share below the 40-character line, blue the Haiku note — two hues with meaning, not decoration. The pull-quote is the library owner's own sentence, the reason manual-only skills were ruled out.
-4. [three-diagrams-plus-a-timeline] layers (what exists), paths timeline (what was measured, not read), multi-runtime architecture (how the core stays neutral), replay bars (how changes are judged). The architecture uses solid olive vs dashed grey to separate built from designed so the status cannot be misread from the picture alone.
-5. [terminal-as-pre] the find mock is a <pre> with real output from a generic five-skill demo library written for this page, including one real miss below the threshold — the miss is kept on purpose because the page claims the threshold is only a starting value.
-6. [runtime-table-scrolls] the six-runtime comparison is a real table (seven rows, six columns) in an overflow wrapper rather than an SVG, so it stays selectable and readable on a phone; every cell is traceable to file:line in the spec.
-7. [honest-caveat-three-limits] the callout leads with "only Claude Code is wired up" — the question a reader of the multi-runtime section will ask first.
-
-Known trade-offs:
-- Bilingual SVG text doubles the <text> count; hidden groups are display:none.
-- The layers figure drops the arrows between layers in favour of chips ("from usage", "learned"), to avoid lines crossing the middle band; the feed is spelled out in one olive line at the bottom.
-- The replay chart shows top-3 hits, which the page itself says is not the decision rule; the case-by-case verdict is carried in the sub-labels and the caption, because a paired comparison has no natural bar.
-/design-review:self-diff -->
-
+<script src="assets/site.js"></script>
 </body>
 </html>

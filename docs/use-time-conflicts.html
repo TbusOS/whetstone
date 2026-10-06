@@ -2,620 +2,286 @@
 <html lang="en" data-lang="en">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Check a note when you use it — Whetstone</title>
 <meta name="description" content="At use time the code and the board are right there. How whetstone catches a note that disagrees with reality and changes nothing until you say yes.">
+<meta name="theme-color" content="#0f1113">
 <meta property="og:title" content="Check a note when you use it, not when you file it">
 <meta property="og:description" content="Five kinds of disagreement, three grades of evidence, a record the AI cannot rewrite after hearing your answer, and a score that starts from zero when the model changes.">
 <meta property="og:url" content="https://doc.tbusos.com/whetstone/use-time-conflicts.html">
 <meta property="og:image" content="https://doc.tbusos.com/whetstone/assets/og-home.png">
 <meta property="og:image:width" content="2400">
 <meta property="og:image:height" content="1260">
+<meta property="og:type" content="article">
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:image" content="https://doc.tbusos.com/whetstone/assets/og-home.png">
-<meta property="og:type" content="article">
-<link rel="stylesheet" href="assets/fonts.css">
-<link rel="stylesheet" href="assets/anthropic.css">
+<script>(function(){var h=document.documentElement,l='en';h.classList.add('js');try{var q=new URLSearchParams(location.search).get('lang'),s=localStorage.getItem('whetstone-lang');l=(q==='zh'||q==='en')?q:(s==='zh'||s==='en')?s:((navigator.language||'').toLowerCase().indexOf('zh')===0?'zh':'en');}catch(e){}h.setAttribute('data-lang',l);})();</script>
+<link rel="stylesheet" href="assets/site.css">
 <style>
-  html[data-lang="en"] .lang-zh { display: none !important; }
-  html[data-lang="zh"] .lang-en { display: none !important; }
-  .lang-toggle {
-    background: transparent; border: 1px solid var(--anth-light-gray); color: var(--anth-text);
-    font-family: var(--font-heading); font-size: 13px; font-weight: 500;
-    padding: 6px 12px; border-radius: var(--radius-pill); cursor: pointer; letter-spacing: 0.05em;
-  }
-  .lang-toggle:hover { background: var(--anth-light-gray); }
+:root { --gold: var(--l3); --green: var(--ok); --blue: #6fb3e0; }
 
-  /* §H · Lora body → Noto Serif SC; Poppins display → Noto Sans SC */
-  html[data-lang="zh"] body, html[data-lang="zh"] p, html[data-lang="zh"] li,
-  html[data-lang="zh"] td, html[data-lang="zh"] .kind-card__body,
-  html[data-lang="zh"] .callout__body, html[data-lang="zh"] .detail-row__body,
-  html[data-lang="zh"] .ref-card p {
-    font-family: "Noto Serif SC", "Source Han Serif SC", "PingFang SC", serif;
-  }
-  html[data-lang="zh"] h1, html[data-lang="zh"] h2, html[data-lang="zh"] h3,
-  html[data-lang="zh"] th, html[data-lang="zh"] .anth-badge,
-  html[data-lang="zh"] .kind-card__title, html[data-lang="zh"] .kind-card__kicker,
-  html[data-lang="zh"] .detail-row__label, html[data-lang="zh"] .stat-trio .num,
-  html[data-lang="zh"] .stat-trio .lbl, html[data-lang="zh"] .ref-card h3,
-  html[data-lang="zh"] .ref-card .no, html[data-lang="zh"] figcaption {
-    font-family: "Noto Sans SC", "PingFang SC", sans-serif;
-  }
-  html[data-lang="zh"] .anth-quote { font-style: normal; }
-  html[data-lang="zh"] .kind-card__kicker, html[data-lang="zh"] .detail-row__label,
-  html[data-lang="zh"] .callout__kicker, html[data-lang="zh"] .ref-card .no { text-transform:none; letter-spacing:0.04em; }
+/* conflict path */
+.usteps { display: grid; grid-template-columns: repeat(6, 1fr); gap: 12px; position: relative; }
+.usteps::before { content: ""; position: absolute; left: 6%; right: 6%; top: 50%; height: 2px; background: linear-gradient(90deg, var(--ember), var(--ember-2)); opacity: .55; }
+.ustep { position: relative; z-index: 1; padding: 16px 14px 14px; border-radius: 14px; background: #121518; border: 1px solid var(--line); border-top: 3px solid var(--sc, var(--line-2)); min-width: 0; }
+.ustep .no { position: absolute; top: -12px; left: 12px; width: 24px; height: 24px; border-radius: 50%; display: grid; place-items: center; background: var(--ember); color: #1a0d05; font: 700 12px/1 var(--mono); }
+.ustep h4 { margin: 4px 0 0; font: 600 14.5px/1.3 var(--sans); color: var(--text); }
+.ustep p { margin: 6px 0 0; font-size: 12.5px; line-height: 1.45; color: var(--muted); }
+.ustep.hot { background: color-mix(in srgb, var(--ember) 10%, #121518); border-color: color-mix(in srgb, var(--ember) 50%, transparent); }
+.ustep.which { display: grid; place-items: center; text-align: center; border-top-color: var(--ember); }
+.ustep.which h4 { font: 500 19px/1.2 var(--serif); }
+.ukinds { margin-top: 20px; padding: 16px; border-radius: 14px; border: 1px dashed var(--line-2); }
+.ukinds > span { display: block; font-size: 12.5px; color: var(--dim); margin-bottom: 12px; }
+.ukinds .row { display: grid; grid-template-columns: repeat(5, 1fr); gap: 10px; }
+.uk { padding: 12px; border-radius: 10px; background: #121518; border-left: 3px solid var(--kc); }
+.uk b { display: block; font: 600 13.5px/1.3 var(--sans); color: var(--text); }
+.uk span { display: block; margin-top: 4px; font-size: 12px; color: var(--muted); }
+.uouts { margin-top: 12px; display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.uout { padding: 14px 16px; border-radius: 12px; background: #121518; border: 1px solid var(--line); border-left: 3px solid var(--kc); }
+.uout b { display: block; font: 600 14px/1.3 var(--sans); color: var(--text); }
+.uout span { display: block; margin-top: 4px; font-size: 12.5px; color: var(--muted); }
+@media (max-width: 1000px) { .usteps { grid-template-columns: repeat(3, 1fr); row-gap: 22px; } .usteps::before { display: none; } .ukinds .row { grid-template-columns: repeat(3, 1fr); } }
+@media (max-width: 600px) { .usteps, .ukinds .row, .uouts { grid-template-columns: 1fr; } }
 
-  .eyebrow-link { font-family:var(--font-heading); font-size:12px; letter-spacing:0.14em; text-transform:uppercase; color:var(--anth-text-secondary); font-weight:600; text-decoration:none; }
+/* two-step record: a sequence between three parties */
+.seq { position: relative; display: grid; grid-template-columns: repeat(3, 1fr); row-gap: 14px; }
+.seq::before { content: ""; position: absolute; inset: 70px 0 0 0; pointer-events: none;
+  background: linear-gradient(var(--line-2), var(--line-2)) 16.66% 0 / 1px 100% no-repeat, linear-gradient(var(--line-2), var(--line-2)) 50% 0 / 1px 100% no-repeat, linear-gradient(var(--line-2), var(--line-2)) 83.33% 0 / 1px 100% no-repeat; }
+.actor { margin: 0 10px 8px; padding: 12px 14px; border-radius: 12px; text-align: center; background: #121518; border: 1px solid var(--line); border-top: 3px solid var(--ac); position: relative; z-index: 1; }
+.actor b { display: block; font: 600 15px/1.3 var(--sans); color: var(--text); }
+.actor > span { display: block; margin-top: 3px; font-size: 12px; color: var(--muted); }
+.msg { position: relative; z-index: 1; padding: 0 var(--pad); }
+.msg.s12 { grid-column: 1 / 3; --pad: 25%; } .msg.s13 { grid-column: 1 / 4; --pad: 16.66%; } .msg.s23 { grid-column: 2 / 4; --pad: 25%; }
+.msg .lab { display: block; text-align: center; font-size: 12.5px; color: var(--text); margin-bottom: 6px; line-height: 1.4; }
+.msg .lab .n { display: inline-grid; place-items: center; width: 20px; height: 20px; margin-right: 6px; border-radius: 50%; background: var(--ember); color: #1a0d05; font: 700 11px/1 var(--mono); vertical-align: 1px; }
+.msg .ln { position: relative; height: 2px; background: var(--mc, var(--ember)); }
+.msg .ln::after { content: ""; position: absolute; right: -2px; top: -5px; border: 6px solid transparent; border-left: 9px solid var(--mc, var(--ember)); border-right: 0; }
+.msg.rev .ln::after { right: auto; left: -2px; border-left: 0; border-right: 9px solid var(--mc, var(--ember)); }
+.msg.dash .ln { background: repeating-linear-gradient(90deg, var(--mc) 0 6px, transparent 6px 11px); }
+.msg .mnote { display: block; text-align: center; margin-top: 6px; font-size: 11.5px; color: var(--dim); }
+.msg code { font-size: 11.5px; }
+.stats-box { grid-column: 2 / 3; margin: 6px 6px 0; padding: 12px; border-radius: 12px; text-align: center; border: 1px solid var(--blue); background: color-mix(in srgb, var(--blue) 10%, #121518); position: relative; z-index: 1; }
+.stats-box b { display: block; font: 600 13px/1.4 var(--sans); }
+.stats-box span { display: block; margin-top: 3px; font-size: 12px; color: var(--blue); }
+.stats-box .n { display: inline-grid; place-items: center; width: 20px; height: 20px; margin-right: 6px; border-radius: 50%; background: var(--ember); color: #1a0d05; font: 700 11px/1 var(--mono); }
+.js .seq .msg, .js .seq .stats-box { opacity: 0; transform: translateY(6px); transition: opacity .5s, transform .5s; }
+.js .seq.in .msg, .js .seq.in .stats-box { opacity: 1; transform: none; }
+.js .seq.in > :nth-child(5) { transition-delay: .15s; } .js .seq.in > :nth-child(6) { transition-delay: .45s; } .js .seq.in > :nth-child(7) { transition-delay: .75s; }
+.js .seq.in > :nth-child(8) { transition-delay: 1.05s; } .js .seq.in > :nth-child(9) { transition-delay: 1.35s; } .js .seq.in > :nth-child(10) { transition-delay: 1.65s; }
+@media (max-width: 640px) { .actor { margin: 0 3px 8px; padding: 10px 6px; } .actor > span { display: none; } .msg .lab { font-size: 11.5px; } }
 
-  .stat-trio { display:grid; grid-template-columns:repeat(3, 1fr); gap:var(--space-5); padding:var(--space-7) var(--space-5); background:#ffffff; border:1px solid var(--anth-light-gray); border-radius:var(--radius-md); }
-  .stat-trio > div { text-align:center; }
-  .stat-trio .num { display:block; font-family:var(--font-heading); font-size:48px; font-weight:600; color:var(--anth-text); letter-spacing:-0.02em; line-height:1; }
-  .stat-trio .lbl { display:block; font-family:var(--font-heading); font-size:12.5px; font-weight:500; color:var(--anth-text-secondary); margin-top:var(--space-3); letter-spacing:0.02em; line-height:1.45; }
-
-  .prose p { font-family:var(--font-body); font-size:17px; line-height:1.75; margin:0 0 var(--space-5); color:var(--anth-text); }
-
-  figure { margin:0; }
-  figcaption { font-family:var(--font-heading); font-size:13px; line-height:1.6; color:var(--anth-text-secondary); text-align:center; margin:var(--space-4) auto 0; max-width:880px; }
-
-  .kind-grid { display:grid; grid-template-columns:repeat(3, 1fr); gap:var(--space-5); }
-  .kind-card { background:#ffffff; border:1px solid var(--anth-light-gray); border-radius:var(--radius-lg); padding:var(--space-6); display:flex; flex-direction:column; gap:var(--space-3); }
-  .kind-card__kicker { font-family:var(--font-heading); font-size:11px; font-weight:700; letter-spacing:0.16em; color:var(--anth-orange-ink); text-transform:uppercase; display:flex; align-items:center; gap:8px; }
-  .kind-card__dot { width:8px; height:8px; border-radius:50%; display:inline-block; flex:none; }
-  .kind-card__title { font-family:var(--font-heading); font-size:21px; font-weight:600; letter-spacing:-0.01em; color:var(--anth-text); margin:0; line-height:1.25; }
-  .kind-card__body { font-family:var(--font-body); font-size:15.5px; line-height:1.65; color:var(--anth-text); margin:0; }
-  .kind-card__act { font-family:var(--font-heading); font-size:13px; font-weight:600; color:var(--anth-text-secondary); margin-top:auto; padding-top:var(--space-3); border-top:1px solid var(--anth-light-gray); }
-  .kind-card--muted { background:var(--anth-bg); }
-
-  .art-table { width:100%; border-collapse:collapse; font-family:var(--font-body); font-size:16px; background:#ffffff; border:1px solid var(--anth-light-gray); border-radius:var(--radius-md); overflow:hidden; }
-  .art-table th, .art-table td { text-align:left; padding:var(--space-4) var(--space-5); border-bottom:1px solid var(--anth-light-gray); vertical-align:top; line-height:1.6; }
-  .art-table th { font-family:var(--font-heading); font-size:13px; font-weight:600; color:var(--anth-text-secondary); background:var(--anth-bg); }
-  .art-table tbody tr:last-child td { border-bottom:none; }
-  .art-table .lv { font-family:var(--font-heading); font-weight:700; white-space:nowrap; }
-  .lv--seen { color:#5d7045; } .lv--inferred { color:var(--anth-blue-ink); } .lv--unseen { color:var(--anth-text-secondary); }
-  .lv--full { color:var(--anth-text-secondary); } .lv--summary { color:#8a5a2a; } .lv--batch { color:#5d7045; }
-  .art-table code, .prose code, .kind-card__body code, .callout__body code, .ref-card p code { font-family:'JetBrains Mono', monospace; font-size:13.5px; background:var(--anth-bg); padding:1px 6px; border-radius:4px; border:1px solid var(--anth-light-gray); }
-
-  .palette-split { display:grid; grid-template-columns:2fr 3fr; gap:var(--space-7); align-items:start; }
-  .palette-list { list-style:none; padding:0; margin:var(--space-5) 0 0; display:flex; flex-direction:column; gap:var(--space-4); }
-  .palette-list li { font-family:var(--font-body); font-size:16px; line-height:1.6; color:var(--anth-text); padding-left:var(--space-5); position:relative; }
-  .palette-list li::before { content:''; position:absolute; left:0; top:10px; width:6px; height:6px; border-radius:50%; background:var(--anth-orange); }
-  .palette-list code { font-family:'JetBrains Mono', monospace; font-size:14px; background:#ffffff; padding:1px 6px; border-radius:4px; border:1px solid var(--anth-light-gray); }
-  .art-term { background:var(--anth-text); color:#e9e6dd; border-radius:var(--radius-md); padding:var(--space-5) var(--space-5); overflow-x:auto; font-size:12.5px; line-height:1.65; margin:0; border:1px solid var(--anth-light-gray); }
-  .art-term code { font-family:'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, monospace; background:none; color:inherit; padding:0; border:0; }
-  .art-term .t-dim { color:#8c8a7d; } .art-term .t-hi { color:#e8a184; font-weight:600; } .art-term .t-ok { color:#b5c49a; font-weight:600; }
-
-  .rule-list { list-style:none; padding:0; margin:var(--space-6) 0 0; display:grid; grid-template-columns:repeat(2, 1fr); gap:var(--space-4) var(--space-6); }
-  .rule-list li { font-family:var(--font-body); font-size:16px; line-height:1.6; padding-left:var(--space-5); position:relative; color:var(--anth-text); }
-  .rule-list li::before { content:''; position:absolute; left:0; top:10px; width:6px; height:6px; border-radius:50%; background:var(--anth-orange); }
-
-  .ref-grid { display:grid; grid-template-columns:repeat(2, 1fr); gap:var(--space-5); }
-  .ref-card { background:#ffffff; border:1px solid var(--anth-light-gray); border-radius:var(--radius-md); padding:var(--space-5) var(--space-6); }
-  .ref-card h3 { font-family:var(--font-heading); font-size:17px; font-weight:600; margin:var(--space-2) 0 var(--space-2); color:var(--anth-text); }
-  .ref-card h3 a { color:inherit; text-decoration:none; border-bottom:1px solid var(--anth-light-gray); }
-  .ref-card h3 a:hover { border-bottom-color:var(--anth-orange); }
-  .ref-card p { font-family:var(--font-body); font-size:15px; line-height:1.6; color:var(--anth-text-secondary); margin:0; }
-  .ref-card .no { font-family:var(--font-heading); font-size:11px; font-weight:700; letter-spacing:0.1em; text-transform:uppercase; color:var(--anth-orange-ink); }
-
-  .callout { background:var(--anth-bg); border:1px solid var(--anth-light-gray); border-left:3px solid var(--anth-orange); border-radius:var(--radius-md); padding:var(--space-6); }
-  .callout__kicker { font-family:var(--font-heading); font-size:11.5px; font-weight:700; letter-spacing:0.16em; text-transform:uppercase; color:var(--anth-orange-ink); margin:0; }
-  .callout__title { font-family:var(--font-heading); font-size:22px; font-weight:600; color:var(--anth-text); margin:var(--space-2) 0 var(--space-3); }
-  .callout__body { font-family:var(--font-body); font-size:16px; line-height:1.65; color:var(--anth-text); margin:0 0 var(--space-3); }
-  .callout__body:last-child { margin-bottom:0; }
-
-  .detail-row { display:grid; grid-template-columns:180px 1fr; gap:var(--space-5); padding:var(--space-5) 0; border-bottom:1px solid var(--anth-light-gray); }
-  .detail-row:last-child { border-bottom:none; }
-  .detail-row__label { font-family:var(--font-heading); font-size:11.5px; font-weight:700; letter-spacing:0.16em; text-transform:uppercase; color:var(--anth-orange-ink); padding-top:3px; }
-  .detail-row__body { font-family:var(--font-body); font-size:16px; line-height:1.6; color:var(--anth-text); margin:0; }
-  .detail-row__body code { font-family:'JetBrains Mono', monospace; font-size:14px; background:var(--anth-bg); padding:2px 8px; border-radius:4px; border:1px solid var(--anth-light-gray); }
-
-  .art-cta { background:var(--anth-bg-subtle); border-radius:var(--radius-lg); padding:var(--space-6); }
-  .art-cta p { font-family:var(--font-body); font-size:16px; line-height:1.65; margin:0 0 var(--space-4); }
-  .art-cta .anth-button { margin-right:var(--space-3); }
-
-  .palette-split > * { min-width:0; }
-  /* pan wrapper: below 1024px a figure keeps the width at which its smallest label is 9px */
-  @media (max-width:1024px) {
-    .anth-scroll { overflow-x:auto; overflow-y:hidden; -webkit-overflow-scrolling:touch; }
-    .anth-scroll > svg { display:block; min-width:var(--pan-w, 720px); height:auto; }
-  }
-  /* the nav is a fixed 64px; on a narrow screen its links would wrap past it and
-     sit on top of the page, so they step aside (the footer carries the same links) */
-  @media (max-width:768px) {
-    .anth-nav-inner > div:nth-child(2) { display:none; }
-  }
-  @media (max-width:960px) {
-    .kind-grid { grid-template-columns:repeat(2, 1fr); }
-    .palette-split { grid-template-columns:1fr; }
-  }
-  @media (max-width:720px) {
-    .kind-grid, .ref-grid, .rule-list, .stat-trio { grid-template-columns:1fr; }
-    .detail-row { grid-template-columns:1fr; gap:var(--space-2); }
-  }
+/* exact lower bound vs point estimate */
+.db { position: relative; margin: 30px 0 0 54px; height: 260px; display: grid; grid-template-columns: repeat(4, 1fr); border-bottom: 1px solid var(--line-2); }
+.db .grid { position: absolute; left: 0; right: 0; height: 0; border-top: 1px solid rgba(255,255,255,.05); }
+.db .grid i { position: absolute; left: -54px; top: -8px; width: 44px; text-align: right; font: 11.5px/1 var(--mono); color: var(--dim); font-style: normal; }
+.db .th { position: absolute; left: 0; right: 0; height: 0; border-top: 2px dashed var(--tc); }
+.db .th > span { position: absolute; right: 6px; top: -20px; font-size: 12px; color: var(--tc); background: var(--panel); padding: 0 4px; white-space: nowrap; }
+.dbc { position: relative; }
+.dbc .stem { position: absolute; left: 50%; width: 2px; margin-left: -1px; background: #4a5058; top: calc((100 - var(--p)) / 30 * 100%); bottom: calc(100% - (100 - var(--lb)) / 30 * 100%); }
+.dbc .pt, .dbc .lb { position: absolute; left: 50%; width: 14px; height: 14px; margin: -7px 0 0 -7px; border-radius: 50%; }
+.dbc .pt { top: calc((100 - var(--p)) / 30 * 100%); background: var(--blue); }
+.dbc .lb { top: calc((100 - var(--lb)) / 30 * 100%); background: var(--ember); box-shadow: 0 0 14px var(--ember); }
+.dbc .pv, .dbc .lv { position: absolute; z-index: 1; font: 600 12.5px/1 var(--mono); white-space: nowrap; background: var(--panel); padding: 2px 4px; border-radius: 4px; }
+.dbc .pv { right: calc(50% + 14px); top: calc((100 - var(--p)) / 30 * 100% - 6px); color: var(--blue); }
+.dbc .lv { left: calc(50% + 14px); top: calc((100 - var(--lb)) / 30 * 100% - 6px); color: var(--ember-2); }
+.js .dbc .lb, .js .dbc .stem, .js .dbc .lv { opacity: 0; transition: opacity .6s .4s; }
+.js .in .dbc .lb, .js .in .dbc .stem, .js .in .dbc .lv { opacity: 1; }
+.dbx { margin-left: 54px; display: grid; grid-template-columns: repeat(4, 1fr); text-align: center; padding-top: 12px; }
+.dbx b { display: block; font: 600 14px/1 var(--mono); color: var(--text); }
+.dbx span { display: block; margin-top: 6px; font-size: 12.5px; color: var(--tc, var(--muted)); }
+@media (max-width: 560px) { .db, .dbx { margin-left: 40px; } .db .grid i { left: -42px; width: 36px; } .dbc .pv { display: none; } .dbx span { font-size: 11.5px; } }
 </style>
 </head>
 <body>
 
-<!-- Nav -->
-<nav class="anth-nav"><div class="anth-nav-inner">
-  <a href="index.html" style="font-family:var(--font-heading); font-weight:600; font-size:18px; text-decoration:none; color:var(--anth-text);">Whetstone · <span lang="zh-CN">磨刀石</span></a>
-  <div>
-    <a href="index.html#why"><span class="lang-en">Why</span><span class="lang-zh">为什么</span></a>
-    <a href="index.html#evidence"><span class="lang-en">Evidence</span><span class="lang-zh">证据</span></a>
-    <a href="use-time-conflicts.html" style="color:var(--anth-orange-ink); font-weight:600;"><span class="lang-en">Use-time check</span><span class="lang-zh">用时纠错</span></a>
-    <a href="routing.html"><span class="lang-en">Routing</span><span class="lang-zh">经验路由</span></a>
-    <a href="index.html#architecture"><span class="lang-en">Architecture</span><span class="lang-zh">架构</span></a>
-    <a href="index.html#flow"><span class="lang-en">How it works</span><span class="lang-zh">流程</span></a>
-    <a href="skills.html"><span class="lang-en">Skills</span><span class="lang-zh">技能</span></a>
-    <a href="index.html#install"><span class="lang-en">Install</span><span class="lang-zh">安装</span></a>
-  </div>
-  <div style="display:flex; gap:var(--space-3); align-items:center;">
-    <button type="button" class="lang-toggle" aria-label="Switch language">中 / EN</button>
-    <a class="anth-button" href="https://github.com/TbusOS/whetstone">GitHub</a>
-  </div>
-</div></nav>
-
-<div style="padding:var(--space-5) var(--space-5) 0;">
-  <div class="anth-container">
-    <a href="index.html" class="eyebrow-link"><span class="lang-en">← Back · Whetstone overview</span><span class="lang-zh">← 返回 · Whetstone 总览</span></a>
-  </div>
-</div>
-
-<!-- Hero -->
-<section class="anth-hero" style="padding-top:var(--space-7);">
-  <div class="anth-container" style="max-width:860px;">
-    <span class="anth-badge" style="background:var(--anth-cta); color:#ffffff; font-weight:600;">
-      <span class="lang-en">Feature · Use-time check</span><span class="lang-zh">功能 · 用时纠错</span>
-    </span>
-    <h1 style="margin-top:var(--space-4);">
-      <span class="lang-en">Check the note<br>when you use it,<br>not when you file it.</span>
-      <span class="lang-zh">经验对不对，<br>用的时候<br>才判得准。</span>
-    </h1>
-    <p style="font-size:20px; color:var(--anth-text-secondary); margin:var(--space-5) auto var(--space-6); line-height:1.6; max-width:700px; font-family:var(--font-body);">
-      <span class="lang-en">When a note is filed there is only text to judge. When it is used, the code, the log and the board are right there. So that is when whetstone checks it: a note that disagrees with reality gets sorted, reported with its evidence, and left exactly as it is until you say <em>yes</em>.</span>
-      <span class="lang-zh">经验入库的时候，手里只有文本可判；用的时候，代码、日志、板子都在眼前。所以 whetstone 在用的时候核它：和实际对不上的经验，先分类，带着证据报给你，在你说<em>好</em>之前一个字都不改。</span>
-    </p>
-    <div style="display:flex; gap:var(--space-3); justify-content:center; flex-wrap:wrap;">
-      <a class="anth-button" href="#flow"><span class="lang-en">See how a conflict travels</span><span class="lang-zh">看一个冲突怎么走</span></a>
-      <a class="anth-button anth-button--ghost" href="#sources"><span class="lang-en">Where the ideas came from</span><span class="lang-zh">思路从哪来</span></a>
+<nav class="nav" aria-label="Primary">
+  <div class="wrap">
+    <a class="brand" href="index.html">
+      <svg width="26" height="26" viewBox="0 0 32 32" aria-hidden="true"><rect x="3" y="12" width="26" height="9" rx="2.5" fill="#5a6068"/><rect x="3" y="12" width="26" height="3" rx="1.5" fill="#8a9098"/><path d="M8 9l3-5M16 8V3M24 9l-3-5" stroke="#ff7a3d" stroke-width="2" stroke-linecap="round"/><rect x="5" y="23" width="22" height="3" rx="1.5" fill="#8f96ff" opacity=".85"/></svg>
+      whetstone <small lang="zh-CN">· 磨刀石</small>
+    </a>
+    <div class="nav-links">
+      <a href="index.html#evidence"><span class="en">Evidence</span><span class="zh">证据纪律</span></a>
+      <a href="index.html#layers"><span class="en">Layers</span><span class="zh">分层</span></a>
+      <a href="use-time-conflicts.html" aria-current="page"><span class="en">Use-time check</span><span class="zh">用时纠错</span></a>
+      <a href="routing.html"><span class="en">Routing</span><span class="zh">经验路由</span></a>
+      <a href="skills.html"><span class="en">Skills</span><span class="zh">技能</span></a>
+      <a href="index.html#install"><span class="en">Install</span><span class="zh">安装</span></a>
+    </div>
+    <div class="nav-act">
+      <button type="button" class="lang" aria-label="Switch language / 切换语言">中 / EN</button>
+      <a class="gh" href="https://github.com/TbusOS/whetstone"><svg width="15" height="15" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/></svg>GitHub</a>
     </div>
   </div>
-</section>
+</nav>
 
-<!-- Stat trio -->
-<section class="anth-section">
-  <div class="anth-container anth-container--narrow">
-    <div class="stat-trio">
-      <div>
-        <span class="num">5</span>
-        <span class="lbl"><span class="lang-en">kinds of disagreement; only one means the note was wrong</span><span class="lang-zh">类冲突，只有一类是经验本身错了</span></span>
+<header class="page-hero">
+  <div class="wrap">
+    <a class="back" href="index.html" style="margin:0 0 22px;display:inline-flex"><span class="en">← Whetstone overview</span><span class="zh">← 返回 Whetstone 总览</span></a><br>
+    <span class="feat-tag"><span class="en">Feature · Use-time check</span><span class="zh">功能 · 用时纠错</span></span>
+    <h1><span class="en">Check the note when you use it, not when you file it.</span><span class="zh">经验对不对，用的时候才判得准。</span></h1>
+    <p class="lede">
+      <span class="en">When a note is filed there is only text to judge. When it is used, the code, the log and the board are right there. So that is when whetstone checks it: a note that disagrees with reality gets sorted, reported with its evidence, and left exactly as it is until you say <em class="hl">yes</em>.</span>
+      <span class="zh">经验入库的时候，手里只有文本可判；用的时候，代码、日志、板子都在眼前。所以 whetstone 在用的时候核它：和实际对不上的经验，先分类，带着证据报给你，在你说<em class="hl">好</em>之前一个字都不改。</span>
+    </p>
+    <div class="cta">
+      <a class="btn btn--hot" href="#flow"><span class="en">See how a conflict travels</span><span class="zh">看一个冲突怎么走</span></a>
+      <a class="btn btn--ghost" href="#sources"><span class="en">Where the ideas came from</span><span class="zh">思路从哪来</span> →</a>
+    </div>
+    <div class="stats3 rv">
+      <div><b class="hot">5</b><span class="en">kinds of disagreement; only one means the note was wrong</span><span class="zh">类冲突，只有一类是经验本身错了</span></div>
+      <div><b class="hot">0</b><span class="en">changes to a note without your yes</span><span class="zh">处改动，没有你点头就发生</span></div>
+      <div><b>22</b><span class="en">agreeing real records, at least, before you are asked more briefly</span><span class="zh">条真实记录全部判对，至少这么多，才简化问法</span></div>
+    </div>
+  </div>
+</header>
+
+<main>
+  <!-- premise -->
+  <section class="sec alt">
+    <div class="wrap">
+      <div class="sec-head rv">
+        <span class="kicker"><span class="en">The premise</span><span class="zh">前提</span></span>
+        <h2><span class="en">A note can only be graded against the thing it describes.</span><span class="zh">一条经验，只能拿它描述的那个东西来判。</span></h2>
       </div>
-      <div>
-        <span class="num">0</span>
-        <span class="lbl"><span class="lang-en">changes to a note without your yes</span><span class="lang-zh">处改动，没有你点头就发生</span></span>
+      <div class="prose rv">
+        <p><span class="en">Every note in the library went through review once, on the way in. At that moment the reviewer, human or model, had the session transcript and the text of the note, and nothing else. That is thin ground: an unguided model judge picks the better of two skills 46.4% of the time (SkillLens, arXiv 2605.23899), which is a coin toss. Then the code moves on, the platform changes, and the note keeps its confident label.</span><span class="zh">库里的每一条经验，入库时都审过一次。那一刻，审的人（或模型）手里只有会话记录和经验的文本，别的什么都没有。这个依据很薄：无引导的模型评委在两个 skill 里挑更好的那个，准确率 46.4%（SkillLens，arXiv 2605.23899），等于抛硬币。之后代码往前走、平台换了，经验还顶着原来那个自信的标签。</span></p>
+        <p><span class="en">The moment a note is used is different. The agent is about to act on it, with the current source tree, the git history and often the hardware in reach. Whether the note still holds is no longer a matter of taste; it can be looked up. The same moment is also where the most common failure hides: the agent notices the mismatch, works around it, finishes the task and says nothing, so the note misleads the next session too.</span><span class="zh">用的那一刻不一样。agent 马上要照着它动手，当前代码、git 历史，常常连硬件都够得着。这条经验还成不成立，不再是品味问题，是查得到的事实。最常见的坏法也藏在这一刻：agent 发现对不上，自己绕过去把活干完，一个字不提，于是这条经验接着误导下一次会话。</span></p>
       </div>
-      <div>
-        <span class="num">22</span>
-        <span class="lbl"><span class="lang-en">agreeing real records, at least, before you are asked more briefly</span><span class="lang-zh">条真实记录全部判对，至少这么多，才简化问法</span></span>
+      <blockquote class="quote rv">
+        <p><span class="en">“The next time a note is used is the real exam. Everything before that is a rehearsal.”</span><span class="zh">「下次真用这条经验的时候，才是真正的考试。在那之前的，都是彩排。」</span></p>
+        <cite><span class="en">From the design review, 2026-09-29</span><span class="zh">设计评审，2026-09-29</span></cite>
+      </blockquote>
+    </div>
+  </section>
+
+  <!-- flow -->
+  <section class="sec" id="flow">
+    <div class="wrap">
+      <div class="sec-head rv">
+        <span class="kicker"><span class="en">The path</span><span class="zh">路径</span></span>
+        <h2><span class="en">From “that doesn’t match” to a changed note.</span><span class="zh">从「对不上」到经验被改，中间每一步。</span></h2>
+      </div>
+      <figure class="fig" style="margin:0" role="img" aria-label="Flow of a use-time conflict: use an entry, check it at its source commit and now, classify it into one of five kinds, record the AI's call with a fingerprint before asking, ask with the fingerprint on the card, and let the human decide; decided changes are appended and the first call is scored per model. 用时冲突的流程:照经验做一步、核两次、分成五类之一、先记下判断再问人、人来定;改动只追加,按模型给第一次判断打分。">
+        <div class="usteps">
+          <div class="ustep rv" style="--sc:var(--blue)"><span class="no">1</span><h4><span class="en">Use an entry</span><span class="zh">照经验做一步</span></h4><p><span class="en">a step, a value, a path</span><span class="zh">一个步骤、值或路径</span></p></div>
+          <div class="ustep rv d1" style="--sc:var(--blue)"><span class="no">2</span><h4><span class="en">Check it twice</span><span class="zh">核两次</span></h4><p><span class="en">at its source, and now</span><span class="zh">来源 commit 上 · 现在</span></p></div>
+          <div class="ustep which rv d2"><span class="no">3</span><h4><span class="en">Which kind?</span><span class="zh">哪一类？</span></h4></div>
+          <div class="ustep hot rv d3" style="--sc:var(--ember)"><span class="no">4</span><h4><span class="en">Record the call</span><span class="zh">先记下判断</span></h4><p><span class="en">report: id + fingerprint</span><span class="zh">report：编号 + 指纹</span></p></div>
+          <div class="ustep hot rv d4" style="--sc:var(--ember)"><span class="no">5</span><h4><span class="en">Then ask</span><span class="zh">再问你</span></h4><p><span class="en">the card carries it</span><span class="zh">报告带着这行指纹</span></p></div>
+          <div class="ustep rv d4" style="--sc:var(--green)"><span class="no">6</span><h4><span class="en">You decide</span><span class="zh">你来定</span></h4><p><span class="en">resolve, appended</span><span class="zh">resolve 追加一行</span></p></div>
+        </div>
+        <div class="ukinds rv">
+          <span><span class="en">③ five kinds, and only one of them means the entry was wrong</span><span class="zh">③ 五类冲突，只有一类是经验本身错了</span></span>
+          <div class="row">
+            <div class="uk" style="--kc:var(--green)"><b><span class="en">stale</span><span class="zh">过期</span></b><span><span class="en">update, keep the old</span><span class="zh">更新，旧值留着</span></span></div>
+            <div class="uk" style="--kc:var(--green)"><b><span class="en">wrong</span><span class="zh">原本就错</span></b><span><span class="en">supersede, note why</span><span class="zh">替代，记下原因</span></span></div>
+            <div class="uk" style="--kc:var(--blue)"><b><span class="en">other platform</span><span class="zh">范围不符</span></b><span><span class="en">add a variant</span><span class="zh">加一个平台变体</span></span></div>
+            <div class="uk" style="--kc:var(--gold)"><b><span class="en">code regressed</span><span class="zh">代码又犯了</span></b><span><span class="en">keep entry, flag code</span><span class="zh">经验不动，报代码</span></span></div>
+            <div class="uk" style="--kc:var(--green)"><b><span class="en">entries clash</span><span class="zh">经验互相矛盾</span></b><span><span class="en">you pick one</span><span class="zh">你来选</span></span></div>
+          </div>
+        </div>
+        <div class="uouts rv">
+          <div class="uout" style="--kc:var(--green)"><b><span class="en">Append, never overwrite</span><span class="zh">只追加，不覆盖</span></b><span><span class="en">old entry marked, a runnable check left behind</span><span class="zh">旧条目标失效，留下一条能跑的检查</span></span></div>
+          <div class="uout" style="--kc:var(--blue)"><b><span class="en">Score the first call</span><span class="zh">给第一次判断打分</span></b><span><span class="en">per model; sets how you are asked next time</span><span class="zh">按模型算；决定下次怎么问你</span></span></div>
+        </div>
+        <div class="legend-row">
+          <span><span style="display:inline-block;width:22px;height:2px;background:var(--ember)"></span><span class="en">path every conflict takes</span><span class="zh">每个冲突走的路径</span></span>
+          <span><span class="dot" style="--dc:var(--blue)"></span><span class="en">a variant is added, or the call is scored</span><span class="zh">加一个变体，或给判断打分</span></span>
+          <span><span class="dot" style="--dc:var(--green)"></span><span class="en">the entry changes, after your yes</span><span class="zh">经验会改，须你点头</span></span>
+          <span><span class="dot" style="--dc:var(--gold)"></span><span class="en">entry kept, the code is flagged</span><span class="zh">经验不动，报代码问题</span></span>
+        </div>
+      </figure>
+      <p class="rv" style="font-size:13.5px;color:var(--dim);max-width:88ch;margin-top:14px"><span class="en">② checks the note twice: at the commit it was written from, and in the code as it is now. ③ sorts the mismatch into one of five kinds. ④ puts the AI’s call on file before anyone is asked, and ⑤ is the question itself, carrying the fingerprint that ④ printed. Only after ⑥ does anything change, and then only by appending.</span><span class="zh">② 把经验核两次：在它的来源 commit 上核一次，在现在的代码上核一次。③ 把对不上的情况分到五类之一。④ 在问任何人之前先把 AI 的判断写进记录，⑤ 才是提问，报告里带着 ④ 打印出的那行指纹。要等 ⑥ 你做了决定才会改，而且只追加。</span></p>
+    </div>
+  </section>
+
+  <!-- five kinds -->
+  <section class="sec alt" id="kinds">
+    <div class="wrap">
+      <div class="sec-head rv">
+        <span class="kicker"><span class="en">Five kinds</span><span class="zh">五类冲突</span></span>
+        <h2><span class="en">A mismatch is not yet a wrong note.</span><span class="zh">对不上，还不等于经验错了。</span></h2>
+        <p class="lede"><span class="en">The sorting is mechanical: check the claim at the note’s own source commit, then at HEAD, then ask whether the note is a warning.</span><span class="zh">分类是机械的：在经验自己的来源 commit 上核一次说法，在当前代码上再核一次，再看这条经验是不是一条警告。</span></p>
+      </div>
+      <div class="kcards">
+        <article class="kcard rv" style="--dc:var(--green)"><span class="k"><span class="dot"></span><span class="en">stale</span><span class="zh">stale · 过期</span></span><h3><span class="en">True then, not now</span><span class="zh">当时对，现在不对</span></h3><p><span class="en">It held at its source commit; a later commit changed the code it describes.</span><span class="zh">在来源 commit 上成立；后来有提交改过它描述的代码。</span></p><span class="act"><span class="en">Update it, keep the old value, record the version where it stopped holding.</span><span class="zh">更新，旧值保留，写明从哪个版本起不成立。</span></span></article>
+        <article class="kcard rv d1" style="--dc:var(--blue)"><span class="k"><span class="dot"></span><span class="en">scope</span><span class="zh">scope · 范围不符</span></span><h3><span class="en">Right, somewhere else</span><span class="zh">对，但不是这里</span></h3><p><span class="en">It still holds where it was learned. This is a different platform or branch.</span><span class="zh">在学到它的地方仍然成立，只是现在换了平台或分支。</span></p><span class="act"><span class="en">Add a platform variant. The general rule is not touched.</span><span class="zh">加一个平台变体，通用规律不动。</span></span></article>
+        <article class="kcard rv d2" style="--dc:var(--green)"><span class="k"><span class="dot"></span><span class="en">wrong</span><span class="zh">wrong · 原本就错</span></span><h3><span class="en">Never held</span><span class="zh">从来没成立过</span></h3><p><span class="en">Checked at its own source commit, the claim was already false.</span><span class="zh">在它自己的来源 commit 上核，说法就已经不成立。</span></p><span class="act"><span class="en">Supersede it, and keep why it was misjudged as a lesson of its own.</span><span class="zh">替代它；当初为什么判错，本身记成一条教训。</span></span></article>
+        <article class="kcard rv" style="--dc:var(--gold)"><span class="k"><span class="dot"></span><span class="en">code-regress</span><span class="zh">code-regress · 代码又犯了</span></span><h3><span class="en">The note is right. The code is not.</span><span class="zh">经验没错，代码错了</span></h3><p><span class="en">The note is a warning, and the code now does the very thing it warns against. A pitfall exists <em>because</em> the obvious reasoning fails there, so reasoning cannot overrule it.</span><span class="zh">这条经验是一条警告，而现在的代码正好是它警告的那种写法。坑之所以是坑，<em>正是</em>因为按直觉推会错，所以推理推翻不了它。</span></p><span class="act"><span class="en">Leave the note alone and report the code. Count it as a confirmation.</span><span class="zh">经验不动，报代码问题；这次算经验被印证了一次。</span></span></article>
+        <article class="kcard rv d1" style="--dc:var(--green)"><span class="k"><span class="dot"></span><span class="en">clash</span><span class="zh">clash · 经验互相矛盾</span></span><h3><span class="en">Two notes disagree</span><span class="zh">两条经验说法不同</span></h3><p><span class="en">Two skills say different things about the same step.</span><span class="zh">两个 skill 对同一步给了不同的做法。</span></p><span class="act"><span class="en">Both go in front of you. The one you set aside is marked, not deleted.</span><span class="zh">两条都摆到你面前；落选那条标失效，不删。</span></span></article>
+        <article class="kcard muted rv d2" style="--dc:var(--dim)"><span class="k"><span class="dot"></span><span class="en">not a conflict</span><span class="zh">不算冲突</span></span><h3><span class="en">A new case is only a supplement</span><span class="zh">新情况只是补充</span></h3><p><span class="en">Something the note never covered is not a contradiction. Untrained memory managers delete the old entry and add a new one here, and fragment the memory (Memory-R1, arXiv 2508.19828).</span><span class="zh">经验没覆盖到的新情况不是矛盾。未经训练的记忆管理器在这里会删旧加新，把记忆打碎（Memory-R1，arXiv 2508.19828）。</span></p><span class="act"><span class="en">Goes through normal distillation as a new entry or variant.</span><span class="zh">走正常蒸馏，作为新条目或变体。</span></span></article>
       </div>
     </div>
-  </div>
-</section>
+  </section>
 
-<!-- Premise -->
-<section class="anth-section anth-section--subtle">
-  <div class="anth-container anth-container--narrow prose">
-    <span class="anth-badge"><span class="lang-en">The premise</span><span class="lang-zh">前提</span></span>
-    <h2 style="margin-top:var(--space-3); margin-bottom:var(--space-5);">
-      <span class="lang-en">A note can only be graded against the thing it describes.</span>
-      <span class="lang-zh">一条经验，只能拿它描述的那个东西来判。</span>
-    </h2>
-    <p>
-      <span class="lang-en">Every note in the library went through review once, on the way in. At that moment the reviewer, human or model, had the session transcript and the text of the note, and nothing else. That is thin ground: an unguided model judge picks the better of two skills 46.4% of the time (SkillLens, arXiv 2605.23899), which is a coin toss. Then the code moves on, the platform changes, and the note keeps its confident label.</span>
-      <span class="lang-zh">库里的每一条经验，入库时都审过一次。那一刻，审的人（或模型）手里只有会话记录和经验的文本，别的什么都没有。这个依据很薄：无引导的模型评委在两个 skill 里挑更好的那个，准确率 46.4%（SkillLens，arXiv 2605.23899），等于抛硬币。之后代码往前走、平台换了，经验还顶着原来那个自信的标签。</span>
-    </p>
-    <p>
-      <span class="lang-en">The moment a note is used is different. The agent is about to act on it, with the current source tree, the git history and often the hardware in reach. Whether the note still holds is no longer a matter of taste; it can be looked up. The same moment is also where the most common failure hides: the agent notices the mismatch, works around it, finishes the task and says nothing, so the note misleads the next session too.</span>
-      <span class="lang-zh">用的那一刻不一样。agent 马上要照着它动手，当前代码、git 历史，常常连硬件都够得着。这条经验还成不成立，不再是品味问题，是查得到的事实。最常见的坏法也藏在这一刻：agent 发现对不上，自己绕过去把活干完，一个字不提，于是这条经验接着误导下一次会话。</span>
-    </p>
-    <blockquote class="anth-quote">
-      <span class="lang-en">The next time a note is used is the real exam. Everything before that is a rehearsal.</span>
-      <span class="lang-zh">下次真用这条经验的时候，才是真正的考试。在那之前的，都是彩排。</span>
-    </blockquote>
-    <p class="anth-quote-cite" style="margin-top:var(--space-4);">
-      <span aria-hidden="true" style="display:inline-block; width:24px; height:24px; border-radius:50%; background:var(--anth-orange);"></span>
-      <span><span class="lang-en">From the design review, 2026-09-29</span><span class="lang-zh">设计评审，2026-09-29</span></span>
-    </p>
-  </div>
-</section>
-
-<!-- Flow -->
-<section class="anth-section" id="flow">
-  <div class="anth-container anth-container--wide">
-    <div style="max-width:760px; margin:0 auto var(--space-7); text-align:center;">
-      <span class="anth-badge"><span class="lang-en">The path</span><span class="lang-zh">路径</span></span>
-      <h2 style="margin-top:var(--space-3);">
-        <span class="lang-en">From “that doesn’t match” to a changed note.</span>
-        <span class="lang-zh">从「对不上」到经验被改，中间每一步。</span>
-      </h2>
-    </div>
-    <figure>
-      <div class="anth-scroll" style="--pan-w:950px"><svg role="img" aria-label="Flow of a use-time conflict: use an entry, check it at its source commit and now, classify it into one of five kinds, record the AI's call with a fingerprint before asking, ask with the fingerprint on the card, and let the human decide; decided changes are appended and the first call is scored per model. 用时冲突的流程:照经验做一步、核两次、分成五类之一、先记下判断再问人、人来定;改动只追加,按模型给第一次判断打分。" viewBox="0 0 1160 320" style="display:block; width:100%; max-width:1160px; height:auto;" font-family="Poppins, 'Noto Sans SC', 'Helvetica Neue', Arial, sans-serif">
-        <defs>
-          <pattern id="f1-dots" width="24" height="24" patternUnits="userSpaceOnUse"><circle cx="12" cy="12" r="1" fill="#141413" opacity="0.05"/></pattern>
-          <filter id="f1-sh" x="-20%" y="-20%" width="140%" height="140%"><feDropShadow dx="0" dy="1" stdDeviation="2" flood-color="#141413" flood-opacity="0.06"/></filter>
-          <marker id="f1-arrO" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0.5 L7.5,4 L0,7.5 Z" fill="#d97757"/></marker>
-          <marker id="f1-arrN" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0.5 L7.5,4 L0,7.5 Z" fill="#a8a496"/></marker>
-          <marker id="f1-arrG" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0.5 L7.5,4 L0,7.5 Z" fill="#788c5d"/></marker>
-          <marker id="f1-arrB" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0.5 L7.5,4 L0,7.5 Z" fill="#6a9bcc"/></marker>
-        </defs>
-        <rect width="1160" height="320" rx="16" fill="#faf9f5" stroke="#eceadf"/>
-        <rect width="1160" height="320" rx="16" fill="url(#f1-dots)"/>
-
-        <!-- main path -->
-        <g fill="none" stroke="#d97757" stroke-width="1.8">
-          <line x1="198" y1="88" x2="224" y2="88" marker-end="url(#f1-arrO)"/>
-          <line x1="402" y1="88" x2="428" y2="88" marker-end="url(#f1-arrO)"/>
-          <line x1="530" y1="88" x2="556" y2="88" marker-end="url(#f1-arrO)"/>
-          <line x1="734" y1="88" x2="760" y2="88" marker-end="url(#f1-arrO)"/>
-          <line x1="938" y1="88" x2="964" y2="88" marker-end="url(#f1-arrO)"/>
-        </g>
-
-        <!-- classification bracket -->
-        <g fill="none" stroke="#a8a496" stroke-width="1.2">
-          <path d="M480,136 V160"/>
-          <path d="M92,160 H684"/>
-          <path d="M92,160 V174" marker-end="url(#f1-arrN)"/>
-          <path d="M240,160 V174" marker-end="url(#f1-arrN)"/>
-          <path d="M388,160 V174" marker-end="url(#f1-arrN)"/>
-          <path d="M536,160 V174" marker-end="url(#f1-arrN)"/>
-          <path d="M684,160 V174" marker-end="url(#f1-arrN)"/>
-        </g>
-        <!-- outcome lines -->
-        <path d="M1052,128 V174" fill="none" stroke="#788c5d" stroke-width="1.8" marker-end="url(#f1-arrG)"/>
-        <path d="M962,232 V242" fill="none" stroke="#6a9bcc" stroke-width="1.8" marker-end="url(#f1-arrB)"/>
-
-        <!-- step cards -->
-        <g filter="url(#f1-sh)">
-          <rect x="24" y="48" width="172" height="80" rx="10" fill="#ffffff" stroke="#d8d4c8"/>
-          <rect x="228" y="48" width="172" height="80" rx="10" fill="#ffffff" stroke="#d8d4c8"/>
-          <rect x="560" y="48" width="172" height="80" rx="10" fill="#f7e4dc" stroke="#d97757" stroke-width="1.5"/>
-          <rect x="764" y="48" width="172" height="80" rx="10" fill="#ffffff" stroke="#d8d4c8"/>
-          <rect x="968" y="48" width="168" height="80" rx="10" fill="#ffffff" stroke="#d8d4c8"/>
-          <rect x="24" y="180" width="136" height="52" rx="8" fill="#ffffff" stroke="#d8d4c8"/>
-          <rect x="172" y="180" width="136" height="52" rx="8" fill="#ffffff" stroke="#d8d4c8"/>
-          <rect x="320" y="180" width="136" height="52" rx="8" fill="#ffffff" stroke="#d8d4c8"/>
-          <rect x="468" y="180" width="136" height="52" rx="8" fill="#ffffff" stroke="#d8d4c8"/>
-          <rect x="616" y="180" width="136" height="52" rx="8" fill="#ffffff" stroke="#d8d4c8"/>
-          <rect x="788" y="180" width="348" height="52" rx="8" fill="#ffffff" stroke="#d8d4c8"/>
-          <rect x="788" y="248" width="348" height="52" rx="8" fill="#ffffff" stroke="#d8d4c8"/>
-        </g>
-        <path d="M480,40 L528,88 L480,136 L432,88 Z" fill="#f4d9cd" stroke="#d97757" stroke-width="1.5"/>
-
-        <!-- category dots -->
-        <circle cx="40" cy="80" r="3.5" fill="#6a9bcc"/>
-        <circle cx="244" cy="80" r="3.5" fill="#6a9bcc"/>
-        <circle cx="576" cy="80" r="3.5" fill="#d97757"/>
-        <circle cx="780" cy="80" r="3.5" fill="#d97757"/>
-        <circle cx="984" cy="80" r="3.5" fill="#788c5d"/>
-        <circle cx="40" cy="198" r="3.5" fill="#788c5d"/>
-        <circle cx="188" cy="198" r="3.5" fill="#788c5d"/>
-        <circle cx="336" cy="198" r="3.5" fill="#6a9bcc"/>
-        <circle cx="484" cy="198" r="3.5" fill="#c9913f"/>
-        <circle cx="632" cy="198" r="3.5" fill="#788c5d"/>
-        <circle cx="804" cy="198" r="3.5" fill="#788c5d"/>
-        <circle cx="804" cy="266" r="3.5" fill="#6a9bcc"/>
-
-        <!-- English labels -->
-        <g class="lang-en">
-          <text x="50" y="84" font-size="13.5" font-weight="600" fill="#141413">Use an entry</text>
-          <text x="40" y="108" font-size="11" fill="#6b6a5f">a step, a value, a path</text>
-          <text x="254" y="84" font-size="13.5" font-weight="600" fill="#141413">Check it twice</text>
-          <text x="244" y="108" font-size="11" fill="#6b6a5f">at its source, and now</text>
-          <text x="480" y="85" font-size="12" font-weight="600" fill="#141413" text-anchor="middle">Which</text>
-          <text x="480" y="101" font-size="12" font-weight="600" fill="#141413" text-anchor="middle">kind?</text>
-          <text x="586" y="84" font-size="13.5" font-weight="600" fill="#141413">Record the call</text>
-          <text x="576" y="108" font-size="11" fill="#6b6a5f">report: id + fingerprint</text>
-          <text x="790" y="84" font-size="13.5" font-weight="600" fill="#141413">Then ask</text>
-          <text x="780" y="108" font-size="11" fill="#6b6a5f">the card carries it</text>
-          <text x="994" y="84" font-size="13.5" font-weight="600" fill="#141413">You decide</text>
-          <text x="984" y="108" font-size="11" fill="#6b6a5f">resolve, appended</text>
-          <text x="24" y="152" font-size="11" fill="#8c8a7d">five kinds, and only one of them means the entry was wrong</text>
-          <text x="50" y="202" font-size="12.5" font-weight="600" fill="#141413">stale</text>
-          <text x="40" y="221" font-size="11" fill="#6b6a5f">update, keep the old</text>
-          <text x="198" y="202" font-size="12.5" font-weight="600" fill="#141413">wrong</text>
-          <text x="188" y="221" font-size="11" fill="#6b6a5f">supersede, note why</text>
-          <text x="346" y="202" font-size="12.5" font-weight="600" fill="#141413">other platform</text>
-          <text x="336" y="221" font-size="11" fill="#6b6a5f">add a variant</text>
-          <text x="494" y="202" font-size="12.5" font-weight="600" fill="#141413">code regressed</text>
-          <text x="484" y="221" font-size="11" fill="#6b6a5f">keep entry, flag code</text>
-          <text x="642" y="202" font-size="12.5" font-weight="600" fill="#141413">entries clash</text>
-          <text x="632" y="221" font-size="11" fill="#6b6a5f">you pick one</text>
-          <text x="814" y="202" font-size="12.5" font-weight="600" fill="#141413">Append, never overwrite</text>
-          <text x="804" y="221" font-size="11" fill="#6b6a5f">old entry marked, a runnable check left behind</text>
-          <text x="814" y="270" font-size="12.5" font-weight="600" fill="#141413">Score the first call</text>
-          <text x="804" y="289" font-size="11" fill="#6b6a5f">per model; sets how you are asked next time</text>
-          <text x="54" y="272" font-size="11" fill="#6b6a5f">path every conflict takes</text>
-          <text x="54" y="296" font-size="11" fill="#6b6a5f">a variant is added, or the call is scored</text>
-          <text x="392" y="272" font-size="11" fill="#6b6a5f">the entry changes, after your yes</text>
-          <text x="392" y="296" font-size="11" fill="#6b6a5f">entry kept, the code is flagged</text>
-        </g>
-        <!-- Chinese labels -->
-        <g class="lang-zh">
-          <text x="50" y="84" font-size="13.5" font-weight="600" fill="#141413">照经验做一步</text>
-          <text x="40" y="108" font-size="11" fill="#6b6a5f">一个步骤、值或路径</text>
-          <text x="254" y="84" font-size="13.5" font-weight="600" fill="#141413">核两次</text>
-          <text x="244" y="108" font-size="11" fill="#6b6a5f">来源 commit 上 · 现在</text>
-          <text x="480" y="93" font-size="12" font-weight="600" fill="#141413" text-anchor="middle">哪一类？</text>
-          <text x="586" y="84" font-size="13.5" font-weight="600" fill="#141413">先记下判断</text>
-          <text x="576" y="108" font-size="11" fill="#6b6a5f">report：编号 + 指纹</text>
-          <text x="790" y="84" font-size="13.5" font-weight="600" fill="#141413">再问你</text>
-          <text x="780" y="108" font-size="11" fill="#6b6a5f">报告带着这行指纹</text>
-          <text x="994" y="84" font-size="13.5" font-weight="600" fill="#141413">你来定</text>
-          <text x="984" y="108" font-size="11" fill="#6b6a5f">resolve 追加一行</text>
-          <text x="24" y="152" font-size="11" fill="#8c8a7d">五类冲突，只有一类是经验本身错了</text>
-          <text x="50" y="202" font-size="12.5" font-weight="600" fill="#141413">过期</text>
-          <text x="40" y="221" font-size="11" fill="#6b6a5f">更新，旧值留着</text>
-          <text x="198" y="202" font-size="12.5" font-weight="600" fill="#141413">原本就错</text>
-          <text x="188" y="221" font-size="11" fill="#6b6a5f">替代，记下原因</text>
-          <text x="346" y="202" font-size="12.5" font-weight="600" fill="#141413">范围不符</text>
-          <text x="336" y="221" font-size="11" fill="#6b6a5f">加一个平台变体</text>
-          <text x="494" y="202" font-size="12.5" font-weight="600" fill="#141413">代码又犯了</text>
-          <text x="484" y="221" font-size="11" fill="#6b6a5f">经验不动，报代码</text>
-          <text x="642" y="202" font-size="12.5" font-weight="600" fill="#141413">经验互相矛盾</text>
-          <text x="632" y="221" font-size="11" fill="#6b6a5f">你来选</text>
-          <text x="814" y="202" font-size="12.5" font-weight="600" fill="#141413">只追加，不覆盖</text>
-          <text x="804" y="221" font-size="11" fill="#6b6a5f">旧条目标失效，留下一条能跑的检查</text>
-          <text x="814" y="270" font-size="12.5" font-weight="600" fill="#141413">给第一次判断打分</text>
-          <text x="804" y="289" font-size="11" fill="#6b6a5f">按模型算；决定下次怎么问你</text>
-          <text x="54" y="272" font-size="11" fill="#6b6a5f">每个冲突走的路径</text>
-          <text x="54" y="296" font-size="11" fill="#6b6a5f">加一个变体，或给判断打分</text>
-          <text x="392" y="272" font-size="11" fill="#6b6a5f">经验会改，须你点头</text>
-          <text x="392" y="296" font-size="11" fill="#6b6a5f">经验不动，报代码问题</text>
-        </g>
-
-        <!-- legend marks -->
-        <line x1="24" y1="268" x2="46" y2="268" stroke="#d97757" stroke-width="1.8"/>
-        <circle cx="35" cy="292" r="4" fill="#6a9bcc"/>
-        <circle cx="378" cy="268" r="4" fill="#788c5d"/>
-        <circle cx="378" cy="292" r="4" fill="#c9913f"/>
-
-        <!-- numbered badges -->
-        <g font-size="11" font-weight="600" text-anchor="middle">
-          <circle cx="28" cy="52" r="10" fill="#d97757"/><text x="28" y="56" fill="#ffffff">1</text>
-          <circle cx="232" cy="52" r="10" fill="#d97757"/><text x="232" y="56" fill="#ffffff">2</text>
-          <circle cx="480" cy="40" r="10" fill="#d97757"/><text x="480" y="44" fill="#ffffff">3</text>
-          <circle cx="564" cy="52" r="10" fill="#d97757"/><text x="564" y="56" fill="#ffffff">4</text>
-          <circle cx="768" cy="52" r="10" fill="#d97757"/><text x="768" y="56" fill="#ffffff">5</text>
-          <circle cx="972" cy="52" r="10" fill="#d97757"/><text x="972" y="56" fill="#ffffff">6</text>
-        </g>
-      </svg></div>
-      <figcaption>
-        <span class="lang-en">② checks the note twice: at the commit it was written from, and in the code as it is now. ③ sorts the mismatch into one of five kinds. ④ puts the AI’s call on file before anyone is asked, and ⑤ is the question itself, carrying the fingerprint that ④ printed. Only after ⑥ does anything change, and then only by appending.</span>
-        <span class="lang-zh">② 把经验核两次：在它的来源 commit 上核一次，在现在的代码上核一次。③ 把对不上的情况分到五类之一。④ 在问任何人之前先把 AI 的判断写进记录，⑤ 才是提问，报告里带着 ④ 打印出的那行指纹。要等 ⑥ 你做了决定才会改，而且只追加。</span>
-      </figcaption>
-    </figure>
-  </div>
-</section>
-
-<!-- Five kinds -->
-<section class="anth-section anth-section--subtle" id="kinds">
-  <div class="anth-container anth-container--wide">
-    <div style="max-width:760px; margin:0 auto var(--space-7); text-align:center;">
-      <span class="anth-badge"><span class="lang-en">Five kinds</span><span class="lang-zh">五类冲突</span></span>
-      <h2 style="margin-top:var(--space-3);">
-        <span class="lang-en">A mismatch is not yet a wrong note.</span>
-        <span class="lang-zh">对不上，还不等于经验错了。</span>
-      </h2>
-      <p style="font-family:var(--font-body); font-size:17px; line-height:1.7; color:var(--anth-text-secondary); margin:var(--space-4) 0 0;">
-        <span class="lang-en">The sorting is mechanical: check the claim at the note’s own source commit, then at HEAD, then ask whether the note is a warning.</span>
-        <span class="lang-zh">分类是机械的：在经验自己的来源 commit 上核一次说法，在当前代码上再核一次，再看这条经验是不是一条警告。</span>
-      </p>
-    </div>
-    <div class="kind-grid">
-      <article class="kind-card">
-        <span class="kind-card__kicker"><span class="kind-card__dot" style="background:var(--anth-green);"></span><span class="lang-en">stale</span><span class="lang-zh">stale · 过期</span></span>
-        <h3 class="kind-card__title"><span class="lang-en">True then, not now</span><span class="lang-zh">当时对，现在不对</span></h3>
-        <p class="kind-card__body"><span class="lang-en">It held at its source commit; a later commit changed the code it describes.</span><span class="lang-zh">在来源 commit 上成立；后来有提交改过它描述的代码。</span></p>
-        <p class="kind-card__act"><span class="lang-en">Update it, keep the old value, record the version where it stopped holding.</span><span class="lang-zh">更新，旧值保留，写明从哪个版本起不成立。</span></p>
-      </article>
-      <article class="kind-card">
-        <span class="kind-card__kicker"><span class="kind-card__dot" style="background:var(--anth-blue);"></span><span class="lang-en">scope</span><span class="lang-zh">scope · 范围不符</span></span>
-        <h3 class="kind-card__title"><span class="lang-en">Right, somewhere else</span><span class="lang-zh">对，但不是这里</span></h3>
-        <p class="kind-card__body"><span class="lang-en">It still holds where it was learned. This is a different platform or branch.</span><span class="lang-zh">在学到它的地方仍然成立，只是现在换了平台或分支。</span></p>
-        <p class="kind-card__act"><span class="lang-en">Add a platform variant. The general rule is not touched.</span><span class="lang-zh">加一个平台变体，通用规律不动。</span></p>
-      </article>
-      <article class="kind-card">
-        <span class="kind-card__kicker"><span class="kind-card__dot" style="background:var(--anth-green);"></span><span class="lang-en">wrong</span><span class="lang-zh">wrong · 原本就错</span></span>
-        <h3 class="kind-card__title"><span class="lang-en">Never held</span><span class="lang-zh">从来没成立过</span></h3>
-        <p class="kind-card__body"><span class="lang-en">Checked at its own source commit, the claim was already false.</span><span class="lang-zh">在它自己的来源 commit 上核，说法就已经不成立。</span></p>
-        <p class="kind-card__act"><span class="lang-en">Supersede it, and keep why it was misjudged as a lesson of its own.</span><span class="lang-zh">替代它；当初为什么判错，本身记成一条教训。</span></p>
-      </article>
-      <article class="kind-card">
-        <span class="kind-card__kicker"><span class="kind-card__dot" style="background:#c9913f;"></span><span class="lang-en">code-regress</span><span class="lang-zh">code-regress · 代码又犯了</span></span>
-        <h3 class="kind-card__title"><span class="lang-en">The note is right. The code is not.</span><span class="lang-zh">经验没错，代码错了</span></h3>
-        <p class="kind-card__body"><span class="lang-en">The note is a warning, and the code now does the very thing it warns against. A pitfall exists <em>because</em> the obvious reasoning fails there, so reasoning cannot overrule it.</span><span class="lang-zh">这条经验是一条警告，而现在的代码正好是它警告的那种写法。坑之所以是坑，<em>正是</em>因为按直觉推会错，所以推理推翻不了它。</span></p>
-        <p class="kind-card__act"><span class="lang-en">Leave the note alone and report the code. Count it as a confirmation.</span><span class="lang-zh">经验不动，报代码问题；这次算经验被印证了一次。</span></p>
-      </article>
-      <article class="kind-card">
-        <span class="kind-card__kicker"><span class="kind-card__dot" style="background:var(--anth-green);"></span><span class="lang-en">clash</span><span class="lang-zh">clash · 经验互相矛盾</span></span>
-        <h3 class="kind-card__title"><span class="lang-en">Two notes disagree</span><span class="lang-zh">两条经验说法不同</span></h3>
-        <p class="kind-card__body"><span class="lang-en">Two skills say different things about the same step.</span><span class="lang-zh">两个 skill 对同一步给了不同的做法。</span></p>
-        <p class="kind-card__act"><span class="lang-en">Both go in front of you. The one you set aside is marked, not deleted.</span><span class="lang-zh">两条都摆到你面前；落选那条标失效，不删。</span></p>
-      </article>
-      <article class="kind-card kind-card--muted">
-        <span class="kind-card__kicker"><span class="kind-card__dot" style="background:var(--anth-text-secondary);"></span><span class="lang-en">not a conflict</span><span class="lang-zh">不算冲突</span></span>
-        <h3 class="kind-card__title"><span class="lang-en">A new case is only a supplement</span><span class="lang-zh">新情况只是补充</span></h3>
-        <p class="kind-card__body"><span class="lang-en">Something the note never covered is not a contradiction. Untrained memory managers delete the old entry and add a new one here, and fragment the memory (Memory-R1, arXiv 2508.19828).</span><span class="lang-zh">经验没覆盖到的新情况不是矛盾。未经训练的记忆管理器在这里会删旧加新，把记忆打碎（Memory-R1，arXiv 2508.19828）。</span></p>
-        <p class="kind-card__act"><span class="lang-en">Goes through normal distillation as a new entry or variant.</span><span class="lang-zh">走正常蒸馏，作为新条目或变体。</span></p>
-      </article>
-    </div>
-  </div>
-</section>
-
-<!-- Evidence grades -->
-<section class="anth-section">
-  <div class="anth-container anth-container--narrow prose">
-    <span class="anth-badge"><span class="lang-en">Evidence</span><span class="lang-zh">证据</span></span>
-    <h2 style="margin-top:var(--space-3); margin-bottom:var(--space-5);">
-      <span class="lang-en">What the AI saw decides what it may say.</span>
-      <span class="lang-zh">看到了什么，决定 AI 能说到哪一步。</span>
-    </h2>
-    <p>
-      <span class="lang-en">One rule sits above the table: a note that came from a measurement can only be overturned by a new measurement, never by reasoning. Many notes record exactly the case where the documentation or the first principle was wrong.</span>
-      <span class="lang-zh">表上面压着一条规矩：实测来的经验，只能被新的实测推翻，不能被推理推翻。很多经验记的恰恰就是「文档或原理说 X、测出来是 Y」。</span>
-    </p>
-    <figure style="margin:var(--space-6) 0 0;">
-      <table class="art-table">
-        <thead><tr>
-          <th><span class="lang-en">Grade</span><span class="lang-zh">档</span></th>
-          <th><span class="lang-en">Counts as this grade</span><span class="lang-zh">算这一档的</span></th>
-          <th><span class="lang-en">The AI may say</span><span class="lang-zh">AI 能说到</span></th>
-        </tr></thead>
-        <tbody>
-          <tr><td class="lv lv--seen">seen</td><td><span class="lang-en">A <code>file:line</code> in the current code, the note’s own check re-run, a register read back. You could repeat it.</span><span class="lang-zh">当前代码的 <code>file:line</code>、重跑了经验自带的检查、读回了寄存器。你照着能重做一遍。</span></td><td><span class="lang-en">“This is wrong; change it to X; here is the evidence.”</span><span class="lang-zh">「这里不对，建议改成 X，证据是……」</span></td></tr>
-          <tr><td class="lv lv--inferred">inferred</td><td><span class="lang-en">Worked out from principle, analogy or documentation.</span><span class="lang-zh">从原理推、从别处类比、从文档读出来的。</span></td><td><span class="lang-en">“I suspect this is wrong, because… please judge.”</span><span class="lang-zh">「我怀疑这条不对，理由是……请你判断」</span></td></tr>
-          <tr><td class="lv lv--unseen">unseen</td><td><span class="lang-en">No board, no platform, or the check could not be run.</span><span class="lang-zh">板子不在、平台不在手边，或者核不了。</span></td><td><span class="lang-en">Only that there is a conflict. No verdict.</span><span class="lang-zh">只报冲突，不给结论。</span></td></tr>
-        </tbody>
-      </table>
-      <figcaption><span class="lang-en">Only the <code>seen</code> grade can ever earn a shorter way of asking. What the AI inferred, however often it turned out right, says nothing about what it would see.</span><span class="lang-zh">只有 <code>seen</code> 这一档有资格简化问法。AI 推出来的，判对的次数再多，也说明不了它看到的时候会怎样。</span></figcaption>
-    </figure>
-  </div>
-</section>
-
-<!-- Two-step record -->
-<section class="anth-section anth-section--subtle" id="record">
-  <div class="anth-container anth-container--wide">
-    <div style="max-width:780px; margin:0 auto var(--space-6); text-align:center;">
-      <span class="anth-badge"><span class="lang-en">The record</span><span class="lang-zh">记录</span></span>
-      <h2 style="margin-top:var(--space-3);">
-        <span class="lang-en">The AI writes its call down <em>before</em> it hears yours.</span>
-        <span class="lang-zh">AI 在听到你的回答<em>之前</em>，先写下自己的判断。</span>
-      </h2>
-      <p style="font-family:var(--font-body); font-size:17px; line-height:1.7; color:var(--anth-text-secondary); margin:var(--space-4) 0 0;">
-        <span class="lang-en">The party being scored is the one keeping the record. Written in one line after your answer, its “own” call could simply be copied from yours, and agreement would read 100% with nothing on screen to say so. So the record comes in two steps.</span>
-        <span class="lang-zh">写记录的，正是被打分的一方。等你回答完再一次写一行，它「自己的判断」完全可以照着你的答案填，一致率就成了 100%，屏幕上还没有任何迹象。所以记录分两步。</span>
-      </p>
-    </div>
-    <figure>
-      <div class="anth-scroll" style="--pan-w:890px"><svg role="img" aria-label="Sequence of the two-step record between the AI agent, the decision log and you: the AI reports its call and model and gets back an id and fingerprint, asks you with the fingerprint on the card, you answer, the answer is appended with resolve, and stats scores the first call against the latest answer for the current model only. 两步记录的时序:AI 先写判断和模型、拿回编号和指纹,带着指纹问你,你回答后追加,stats 只按当前模型给第一次判断打分。" viewBox="0 0 1080 452" style="display:block; width:100%; max-width:1080px; height:auto; margin:0 auto;" font-family="Poppins, 'Noto Sans SC', 'Helvetica Neue', Arial, sans-serif">
-        <defs>
-          <pattern id="f2-dots" width="24" height="24" patternUnits="userSpaceOnUse"><circle cx="12" cy="12" r="1" fill="#141413" opacity="0.05"/></pattern>
-          <filter id="f2-sh" x="-20%" y="-20%" width="140%" height="140%"><feDropShadow dx="0" dy="1" stdDeviation="2" flood-color="#141413" flood-opacity="0.06"/></filter>
-          <marker id="f2-arrO" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0.5 L7.5,4 L0,7.5 Z" fill="#d97757"/></marker>
-          <marker id="f2-arrN" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0.5 L7.5,4 L0,7.5 Z" fill="#a8a496"/></marker>
-          <marker id="f2-arrG" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0.5 L7.5,4 L0,7.5 Z" fill="#788c5d"/></marker>
-        </defs>
-        <rect width="1080" height="452" rx="16" fill="#faf9f5" stroke="#eceadf"/>
-        <rect width="1080" height="452" rx="16" fill="url(#f2-dots)"/>
-
-        <!-- lifelines -->
-        <g stroke="#d8d4c8" stroke-width="1">
-          <line x1="180" y1="84" x2="180" y2="412"/>
-          <line x1="540" y1="84" x2="540" y2="412"/>
-          <line x1="900" y1="84" x2="900" y2="412"/>
-        </g>
-
-        <!-- actor cards -->
-        <g filter="url(#f2-sh)">
-          <rect x="80" y="20" width="200" height="60" rx="10" fill="#f7e4dc" stroke="#d97757" stroke-width="1.5"/>
-          <rect x="440" y="20" width="200" height="60" rx="10" fill="#ffffff" stroke="#d8d4c8"/>
-          <rect x="800" y="20" width="200" height="60" rx="10" fill="#ffffff" stroke="#d8d4c8"/>
-        </g>
-        <circle cx="100" cy="44" r="3.5" fill="#d97757"/>
-        <circle cx="460" cy="44" r="3.5" fill="#6a9bcc"/>
-        <circle cx="820" cy="44" r="3.5" fill="#788c5d"/>
-
-        <!-- messages -->
-        <line x1="190" y1="128" x2="530" y2="128" stroke="#d97757" stroke-width="1.8" marker-end="url(#f2-arrO)"/>
-        <line x1="530" y1="176" x2="190" y2="176" stroke="#a8a496" stroke-width="1.2" stroke-dasharray="4 3" marker-end="url(#f2-arrN)"/>
-        <line x1="190" y1="224" x2="890" y2="224" stroke="#d97757" stroke-width="1.8" marker-end="url(#f2-arrO)"/>
-        <line x1="890" y1="272" x2="190" y2="272" stroke="#a8a496" stroke-width="1.2" stroke-dasharray="4 3" marker-end="url(#f2-arrN)"/>
-        <line x1="190" y1="320" x2="530" y2="320" stroke="#788c5d" stroke-width="1.8" marker-end="url(#f2-arrG)"/>
-        <rect x="410" y="352" width="260" height="48" rx="8" fill="#e2ecf5" stroke="#6a9bcc"/>
-        <text x="358" y="168" font-family="'JetBrains Mono', monospace" font-size="11.5" fill="#141413" text-anchor="middle">C-20260929-01 · b19b2a</text>
-
-        <g class="lang-en">
-          <text x="112" y="49" font-size="13.5" font-weight="600" fill="#141413">AI agent</text>
-          <text x="100" y="68" font-size="11" fill="#6b6a5f">the one being scored</text>
-          <text x="472" y="49" font-size="13.5" font-weight="600" fill="#141413">Decision log</text>
-          <text x="460" y="68" font-size="11" fill="#6b6a5f">journal · append-only</text>
-          <text x="832" y="49" font-size="13.5" font-weight="600" fill="#141413">You</text>
-          <text x="820" y="68" font-size="11" fill="#6b6a5f">the one who decides</text>
-          <text x="358" y="116" font-size="12" fill="#141413" text-anchor="middle">report: the call + the model</text>
-          <text x="720" y="212" font-size="12" fill="#141413" text-anchor="middle">conflict card, fingerprint on line 2</text>
-          <text x="720" y="260" font-size="11.5" fill="#6b6a5f" text-anchor="middle">“Amend: it is the other platform.”</text>
-          <text x="358" y="308" font-size="12" fill="#141413" text-anchor="middle">resolve: your answer, appended</text>
-          <text x="540" y="373" font-size="12" font-weight="600" fill="#141413" text-anchor="middle">stats: first call vs latest answer</text>
-          <text x="540" y="390" font-size="11" fill="#4a7bab" text-anchor="middle">counted for the current model only</text>
-          <text x="556" y="124" font-size="11" fill="#8c8a7d">an id is reported once, never again</text>
-          <text x="556" y="144" font-size="11" fill="#8c8a7d">edit the line later and the fingerprint breaks</text>
-          <text x="100" y="440" font-size="11" fill="#6b6a5f">the AI’s call</text>
-          <text x="268" y="440" font-size="11" fill="#6b6a5f">a reply</text>
-          <text x="404" y="440" font-size="11" fill="#6b6a5f">your answer, appended</text>
-          <text x="604" y="440" font-size="11" fill="#6b6a5f">scoring</text>
-        </g>
-        <g class="lang-zh">
-          <text x="112" y="49" font-size="13.5" font-weight="600" fill="#141413">AI</text>
-          <text x="100" y="68" font-size="11" fill="#6b6a5f">被打分的一方</text>
-          <text x="472" y="49" font-size="13.5" font-weight="600" fill="#141413">决定记录</text>
-          <text x="460" y="68" font-size="11" fill="#6b6a5f">journal · 只追加</text>
-          <text x="832" y="49" font-size="13.5" font-weight="600" fill="#141413">你</text>
-          <text x="820" y="68" font-size="11" fill="#6b6a5f">做决定的人</text>
-          <text x="358" y="116" font-size="12" fill="#141413" text-anchor="middle">report：判断 + 模型</text>
-          <text x="720" y="212" font-size="12" fill="#141413" text-anchor="middle">冲突报告，第二行带着指纹</text>
-          <text x="720" y="260" font-size="11.5" fill="#6b6a5f" text-anchor="middle">「改一下，是范围不符。」</text>
-          <text x="358" y="308" font-size="12" fill="#141413" text-anchor="middle">resolve：追加你的回答</text>
-          <text x="540" y="373" font-size="12" font-weight="600" fill="#141413" text-anchor="middle">stats：第一次判断 对照 最新回答</text>
-          <text x="540" y="390" font-size="11" fill="#4a7bab" text-anchor="middle">只算当前模型</text>
-          <text x="556" y="124" font-size="11" fill="#8c8a7d">同一编号只报一次</text>
-          <text x="556" y="144" font-size="11" fill="#8c8a7d">事后改这一行，指纹就对不上</text>
-          <text x="100" y="440" font-size="11" fill="#6b6a5f">AI 的判断</text>
-          <text x="268" y="440" font-size="11" fill="#6b6a5f">回话</text>
-          <text x="404" y="440" font-size="11" fill="#6b6a5f">你的回答，追加</text>
-          <text x="604" y="440" font-size="11" fill="#6b6a5f">打分</text>
-        </g>
-
-        <!-- legend marks -->
-        <line x1="60" y1="436" x2="92" y2="436" stroke="#d97757" stroke-width="1.8"/>
-        <line x1="228" y1="436" x2="260" y2="436" stroke="#a8a496" stroke-width="1.2" stroke-dasharray="4 3"/>
-        <line x1="364" y1="436" x2="396" y2="436" stroke="#788c5d" stroke-width="1.8"/>
-        <rect x="572" y="430" width="24" height="12" rx="3" fill="#e2ecf5" stroke="#6a9bcc"/>
-
-        <!-- badges -->
-        <g font-size="11" font-weight="600" text-anchor="middle">
-          <circle cx="164" cy="128" r="9" fill="#d97757"/><text x="164" y="132" fill="#ffffff">1</text>
-          <circle cx="556" cy="176" r="9" fill="#d97757"/><text x="556" y="180" fill="#ffffff">2</text>
-          <circle cx="164" cy="224" r="9" fill="#d97757"/><text x="164" y="228" fill="#ffffff">3</text>
-          <circle cx="916" cy="272" r="9" fill="#d97757"/><text x="916" y="276" fill="#ffffff">4</text>
-          <circle cx="164" cy="320" r="9" fill="#d97757"/><text x="164" y="324" fill="#ffffff">5</text>
-          <circle cx="394" cy="376" r="9" fill="#d97757"/><text x="394" y="380" fill="#ffffff">6</text>
-        </g>
-      </svg></div>
-      <figcaption>
-        <span class="lang-en">① The call goes on file and ② the id and fingerprint come back. ③ The card cannot exist before that, because it has to carry the fingerprint. ④ Your answer arrives and ⑤ is appended as a separate line. ⑥ If an entry was reported twice in one session, the first call is the one scored.</span>
-        <span class="lang-zh">① 判断先写进记录，② 拿回编号和指纹。③ 报告在这之前出不来，因为它必须带着这行指纹。④ 你回答后，⑤ 另起一行追加。⑥ 同一条经验在一次会话里报了两次的，只给第一次的判断打分。</span>
-      </figcaption>
-    </figure>
-
-    <div class="palette-split" style="margin-top:var(--space-8);">
-      <div>
-        <h3 style="font-family:var(--font-heading); font-size:24px; font-weight:600; margin:0;">
-          <span class="lang-en">Four commands, one file.</span>
-          <span class="lang-zh">四个命令，一个文件。</span>
-        </h3>
-        <ul class="palette-list">
-          <li><span class="lang-en"><code>report</code> — the AI’s call, before asking: kind, evidence grade, proposed action, how sure it is, and the model that made it.</span><span class="lang-zh"><code>report</code> —— 问之前的 AI 判断：哪一类、哪档证据、建议怎么办、有几成把握，以及是哪个模型判的。</span></li>
-          <li><span class="lang-en"><code>resolve</code> — your answer to a report already on file. No report, no answer.</span><span class="lang-zh"><code>resolve</code> —— 你对某条已有报告的回答。没有报告，就收不了回答。</span></li>
-          <li><span class="lang-en"><code>miss</code> — a conflict the AI met and never reported, found by you. It carries no AI call, because there was none.</span><span class="lang-zh"><code>miss</code> —— AI 碰到了却没报、被你发现的冲突。它不带 AI 判断，因为 AI 根本没判过。</span></li>
-          <li><span class="lang-en"><code>stats</code> — scores each group and says how it may be asked next time.</span><span class="lang-zh"><code>stats</code> —— 给每一组打分，并说明下次该怎么问。</span></li>
-        </ul>
-        <p style="font-family:var(--font-body); font-size:15px; line-height:1.6; color:var(--anth-text-secondary); margin-top:var(--space-5);">
-          <span class="lang-en">Everything lands in <code>journal/review-decisions.jsonl</code>, which is git-ignored and stays on your machine.</span>
-          <span class="lang-zh">全部写进 <code>journal/review-decisions.jsonl</code>，它在 gitignore 里，只留在你本机。</span>
-        </p>
+  <!-- evidence grades -->
+  <section class="sec">
+    <div class="wrap">
+      <div class="sec-head rv">
+        <span class="kicker"><span class="en">Evidence</span><span class="zh">证据</span></span>
+        <h2><span class="en">What the AI saw decides what it may say.</span><span class="zh">看到了什么，决定 AI 能说到哪一步。</span></h2>
+        <p class="lede"><span class="en">One rule sits above the table: a note that came from a measurement can only be overturned by a new measurement, never by reasoning. Many notes record exactly the case where the documentation or the first principle was wrong.</span><span class="zh">表上面压着一条规矩：实测来的经验，只能被新的实测推翻，不能被推理推翻。很多经验记的恰恰就是「文档或原理说 X、测出来是 Y」。</span></p>
       </div>
-      <figure>
-<pre class="art-term" aria-label="Terminal: whetstone decision report prints an id and fingerprint; whetstone decision stats prints one row per group with its tier"><code><span class="t-dim">$</span> whetstone decision report --entry boot-x/pitfall-7 \
+      <figure class="rv" style="margin:0;max-width:980px">
+        <div class="tbl-wrap">
+          <table class="tbl">
+            <thead><tr><th><span class="en">Grade</span><span class="zh">档</span></th><th><span class="en">Counts as this grade</span><span class="zh">算这一档的</span></th><th><span class="en">The AI may say</span><span class="zh">AI 能说到</span></th></tr></thead>
+            <tbody>
+              <tr><td class="tag-lv c-hi">seen</td><td><span class="en">A <code>file:line</code> in the current code, the note’s own check re-run, a register read back. You could repeat it.</span><span class="zh">当前代码的 <code>file:line</code>、重跑了经验自带的检查、读回了寄存器。你照着能重做一遍。</span></td><td><span class="en">“This is wrong; change it to X; here is the evidence.”</span><span class="zh">「这里不对，建议改成 X，证据是……」</span></td></tr>
+              <tr><td class="tag-lv c-md">inferred</td><td><span class="en">Worked out from principle, analogy or documentation.</span><span class="zh">从原理推、从别处类比、从文档读出来的。</span></td><td><span class="en">“I suspect this is wrong, because… please judge.”</span><span class="zh">「我怀疑这条不对，理由是……请你判断」</span></td></tr>
+              <tr><td class="tag-lv c-lo">unseen</td><td><span class="en">No board, no platform, or the check could not be run.</span><span class="zh">板子不在、平台不在手边，或者核不了。</span></td><td><span class="en">Only that there is a conflict. No verdict.</span><span class="zh">只报冲突，不给结论。</span></td></tr>
+            </tbody>
+          </table>
+        </div>
+        <figcaption class="cap"><span class="en">Only the <code>seen</code> grade can ever earn a shorter way of asking. What the AI inferred, however often it turned out right, says nothing about what it would see.</span><span class="zh">只有 <code>seen</code> 这一档有资格简化问法。AI 推出来的，判对的次数再多，也说明不了它看到的时候会怎样。</span></figcaption>
+      </figure>
+    </div>
+  </section>
+
+  <!-- two-step record -->
+  <section class="sec alt" id="record">
+    <div class="wrap">
+      <div class="sec-head rv">
+        <span class="kicker"><span class="en">The record</span><span class="zh">记录</span></span>
+        <h2><span class="en">The AI writes its call down <em class="hl">before</em> it hears yours.</span><span class="zh">AI 在听到你的回答<em class="hl">之前</em>，先写下自己的判断。</span></h2>
+        <p class="lede"><span class="en">The party being scored is the one keeping the record. Written in one line after your answer, its “own” call could simply be copied from yours, and agreement would read 100% with nothing on screen to say so. So the record comes in two steps.</span><span class="zh">写记录的，正是被打分的一方。等你回答完再一次写一行，它「自己的判断」完全可以照着你的答案填，一致率就成了 100%，屏幕上还没有任何迹象。所以记录分两步。</span></p>
+      </div>
+      <figure class="fig" style="margin:0" role="img" aria-label="Sequence of the two-step record between the AI agent, the decision log and you: the AI reports its call and model and gets back an id and fingerprint, asks you with the fingerprint on the card, you answer, the answer is appended with resolve, and stats scores the first call against the latest answer for the current model only. 两步记录的时序:AI 先写判断和模型、拿回编号和指纹,带着指纹问你,你回答后追加,stats 只按当前模型给第一次判断打分。">
+        <div class="seq rv">
+          <div class="actor" style="--ac:var(--ember)"><b><span class="en">AI agent</span><span class="zh">AI</span></b><span><span class="en">the one being scored</span><span class="zh">被打分的一方</span></span></div>
+          <div class="actor" style="--ac:var(--blue)"><b><span class="en">Decision log</span><span class="zh">决定记录</span></b><span><span class="en">journal · append-only</span><span class="zh">journal · 只追加</span></span></div>
+          <div class="actor" style="--ac:var(--green)"><b><span class="en">You</span><span class="zh">你</span></b><span><span class="en">the one who decides</span><span class="zh">做决定的人</span></span></div>
+          <div class="msg s12"><span class="lab"><span class="n">1</span><span class="en">report: the call + the model</span><span class="zh">report：判断 + 模型</span></span><div class="ln"></div><span class="mnote"><span class="en">an id is reported once, never again · edit the line later and the fingerprint breaks</span><span class="zh">同一编号只报一次 · 事后改这一行，指纹就对不上</span></span></div>
+          <div class="msg s12 rev dash" style="--mc:#7a8088"><span class="lab"><span class="n">2</span><code>C-20260929-01 · b19b2a</code></span><div class="ln"></div></div>
+          <div class="msg s13"><span class="lab"><span class="n">3</span><span class="en">conflict card, fingerprint on line 2</span><span class="zh">冲突报告，第二行带着指纹</span></span><div class="ln"></div></div>
+          <div class="msg s13 rev dash" style="--mc:#7a8088"><span class="lab"><span class="n">4</span><span class="en">“Amend: it is the other platform.”</span><span class="zh">「改一下，是范围不符。」</span></span><div class="ln"></div></div>
+          <div class="msg s12" style="--mc:var(--green)"><span class="lab"><span class="n">5</span><span class="en">resolve: your answer, appended</span><span class="zh">resolve：追加你的回答</span></span><div class="ln"></div></div>
+          <div class="stats-box"><b><span class="n">6</span><span class="en">stats: first call vs latest answer</span><span class="zh">stats：第一次判断 对照 最新回答</span></b><span><span class="en">counted for the current model only</span><span class="zh">只算当前模型</span></span></div>
+        </div>
+        <div class="legend-row">
+          <span><span style="display:inline-block;width:22px;height:2px;background:var(--ember)"></span><span class="en">the AI’s call</span><span class="zh">AI 的判断</span></span>
+          <span><span style="display:inline-block;width:22px;height:2px;background:repeating-linear-gradient(90deg,#7a8088 0 5px,transparent 5px 9px)"></span><span class="en">a reply</span><span class="zh">回话</span></span>
+          <span><span style="display:inline-block;width:22px;height:2px;background:var(--green)"></span><span class="en">your answer, appended</span><span class="zh">你的回答，追加</span></span>
+          <span><span class="dot" style="--dc:var(--blue)"></span><span class="en">scoring</span><span class="zh">打分</span></span>
+        </div>
+      </figure>
+      <p class="rv" style="font-size:13.5px;color:var(--dim);max-width:88ch;margin-top:14px"><span class="en">① The call goes on file and ② the id and fingerprint come back. ③ The card cannot exist before that, because it has to carry the fingerprint. ④ Your answer arrives and ⑤ is appended as a separate line. ⑥ If an entry was reported twice in one session, the first call is the one scored.</span><span class="zh">① 判断先写进记录，② 拿回编号和指纹。③ 报告在这之前出不来，因为它必须带着这行指纹。④ 你回答后，⑤ 另起一行追加。⑥ 同一条经验在一次会话里报了两次的，只给第一次的判断打分。</span></p>
+
+      <div class="split" style="margin-top:56px">
+        <div class="rv">
+          <h3 style="font-size:clamp(24px,2.6vw,30px)"><span class="en">Four commands, one file.</span><span class="zh">四个命令，一个文件。</span></h3>
+          <ul class="blist">
+            <li><span class="en"><code>report</code> — the AI’s call, before asking: kind, evidence grade, proposed action, how sure it is, and the model that made it.</span><span class="zh"><code>report</code> —— 问之前的 AI 判断：哪一类、哪档证据、建议怎么办、有几成把握，以及是哪个模型判的。</span></li>
+            <li><span class="en"><code>resolve</code> — your answer to a report already on file. No report, no answer.</span><span class="zh"><code>resolve</code> —— 你对某条已有报告的回答。没有报告，就收不了回答。</span></li>
+            <li><span class="en"><code>miss</code> — a conflict the AI met and never reported, found by you. It carries no AI call, because there was none.</span><span class="zh"><code>miss</code> —— AI 碰到了却没报、被你发现的冲突。它不带 AI 判断，因为 AI 根本没判过。</span></li>
+            <li><span class="en"><code>stats</code> — scores each group and says how it may be asked next time.</span><span class="zh"><code>stats</code> —— 给每一组打分，并说明下次该怎么问。</span></li>
+          </ul>
+          <p style="margin-top:20px;color:var(--muted);font-size:14.5px"><span class="en">Everything lands in <code>journal/review-decisions.jsonl</code>, which is git-ignored and stays on your machine.</span><span class="zh">全部写进 <code>journal/review-decisions.jsonl</code>，它在 gitignore 里，只留在你本机。</span></p>
+        </div>
+        <figure class="rv d2" style="margin:0">
+          <div class="term-out"><div class="bar"><i></i><i></i><i></i></div>
+<pre aria-label="Terminal: whetstone decision report prints an id and fingerprint; whetstone decision stats prints one row per group with its tier" style="white-space:pre;overflow-x:auto"><code><span class="t-dim">$</span> whetstone decision report --entry boot-x/pitfall-7 \
     --ai-type stale --ai-evidence seen --ai-action update \
     --ai-certainty high --model model-a <span class="t-dim">…</span>
 reported C-20260929-01 · fingerprint <span class="t-hi">b19b2a</span>
@@ -627,263 +293,122 @@ use-time conflicts — 25 reported by the AI, 0 missed
   group                    judged  basis  lower-bound  ask as
   code-regress × inferred       1    1/1        0.100  full <span class="t-dim">(nothing seen)</span>
   stale × seen                 22  22/22        0.901  <span class="t-ok">summary</span>
-  wrong × seen                  2    0/2        0.000  full</code></pre>
-        <figcaption><span class="lang-en">Real output from a generic demo log, trimmed for width: two columns and the tail of two lines are cut.</span><span class="lang-zh">用通用演示数据跑出的真实输出，为宽度做了截短：去掉了两列和两行的末尾。</span></figcaption>
+  wrong × seen                  2    0/2        0.000  full</code></pre></div>
+          <figcaption style="margin-top:12px;font-size:13px;color:var(--dim)"><span class="en">Real output from a generic demo log, trimmed for width: two columns and the tail of two lines are cut.</span><span class="zh">用通用演示数据跑出的真实输出，为宽度做了截短：去掉了两列和两行的末尾。</span></figcaption>
+        </figure>
+      </div>
+    </div>
+  </section>
+
+  <!-- tiers -->
+  <section class="sec" id="tiers">
+    <div class="wrap">
+      <div class="sec-head rv">
+        <span class="kicker"><span class="en">The score</span><span class="zh">打分</span></span>
+        <h2><span class="en">A score changes how you are asked. Never whether.</span><span class="zh">分数只改怎么问你，不改问不问。</span></h2>
+        <p class="lede"><span class="en">Agreement is judged by an exact one-sided lower bound (Clopper-Pearson, δ = 0.1), not by the share that happened to agree. Setting thresholds from the sample rate met its target only 47.5% of the time in Trust or Escalate (arXiv 2407.18370).</span><span class="zh">判对率用精确单侧下界（Clopper-Pearson，δ = 0.1），不用碰巧判对的比例。Trust or Escalate（arXiv 2407.18370）里，直接用样本一致率定阈值，只有 47.5% 的时候达到了目标。</span></p>
+      </div>
+      <figure class="fig rv" style="margin:0;max-width:980px" role="img" aria-label="Chart comparing the point estimate with the exact lower bound for four samples: 10 of 10 has a lower bound of 79.4 percent, 18 of 20 has 75.5, 22 of 22 has 90.1, and 45 of 45 has 95.0; only the last two reach the summary and batch thresholds. 四组样本的点估计与精确下界:10/10 下界 79.4%,18/20 为 75.5%,22/22 为 90.1%,45/45 为 95.0%;只有后两组达到摘要和批量两条线。">
+        <div class="legend-row" style="margin-top:0">
+          <span><span class="dot" style="--dc:var(--blue)"></span><span class="en">point estimate</span><span class="zh">点估计</span></span>
+          <span><span class="dot" style="--dc:var(--ember)"></span><span class="en">exact lower bound (decides)</span><span class="zh">精确下界（拿它判）</span></span>
+          <span><span style="display:inline-block;width:22px;border-top:2px dashed var(--gold)"></span><span class="en">summary line · 90%</span><span class="zh">摘要线 · 90%</span></span>
+          <span><span style="display:inline-block;width:22px;border-top:2px dashed var(--green)"></span><span class="en">batch line · 95%</span><span class="zh">批量线 · 95%</span></span>
+        </div>
+        <div class="db">
+          <span class="grid" style="top:0"><i>100%</i></span><span class="grid" style="top:33.33%"><i>90%</i></span><span class="grid" style="top:66.66%"><i>80%</i></span><span class="grid" style="top:100%"><i>70%</i></span>
+          <span class="th" style="--tc:var(--green);top:16.66%"></span>
+          <span class="th" style="--tc:var(--gold);top:33.33%"></span>
+          <div class="dbc" style="--p:100;--lb:79.4"><span class="stem"></span><span class="pt"></span><span class="lb"></span><span class="pv">100%</span><span class="lv">79.4%</span></div>
+          <div class="dbc" style="--p:90;--lb:75.5"><span class="stem"></span><span class="pt"></span><span class="lb"></span><span class="pv">90%</span><span class="lv">75.5%</span></div>
+          <div class="dbc" style="--p:100;--lb:90.1"><span class="stem"></span><span class="pt"></span><span class="lb"></span><span class="pv">100%</span><span class="lv">90.1%</span></div>
+          <div class="dbc" style="--p:100;--lb:95.0"><span class="stem"></span><span class="pt"></span><span class="lb"></span><span class="pv">100%</span><span class="lv">95.0%</span></div>
+        </div>
+        <div class="dbx">
+          <div><b>10 / 10</b><span><span class="en">asked in full</span><span class="zh">完整确认</span></span></div>
+          <div><b>18 / 20</b><span><span class="en">asked in full</span><span class="zh">完整确认</span></span></div>
+          <div style="--tc:var(--gold)"><b>22 / 22</b><span><span class="en">one-line summary</span><span class="zh">一行摘要确认</span></span></div>
+          <div style="--tc:var(--green)"><b>45 / 45</b><span><span class="en">batch at the end</span><span class="zh">任务结束批量确认</span></span></div>
+        </div>
       </figure>
+      <p class="rv" style="font-size:13.5px;color:var(--dim);max-width:88ch;margin-top:14px"><span class="en">Eighteen right out of twenty reads as 90%, but it only proves 75.5%. The least that proves 90% is twenty-two out of twenty-two.</span><span class="zh">20 条对 18 条，看上去是 90%，能证明的只有 75.5%。要证明 90%，最少也要 22 条全对。</span></p>
+      <ul class="blist rv" style="max-width:860px;margin-top:28px">
+        <li><span class="en">A missed conflict sends its whole kind back to full confirmation; the count starts again after the miss.</span><span class="zh">出现一次漏报，这一类立刻退回完整确认，之后只算漏报之后的记录。</span></li>
+        <li><span class="en">A new model starts every group from zero. Agreement one model earned says nothing about the next.</span><span class="zh">换了模型，每一组都从 0 开始。一个模型攒下的判对记录，说明不了下一个。</span></li>
+        <li><span class="en">If more than 30% of the calls rest on inference or on nothing seen, no group is relaxed at all.</span><span class="zh">推断和看不到的判断超过三成，任何一组都不放宽。</span></li>
+        <li><span class="en">Safety-relevant notes are always asked in full and re-measured before any change.</span><span class="zh">安全相关的经验永远完整确认，改之前先重测一次。</span></li>
+      </ul>
     </div>
-  </div>
-</section>
+  </section>
 
-<!-- Tiers -->
-<section class="anth-section" id="tiers">
-  <div class="anth-container">
-    <div style="max-width:760px; margin:0 auto var(--space-6); text-align:center;">
-      <span class="anth-badge"><span class="lang-en">The score</span><span class="lang-zh">打分</span></span>
-      <h2 style="margin-top:var(--space-3);">
-        <span class="lang-en">A score changes how you are asked. Never whether.</span>
-        <span class="lang-zh">分数只改怎么问你，不改问不问。</span>
-      </h2>
-      <p style="font-family:var(--font-body); font-size:17px; line-height:1.7; color:var(--anth-text-secondary); margin:var(--space-4) 0 0;">
-        <span class="lang-en">Agreement is judged by an exact one-sided lower bound (Clopper-Pearson, δ = 0.1), not by the share that happened to agree. Setting thresholds from the sample rate met its target only 47.5% of the time in Trust or Escalate (arXiv 2407.18370).</span>
-        <span class="lang-zh">判对率用精确单侧下界（Clopper-Pearson，δ = 0.1），不用碰巧判对的比例。Trust or Escalate（arXiv 2407.18370）里，直接用样本一致率定阈值，只有 47.5% 的时候达到了目标。</span>
-      </p>
-    </div>
-    <figure>
-      <div class="anth-scroll" style="--pan-w:730px"><svg role="img" aria-label="Chart comparing the point estimate with the exact lower bound for four samples: 10 of 10 has a lower bound of 79.4 percent, 18 of 20 has 75.5, 22 of 22 has 90.1, and 45 of 45 has 95.0; only the last two reach the summary and batch thresholds. 四组样本的点估计与精确下界:10/10 下界 79.4%,18/20 为 75.5%,22/22 为 90.1%,45/45 为 95.0%;只有后两组达到摘要和批量两条线。" viewBox="0 0 880 300" style="display:block; width:100%; max-width:880px; height:auto; margin:0 auto;" font-family="Poppins, 'Noto Sans SC', 'Helvetica Neue', Arial, sans-serif">
-        <rect width="880" height="300" rx="16" fill="#faf9f5" stroke="#eceadf"/>
-        <!-- grid -->
-        <g stroke="#eceadf" stroke-width="1">
-          <line x1="96" y1="60" x2="840" y2="60"/>
-          <line x1="96" y1="180" x2="840" y2="180"/>
-          <line x1="96" y1="240" x2="840" y2="240"/>
-        </g>
-        <g font-size="11" fill="#8c8a7d" text-anchor="end">
-          <text x="84" y="64">100%</text>
-          <text x="84" y="124">90%</text>
-          <text x="84" y="184">80%</text>
-          <text x="84" y="244">70%</text>
-        </g>
-        <!-- thresholds -->
-        <line x1="96" y1="120" x2="840" y2="120" stroke="#c9913f" stroke-width="1.4" stroke-dasharray="5 4"/>
-        <line x1="96" y1="90" x2="840" y2="90" stroke="#788c5d" stroke-width="1.4" stroke-dasharray="5 4"/>
-        <!-- dumbbells -->
-        <g stroke="#cfccc0" stroke-width="2">
-          <line x1="250" y1="60" x2="250" y2="184"/>
-          <line x1="420" y1="120" x2="420" y2="207"/>
-          <line x1="590" y1="60" x2="590" y2="119"/>
-          <line x1="760" y1="60" x2="760" y2="90"/>
-        </g>
-        <g fill="#6a9bcc">
-          <circle cx="250" cy="60" r="6"/><circle cx="420" cy="120" r="6"/><circle cx="590" cy="60" r="6"/><circle cx="760" cy="60" r="6"/>
-        </g>
-        <g fill="#d97757">
-          <circle cx="250" cy="184" r="6"/><circle cx="420" cy="207" r="6"/><circle cx="590" cy="119" r="6"/><circle cx="760" cy="90" r="6"/>
-        </g>
-        <g font-size="11.5" font-weight="600">
-          <text x="238" y="64" fill="#4a7bab" text-anchor="end">100%</text>
-          <text x="262" y="188" fill="#c2613f">79.4%</text>
-          <text x="408" y="116" fill="#4a7bab" text-anchor="end">90%</text>
-          <text x="432" y="211" fill="#c2613f">75.5%</text>
-          <text x="578" y="64" fill="#4a7bab" text-anchor="end">100%</text>
-          <text x="602" y="137" fill="#c2613f">90.1%</text>
-          <text x="748" y="64" fill="#4a7bab" text-anchor="end">100%</text>
-          <text x="772" y="108" fill="#c2613f">95.0%</text>
-        </g>
-        <g font-size="12" font-weight="600" fill="#141413" text-anchor="middle">
-          <text x="250" y="264">10 / 10</text>
-          <text x="420" y="264">18 / 20</text>
-          <text x="590" y="264">22 / 22</text>
-          <text x="760" y="264">45 / 45</text>
-        </g>
-        <g class="lang-en" font-size="11" text-anchor="middle">
-          <text x="250" y="284" fill="#6b6a5f">asked in full</text>
-          <text x="420" y="284" fill="#6b6a5f">asked in full</text>
-          <text x="590" y="284" fill="#8a5a2a">one-line summary</text>
-          <text x="760" y="284" fill="#5d7045">batch at the end</text>
-          <text x="104" y="114" fill="#8a5a2a" text-anchor="start">summary line · 90%</text>
-          <text x="104" y="84" fill="#5d7045" text-anchor="start">batch line · 95%</text>
-          <text x="636" y="32" fill="#6b6a5f" text-anchor="start">exact lower bound (decides)</text>
-          <text x="476" y="32" fill="#6b6a5f" text-anchor="start">point estimate</text>
-        </g>
-        <g class="lang-zh" font-size="11" text-anchor="middle">
-          <text x="250" y="284" fill="#6b6a5f">完整确认</text>
-          <text x="420" y="284" fill="#6b6a5f">完整确认</text>
-          <text x="590" y="284" fill="#8a5a2a">一行摘要确认</text>
-          <text x="760" y="284" fill="#5d7045">任务结束批量确认</text>
-          <text x="104" y="114" fill="#8a5a2a" text-anchor="start">摘要线 · 90%</text>
-          <text x="104" y="84" fill="#5d7045" text-anchor="start">批量线 · 95%</text>
-          <text x="636" y="32" fill="#6b6a5f" text-anchor="start">精确下界（拿它判）</text>
-          <text x="476" y="32" fill="#6b6a5f" text-anchor="start">点估计</text>
-        </g>
-        <circle cx="624" cy="28" r="5" fill="#d97757"/>
-        <circle cx="464" cy="28" r="5" fill="#6a9bcc"/>
-      </svg></div>
-      <figcaption><span class="lang-en">Eighteen right out of twenty reads as 90%, but it only proves 75.5%. The least that proves 90% is twenty-two out of twenty-two.</span><span class="lang-zh">20 条对 18 条，看上去是 90%，能证明的只有 75.5%。要证明 90%，最少也要 22 条全对。</span></figcaption>
-    </figure>
-
-    <ul class="rule-list">
-      <li><span class="lang-en">A missed conflict sends its whole kind back to full confirmation; the count starts again after the miss.</span><span class="lang-zh">出现一次漏报，这一类立刻退回完整确认，之后只算漏报之后的记录。</span></li>
-      <li><span class="lang-en">A new model starts every group from zero. Agreement one model earned says nothing about the next.</span><span class="lang-zh">换了模型，每一组都从 0 开始。一个模型攒下的判对记录，说明不了下一个。</span></li>
-      <li><span class="lang-en">If more than 30% of the calls rest on inference or on nothing seen, no group is relaxed at all.</span><span class="lang-zh">推断和看不到的判断超过三成，任何一组都不放宽。</span></li>
-      <li><span class="lang-en">Safety-relevant notes are always asked in full and re-measured before any change.</span><span class="lang-zh">安全相关的经验永远完整确认，改之前先重测一次。</span></li>
-    </ul>
-  </div>
-</section>
-
-<!-- Sources -->
-<section class="anth-section anth-section--subtle" id="sources">
-  <div class="anth-container anth-container--wide">
-    <div style="max-width:760px; margin:0 auto var(--space-7); text-align:center;">
-      <span class="anth-badge"><span class="lang-en">Where the ideas came from</span><span class="lang-zh">思路从哪来</span></span>
-      <h2 style="margin-top:var(--space-3);">
-        <span class="lang-en">Borrowed where it held up, left behind where it did not.</span>
-        <span class="lang-zh">能用的借过来，用不上的不借。</span>
-      </h2>
-      <p style="font-family:var(--font-body); font-size:17px; line-height:1.7; color:var(--anth-text-secondary); margin:var(--space-4) 0 0;">
-        <span class="lang-en">The design came out of reading twelve open-source memory systems at the code level, a few dozen papers, and three self-improvement projects. None of them lets a model decide alone whether an old note should change. The ones that work share one shape: mechanical checks underneath, the model only classifying, a person when it is unsure.</span>
-        <span class="lang-zh">这套设计来自一次调研：读了十二个开源记忆系统的代码、几十篇论文、三个自我进化项目。没有一个能让模型单独决定旧经验该不该改。做得好的都是同一个结构：机械检查打底，模型只做分类，没把握就交给人。</span>
-      </p>
-    </div>
-    <div class="ref-grid">
-      <div class="ref-card">
-        <span class="no"><span class="lang-en">Took</span><span class="lang-zh">借了</span></span>
-        <h3><a href="https://github.com/karpathy/autoresearch">karpathy/autoresearch</a></h3>
-        <p><span class="lang-en">Its loop can run overnight because the agent cannot edit the evaluation. Here the AI may not touch the decision table, the scoring or the statistics code, and a check it writes must fail on the old value before it counts.</span><span class="lang-zh">它能无人值守跑一夜，前提是 agent 改不了评测。这里 AI 不许改判定表、打分算法和统计代码；它新写的检查，拿旧值跑必须失败才算数。</span></p>
+  <!-- sources -->
+  <section class="sec alt" id="sources">
+    <div class="wrap">
+      <div class="sec-head rv">
+        <span class="kicker"><span class="en">Where the ideas came from</span><span class="zh">思路从哪来</span></span>
+        <h2><span class="en">Borrowed where it held up, left behind where it did not.</span><span class="zh">能用的借过来，用不上的不借。</span></h2>
+        <p class="lede"><span class="en">The design came out of reading twelve open-source memory systems at the code level, a few dozen papers, and three self-improvement projects. None of them lets a model decide alone whether an old note should change. The ones that work share one shape: mechanical checks underneath, the model only classifying, a person when it is unsure.</span><span class="zh">这套设计来自一次调研：读了十二个开源记忆系统的代码、几十篇论文、三个自我进化项目。没有一个能让模型单独决定旧经验该不该改。做得好的都是同一个结构：机械检查打底，模型只做分类，没把握就交给人。</span></p>
       </div>
-      <div class="ref-card">
-        <span class="no"><span class="lang-en">Took</span><span class="lang-zh">借了</span></span>
-        <h3><a href="https://github.com/alchaincyf/darwin-skill">alchaincyf/darwin-skill</a></h3>
-        <p><span class="lang-en">Its warning when more than 30% of runs are dry runs became the rule here that nothing is relaxed once guesses pass 30%. Its deliberately degraded versions, which every blind judge had to catch, are the same idea as this repo’s mutation tests. Its weighted score deciding what to keep was left behind.</span><span class="lang-zh">它「空跑超过三成就警告」变成了这里的「推断占比超过三成就不放宽」；它故意造劣化版本、要求盲评裁判全部识别，和本仓的故意改坏测试是同一个思路。用加权总分决定留不留，没借。</span></p>
-      </div>
-      <div class="ref-card">
-        <span class="no"><span class="lang-en">Took</span><span class="lang-zh">借了</span></span>
-        <h3><a href="https://github.com/alchaincyf/nuwa-skill">alchaincyf/nuwa-skill</a></h3>
-        <p><span class="lang-en">Its edge test expects “probably, but not certain” rather than a confident answer. That is the <code>unseen</code> grade: no evidence, no verdict. Its keyword-count quality check is on the list of things not to do.</span><span class="lang-zh">它的边缘测试要的是「可能……但不确定」，不是斩钉截铁。这就是 <code>unseen</code> 那一档：没证据就不下结论。它数关键词的质量检查，进了禁止清单。</span></p>
-      </div>
-      <div class="ref-card">
-        <span class="no"><span class="lang-en">Read</span><span class="lang-zh">读了</span></span>
-        <h3><a href="https://github.com/TbusOS/ai-doc">TbusOS/ai-doc</a></h3>
-        <p><span class="lang-en">The paper notes behind the whole framework: memory systems and self-improving agents. The repeated lesson was that self-correction without a reliable signal tends to fail, which is why the signal here comes from the code in front of the agent.</span><span class="lang-zh">整个框架背后的论文笔记：记忆系统、自我改进的 agent。反复出现的教训是：没有可靠信号的自我纠错往往失败 —— 所以这里的信号，取自 agent 眼前的代码。</span></p>
-      </div>
-      <div class="ref-card">
-        <span class="no"><span class="lang-en">Measured</span><span class="lang-zh">实测依据</span></span>
-        <h3><span class="lang-en">Scoring an AI judge against people</span><span class="lang-zh">拿人校准 AI 裁判</span></h3>
-        <p><span class="lang-en">Trust or Escalate (arXiv 2407.18370) for the exact lower bound and for escalating when unsure. SkillLens (arXiv 2605.23899) for the 46.4% coin toss. On anchoring: experts shown an AI suggestion abandoned a correct call 7% of the time (arXiv 2603.11821).</span><span class="lang-zh">Trust or Escalate（arXiv 2407.18370）：精确下界，以及没把握就上交给人。SkillLens（arXiv 2605.23899）：46.4% 的抛硬币。关于被带偏：专家看到 AI 建议后，7% 放弃了原本正确的判断（arXiv 2603.11821）。</span></p>
-      </div>
-      <div class="ref-card">
-        <span class="no"><span class="lang-en">Measured</span><span class="lang-zh">实测依据</span></span>
-        <h3><span class="lang-en">Updating old memory without breaking it</span><span class="lang-zh">改旧记忆而不改坏</span></h3>
-        <p><span class="lang-en">SEMV (arXiv 2609.27175) stores a verified contradiction as counter-evidence; negative transfer fell from 5.7% to 0.2%. GLOVE (arXiv 2601.19249) re-runs before rewriting. StateAuditor (arXiv 2608.01619) verifies provenance and order, not meaning. misevolution (arXiv 2509.26354) shows safety constraints being selected away.</span><span class="lang-zh">SEMV（arXiv 2609.27175）：核实过的矛盾存为反证，负迁移从 5.7% 降到 0.2%。GLOVE（arXiv 2601.19249）：改记忆前先重跑。StateAuditor（arXiv 2608.01619）：只验出处和先后，不验语义。misevolution（arXiv 2509.26354）：按表现筛选时，安全约束会被一条条淘汰。</span></p>
+      <div class="refs">
+        <div class="ref rv"><span class="no"><span class="en">Took</span><span class="zh">借了</span></span><h3><a href="https://github.com/karpathy/autoresearch">karpathy/autoresearch</a></h3><p><span class="en">Its loop can run overnight because the agent cannot edit the evaluation. Here the AI may not touch the decision table, the scoring or the statistics code, and a check it writes must fail on the old value before it counts.</span><span class="zh">它能无人值守跑一夜，前提是 agent 改不了评测。这里 AI 不许改判定表、打分算法和统计代码；它新写的检查，拿旧值跑必须失败才算数。</span></p></div>
+        <div class="ref rv d1"><span class="no"><span class="en">Took</span><span class="zh">借了</span></span><h3><a href="https://github.com/alchaincyf/darwin-skill">alchaincyf/darwin-skill</a></h3><p><span class="en">Its warning when more than 30% of runs are dry runs became the rule here that nothing is relaxed once guesses pass 30%. Its deliberately degraded versions, which every blind judge had to catch, are the same idea as this repo’s mutation tests. Its weighted score deciding what to keep was left behind.</span><span class="zh">它「空跑超过三成就警告」变成了这里的「推断占比超过三成就不放宽」；它故意造劣化版本、要求盲评裁判全部识别，和本仓的故意改坏测试是同一个思路。用加权总分决定留不留，没借。</span></p></div>
+        <div class="ref rv"><span class="no"><span class="en">Took</span><span class="zh">借了</span></span><h3><a href="https://github.com/alchaincyf/nuwa-skill">alchaincyf/nuwa-skill</a></h3><p><span class="en">Its edge test expects “probably, but not certain” rather than a confident answer. That is the <code>unseen</code> grade: no evidence, no verdict. Its keyword-count quality check is on the list of things not to do.</span><span class="zh">它的边缘测试要的是「可能……但不确定」，不是斩钉截铁。这就是 <code>unseen</code> 那一档：没证据就不下结论。它数关键词的质量检查，进了禁止清单。</span></p></div>
+        <div class="ref rv d1" style="--rc:var(--blue)"><span class="no"><span class="en">Read</span><span class="zh">读了</span></span><h3><a href="https://github.com/TbusOS/ai-doc">TbusOS/ai-doc</a></h3><p><span class="en">The paper notes behind the whole framework: memory systems and self-improving agents. The repeated lesson was that self-correction without a reliable signal tends to fail, which is why the signal here comes from the code in front of the agent.</span><span class="zh">整个框架背后的论文笔记：记忆系统、自我改进的 agent。反复出现的教训是：没有可靠信号的自我纠错往往失败 —— 所以这里的信号，取自 agent 眼前的代码。</span></p></div>
+        <div class="ref rv" style="--rc:var(--green)"><span class="no"><span class="en">Measured</span><span class="zh">实测依据</span></span><h3><span class="en">Scoring an AI judge against people</span><span class="zh">拿人校准 AI 裁判</span></h3><p><span class="en">Trust or Escalate (arXiv 2407.18370) for the exact lower bound and for escalating when unsure. SkillLens (arXiv 2605.23899) for the 46.4% coin toss. On anchoring: experts shown an AI suggestion abandoned a correct call 7% of the time (arXiv 2603.11821).</span><span class="zh">Trust or Escalate（arXiv 2407.18370）：精确下界，以及没把握就上交给人。SkillLens（arXiv 2605.23899）：46.4% 的抛硬币。关于被带偏：专家看到 AI 建议后，7% 放弃了原本正确的判断（arXiv 2603.11821）。</span></p></div>
+        <div class="ref rv d1" style="--rc:var(--green)"><span class="no"><span class="en">Measured</span><span class="zh">实测依据</span></span><h3><span class="en">Updating old memory without breaking it</span><span class="zh">改旧记忆而不改坏</span></h3><p><span class="en">SEMV (arXiv 2609.27175) stores a verified contradiction as counter-evidence; negative transfer fell from 5.7% to 0.2%. GLOVE (arXiv 2601.19249) re-runs before rewriting. StateAuditor (arXiv 2608.01619) verifies provenance and order, not meaning. misevolution (arXiv 2509.26354) shows safety constraints being selected away.</span><span class="zh">SEMV（arXiv 2609.27175）：核实过的矛盾存为反证，负迁移从 5.7% 降到 0.2%。GLOVE（arXiv 2601.19249）：改记忆前先重跑。StateAuditor（arXiv 2608.01619）：只验出处和先后，不验语义。misevolution（arXiv 2509.26354）：按表现筛选时，安全约束会被一条条淘汰。</span></p></div>
       </div>
     </div>
-  </div>
-</section>
+  </section>
 
-<!-- Honest caveat -->
-<section class="anth-section">
-  <div class="anth-container anth-container--narrow">
-    <div class="callout">
-      <p class="callout__kicker"><span class="lang-en">Honest caveat</span><span class="lang-zh">坦诚的边界</span></p>
-      <h3 class="callout__title"><span class="lang-en">Four things the record cannot do for you.</span><span class="lang-zh">记录替你做不了的四件事。</span></h3>
-      <p class="callout__body"><span class="lang-en">It cannot make the AI report. A rule can only ask; a miss is known only when you notice it and say so, so the true number of misses is always at least what the log shows.</span><span class="lang-zh">它没法强制 AI 上报。规则只能要求；漏报只有你发现并说一声才会被记下，所以真实的漏报数只会比记录里多。</span></p>
-      <p class="callout__body"><span class="lang-en">It cannot see a report written after your answer. The file would still show the report first. The one tell is the fingerprint line on the card: a card without it counts as not reported, and that check is <em>yours</em>.</span><span class="lang-zh">它看不出「等你回答完才写报告」。文件里照样是报告在前。能看出来的只有报告上那行指纹：没有这一行的报告当作没报，这一关<em>靠你</em>看一眼。</span></p>
-      <p class="callout__body"><span class="lang-en">With a single reviewer, agreeing with you is not the same as being right; there is no second person to measure against. And only notes that get used get checked. A note nobody opens stays exactly as confident as the day it was filed.</span><span class="lang-zh">只有一个审核人时，和你判得一样不等于判对了，没有第二个人可以比。另外，只有被用到的经验才会被核；没人打开的那条，永远和入库那天一样自信。</span></p>
-    </div>
-  </div>
-</section>
+  <!-- caveat + details -->
+  <section class="sec">
+    <div class="wrap">
+      <div class="caveat rv">
+        <span class="kicker"><span class="en">Honest caveat</span><span class="zh">坦诚的边界</span></span>
+        <h3><span class="en">Four things the record cannot do for you.</span><span class="zh">记录替你做不了的四件事。</span></h3>
+        <p><span class="en">It cannot make the AI report. A rule can only ask; a miss is known only when you notice it and say so, so the true number of misses is always at least what the log shows.</span><span class="zh">它没法强制 AI 上报。规则只能要求；漏报只有你发现并说一声才会被记下，所以真实的漏报数只会比记录里多。</span></p>
+        <p><span class="en">It cannot see a report written after your answer. The file would still show the report first. The one tell is the fingerprint line on the card: a card without it counts as not reported, and that check is <em class="hl">yours</em>.</span><span class="zh">它看不出「等你回答完才写报告」。文件里照样是报告在前。能看出来的只有报告上那行指纹：没有这一行的报告当作没报，这一关<em class="hl">靠你</em>看一眼。</span></p>
+        <p><span class="en">With a single reviewer, agreeing with you is not the same as being right; there is no second person to measure against. And only notes that get used get checked. A note nobody opens stays exactly as confident as the day it was filed.</span><span class="zh">只有一个审核人时，和你判得一样不等于判对了，没有第二个人可以比。另外，只有被用到的经验才会被核；没人打开的那条，永远和入库那天一样自信。</span></p>
+      </div>
 
-<!-- Technical details -->
-<section class="anth-section anth-section--subtle">
-  <div class="anth-container anth-container--narrow">
-    <span class="anth-badge"><span class="lang-en">Technical details</span><span class="lang-zh">技术细节</span></span>
-    <h2 style="margin-top:var(--space-3); margin-bottom:var(--space-5);"><span class="lang-en">The parts you can check.</span><span class="lang-zh">能核对的那些部分。</span></h2>
-    <div class="detail-row">
-      <span class="detail-row__label"><span class="lang-en">Commands</span><span class="lang-zh">命令</span></span>
-      <p class="detail-row__body"><code>whetstone decision report</code> · <code>resolve</code> · <code>miss</code> · <code style="white-space:nowrap;">stats [--model X]</code></p>
-    </div>
-    <div class="detail-row">
-      <span class="detail-row__label"><span class="lang-en">Fingerprint</span><span class="lang-zh">指纹</span></span>
-      <p class="detail-row__body"><span class="lang-en">The first six hex digits of SHA-256 over the id, entry, kind, evidence, action, certainty, time and model. Recomputed on every read; a line that no longer matches is not scored.</span><span class="lang-zh">对编号、条目、类型、证据档、建议、把握、时间和模型取 SHA-256 的前 6 位。每次读取都重算，对不上的那行不计分。</span></p>
-    </div>
-    <div class="detail-row">
-      <span class="detail-row__label"><span class="lang-en">Thresholds</span><span class="lang-zh">门槛</span></span>
-      <p class="detail-row__body"><span class="lang-en">Summary at a lower bound of 0.90, batch at 0.95, no relaxing above a 30% guess share. Every one of these numbers is a guess meant to be recalibrated from the log itself.</span><span class="lang-zh">摘要确认要下界 ≥ 0.90，批量确认要 ≥ 0.95，推断占比超过三成就不放宽。这几个数都是拍的，留着让记录本身来校准。</span></p>
-    </div>
-    <div class="detail-row">
-      <span class="detail-row__label"><span class="lang-en">Tests</span><span class="lang-zh">测试</span></span>
-      <p class="detail-row__body"><span class="lang-en">119 selftest checks and 31 mutations. Each mutation removes one guard, such as the model filter, the fingerprint or the lower bound, and the suite must go red.</span><span class="lang-zh">119 项自检、31 条故意改坏。每一条拿掉一道保护（按模型过滤、指纹、精确下界……），整套测试必须报红。</span></p>
-    </div>
-    <div class="detail-row">
-      <span class="detail-row__label"><span class="lang-en">Spec</span><span class="lang-zh">规范</span></span>
-      <p class="detail-row__body"><a class="anth-link" href="https://github.com/TbusOS/whetstone/blob/main/spec/use-time-conflicts.md"><code>spec/use-time-conflicts.md</code></a> <span class="lang-en">— decision table, report format, scoring, and the list of things never to do.</span><span class="lang-zh">—— 判定表、报告格式、打分规则和禁止清单。</span></p>
-    </div>
+      <div class="details" style="margin-top:56px">
+        <div class="sec-head rv" style="margin-bottom:20px">
+          <span class="kicker"><span class="en">Technical details</span><span class="zh">技术细节</span></span>
+          <h2 style="font-size:clamp(28px,3.2vw,40px)"><span class="en">The parts you can check.</span><span class="zh">能核对的那些部分。</span></h2>
+        </div>
+        <div class="drow rv"><span><span class="en">Commands</span><span class="zh">命令</span></span><p><code>whetstone decision report</code> · <code>resolve</code> · <code>miss</code> · <code>stats [--model X]</code></p></div>
+        <div class="drow rv"><span><span class="en">Fingerprint</span><span class="zh">指纹</span></span><p><span class="en">The first six hex digits of SHA-256 over the id, entry, kind, evidence, action, certainty, time and model. Recomputed on every read; a line that no longer matches is not scored.</span><span class="zh">对编号、条目、类型、证据档、建议、把握、时间和模型取 SHA-256 的前 6 位。每次读取都重算，对不上的那行不计分。</span></p></div>
+        <div class="drow rv"><span><span class="en">Thresholds</span><span class="zh">门槛</span></span><p><span class="en">Summary at a lower bound of 0.90, batch at 0.95, no relaxing above a 30% guess share. Every one of these numbers is a guess meant to be recalibrated from the log itself.</span><span class="zh">摘要确认要下界 ≥ 0.90，批量确认要 ≥ 0.95，推断占比超过三成就不放宽。这几个数都是拍的，留着让记录本身来校准。</span></p></div>
+        <div class="drow rv"><span><span class="en">Tests</span><span class="zh">测试</span></span><p><span class="en">119 selftest checks and 31 mutations. Each mutation removes one guard, such as the model filter, the fingerprint or the lower bound, and the suite must go red.</span><span class="zh">119 项自检、31 条故意改坏。每一条拿掉一道保护（按模型过滤、指纹、精确下界……），整套测试必须报红。</span></p></div>
+        <div class="drow rv"><span><span class="en">Spec</span><span class="zh">规范</span></span><p><a href="https://github.com/TbusOS/whetstone/blob/main/spec/use-time-conflicts.md" style="color:var(--ember-2)"><code>spec/use-time-conflicts.md</code></a> <span class="en">— decision table, report format, scoring, and the list of things never to do.</span><span class="zh">—— 判定表、报告格式、打分规则和禁止清单。</span></p></div>
+      </div>
 
-    <div class="art-cta" style="margin-top:var(--space-7);">
-      <p><span class="lang-en">whetstone is MIT, standard library only, and works with any runtime that reads the Agent Skills layout. The use-time check ships in the same command line as the rest.</span><span class="lang-zh">whetstone 是 MIT 协议，只用标准库，任何读 Agent Skills 布局的 runtime 都能用。用时纠错和其他功能在同一个命令行里。</span></p>
-      <a class="anth-button" href="https://github.com/TbusOS/whetstone"><span class="lang-en">whetstone on GitHub</span><span class="lang-zh">在 GitHub 上看 whetstone</span></a>
-      <a class="anth-button anth-button--ghost" href="why-verify.html"><span class="lang-en">Why the checks are executable</span><span class="lang-zh">为什么检查要做成能跑的</span></a>
-      <a class="anth-button anth-button--ghost" href="routing.html"><span class="lang-en">How the right note gets found</span><span class="lang-zh">经验怎么被找到</span></a>
+      <div class="endcard rv">
+        <p><span class="en">whetstone is MIT, standard library only, and works with any runtime that reads the Agent Skills layout. The use-time check ships in the same command line as the rest.</span><span class="zh">whetstone 是 MIT 协议，只用标准库，任何读 Agent Skills 布局的 runtime 都能用。用时纠错和其他功能在同一个命令行里。</span></p>
+        <div class="cta">
+          <a class="btn btn--hot" href="https://github.com/TbusOS/whetstone"><span class="en">whetstone on GitHub</span><span class="zh">在 GitHub 上看 whetstone</span></a>
+          <a class="btn btn--ghost" href="why-verify.html"><span class="en">Why the checks are executable</span><span class="zh">为什么检查要做成能跑的</span></a>
+          <a class="btn btn--ghost" href="routing.html"><span class="en">How the right note gets found</span><span class="zh">经验怎么被找到</span></a>
+        </div>
+      </div>
     </div>
-  </div>
-</section>
+  </section>
+</main>
 
-<footer class="anth-footer">
-  <div class="anth-footer-grid">
-    <div class="anth-footer-group"><h5>Whetstone</h5><a href="index.html#why"><span class="lang-en">Why</span><span class="lang-zh">为什么</span></a><a href="use-time-conflicts.html"><span class="lang-en">Use-time check</span><span class="lang-zh">用时纠错</span></a><a href="routing.html"><span class="lang-en">Routing</span><span class="lang-zh">经验路由</span></a><a href="index.html#flow"><span class="lang-en">How it works</span><span class="lang-zh">流程</span></a><a href="index.html#install"><span class="lang-en">Install</span><span class="lang-zh">安装</span></a></div>
-    <div class="anth-footer-group"><h5><span class="lang-en">Output</span><span class="lang-zh">产物</span></h5><a href="index.html#architecture"><span class="lang-en">Skill package</span><span class="lang-zh">Skill 包</span></a><a href="index.html#flow">L1–L4</a><a href="why-verify.html"><span class="lang-en">Evidence</span><span class="lang-zh">证据纪律</span></a></div>
-    <div class="anth-footer-group"><h5><span class="lang-en">Ideas from</span><span class="lang-zh">思路来源</span></h5><a href="https://github.com/karpathy/autoresearch">autoresearch</a><a href="https://github.com/alchaincyf/darwin-skill">darwin-skill</a><a href="https://github.com/alchaincyf/nuwa-skill">nuwa-skill</a><a href="https://github.com/TbusOS/ai-doc">ai-doc</a></div>
-    <div class="anth-footer-group"><h5><span class="lang-en">Credits</span><span class="lang-zh">致谢</span></h5><a href="https://github.com/alchaincyf/nuwa-skill">nuwa-skill</a><a href="https://github.com/alchaincyf/darwin-skill">darwin-skill</a><a href="https://github.com/TbusOS">TbusOS</a></div>
-  </div>
-  <div class="anth-footer-legal">
-    <span>© 2026 Whetstone · <span lang="zh-CN">磨刀石</span> · MIT</span>
-    <span><span class="lang-en">Distillation architecture inspired by nuwa-skill · ratchet discipline by darwin-skill (3rd-party). Theory: EvolveR · AgentFactory · MemoryBank · SkillLens.</span><span class="lang-zh">蒸馏架构借鉴 nuwa-skill · 棘轮纪律借鉴 darwin-skill（第三方）。理论：EvolveR · AgentFactory · MemoryBank · SkillLens。</span></span>
+<footer>
+  <div class="wrap">
+    <div class="foot">
+      <div>
+        <a class="brand" href="index.html" style="padding:0">whetstone <small lang="zh-CN">· 磨刀石</small></a>
+        <p><span class="en">MIT · © 2026. Distillation structure inspired by nuwa-skill; ratchet discipline by darwin-skill (3rd-party). Theory: EvolveR · AgentFactory · MemoryBank · SkillLens.</span><span class="zh">MIT · © 2026。蒸馏结构借鉴 nuwa-skill；棘轮纪律借鉴 darwin-skill（第三方）。理论：EvolveR · AgentFactory · MemoryBank · SkillLens。</span></p>
+      </div>
+      <div><h5><span class="en">Home</span><span class="zh">首页</span></h5><a href="index.html#why"><span class="en">Why</span><span class="zh">为什么</span></a><a href="index.html#evidence"><span class="en">Evidence</span><span class="zh">证据纪律</span></a><a href="index.html#flow"><span class="en">How it works</span><span class="zh">流程</span></a><a href="index.html#install"><span class="en">Install</span><span class="zh">安装</span></a></div>
+      <div><h5><span class="en">Read</span><span class="zh">延伸阅读</span></h5><a href="skills.html"><span class="en">Skills</span><span class="zh">技能</span></a><a href="use-time-conflicts.html"><span class="en">Use-time check</span><span class="zh">用时纠错</span></a><a href="routing.html"><span class="en">Routing</span><span class="zh">经验路由</span></a><a href="why-verify.html"><span class="en">Why verify</span><span class="zh">为什么要 verify</span></a></div>
+      <div><h5><span class="en">Ideas from</span><span class="zh">思路来源</span></h5><a href="https://github.com/karpathy/autoresearch">autoresearch</a><a href="https://github.com/alchaincyf/darwin-skill">darwin-skill</a><a href="https://github.com/alchaincyf/nuwa-skill">nuwa-skill</a><a href="https://github.com/TbusOS/ai-doc">ai-doc</a></div>
+    </div>
   </div>
 </footer>
 
-<script>
-(function () {
-  var html = document.documentElement;
-  var queryLang = new URLSearchParams(location.search).get('lang');
-  var saved;
-  if (queryLang === 'zh' || queryLang === 'en') { saved = queryLang; }
-  else {
-    try { saved = localStorage.getItem('whetstone-lang'); } catch (e) {}
-    if (!saved) { saved = (navigator.language || 'en').toLowerCase().indexOf('zh') === 0 ? 'zh' : 'en'; }
-  }
-  function apply(lang) {
-    html.setAttribute('data-lang', lang);
-    html.setAttribute('lang', lang === 'zh' ? 'zh-CN' : 'en');
-    try { localStorage.setItem('whetstone-lang', lang); } catch (e) {}
-    document.querySelectorAll('.lang-toggle').forEach(function (btn) { btn.textContent = lang === 'zh' ? 'EN / 中' : '中 / EN'; });
-  }
-  apply(saved);
-  document.addEventListener('DOMContentLoaded', function () {
-    document.querySelectorAll('.lang-toggle').forEach(function (btn) {
-      btn.addEventListener('click', function () { apply(html.getAttribute('data-lang') === 'zh' ? 'en' : 'zh'); });
-    });
-  });
-})();
-</script>
-
-<!-- design-review:self-diff v1
-Skill: anthropic
-Page-type: feature-deep
-Created: 2026-09-29 · feature page for the use-time conflict check (spec/use-time-conflicts.md)
-
-Decisions (7):
-1. [hero-three-line-stack] "Check the note / when you use it, / not when you file it." — the whole feature is a shift in WHEN a note is judged, so the headline states the shift itself rather than a benefit. One <em> in the subtitle ("yes"), because the one hard rule of the feature is that nothing changes without it.
-2. [stat-trio-as-rules] 5 / 0 / 22 are not usage metrics (the feature is new and has none); each is a rule the code enforces: five kinds of which one means wrong, zero changes without a yes, twenty-two agreeing records as the least that clears the 0.90 lower bound.
-3. [premise-with-the-reviewers-line] the pull-quote is the design review's own sentence ("the next time a note is used is the real exam"), attributed to the review and dated, not to a person — it is the reason the separate exam was dropped, and the premise the page argues.
-4. [three-diagrams-three-questions] flow (what happens to one conflict), sequence (why the record has two steps), dumbbell chart (why 22 and not 20). Each answers a question prose answered badly; each has >=2 semantic hues (orange = the AI's record/main path, blue = the note/score, olive = your decision, gold = code flagged). SVG text is bilingual via .lang-en / .lang-zh groups so the figures switch with the page.
-5. [terminal-as-pre-not-svg] the command/stats mock is a <pre>, not an SVG: it is 14 lines of program output inside a grid cell, which as SVG would breach the dense-diagram-in-grid rule and could not wrap. The output is real, run on a generic demo log, and the caption says what was trimmed.
-6. [sources-as-took-read-measured] the sources section is labelled by what was taken from each (Took / Read / Measured) and says what was NOT taken (darwin's weighted score, nuwa's keyword count), so the credit is falsifiable rather than a logo wall.
-7. [honest-caveat-four-limits] the callout names the four things the record cannot do, including the one hole the two-step design leaves open (a report written after the answer), with the single <em> on "yours" because that last check is the reader's.
-
-Known trade-offs:
-- Bilingual SVG text doubles the <text> count; hidden language groups are display:none, so the rendered figures carry one language at a time.
-- The flow diagram compresses the five kinds into chips with a one-line action; the full decision table lives in the spec, linked from Technical details.
-- The dumbbell chart truncates the axis at 70% to make the differences legible; it is a dot plot, not bars, so the truncation does not exaggerate a length.
-/design-review:self-diff -->
-
+<script src="assets/site.js"></script>
 </body>
 </html>

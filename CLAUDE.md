@@ -13,7 +13,7 @@ Whetstone 是一个**蒸馏工具**(不是单个 skill):开发完一个功能,�
 - 主入口:`SKILL.md`(distiller 流程 Phase 0–5)
 - 灵魂:`references/extraction-framework.md`(L1–L4 分层 schema)
 - 交付物规范:`spec/skill-package.md`(可移植 skill 包格式)
-- 介绍页:`docs/index.html`(GitHub Pages 用;2026-10-07 改版为自有的深色「磨刀石 + 岩层」风格,4 个页面共用 `docs/assets/site.css` + `site.js`)
+- 介绍页:`docs/index.html`(GitHub Pages 用;2026-10-07 改版为自有的深色「磨刀石 + 岩层」风格,6 个页面共用 `docs/assets/site.css` + `site.js`)
 
 ## 定位决定(已定,别再推翻除非有新理由)
 
@@ -46,7 +46,7 @@ Whetstone 是一个**蒸馏工具**(不是单个 skill):开发完一个功能,�
 
 **核心(思考层)= 完成 + 验证:**
 - `SKILL.md`(Phase 0-5)· `references/extraction-framework.md`(L1-L4,跨领域压测过)· `spec/skill-package.md` —— **2 次真实试点跑通**(蒸出 verified-boot / sdk-migration 两个内部 skill 包),还反哺出 Phase 3 的"doc + git/code 双查"规则。
-- 已发布:github.com/TbusOS/whetstone(main)+ GitHub Pages **https://doc.tbusos.com/whetstone/**(源 /docs,Enforce HTTPS;含工具介绍 `index.html` + 通用 skills 介绍 `skills.html` + 验证实践记录 `why-verify.html` + `claude-md-layering.html` + 用时纠错功能页 `use-time-conflicts.html`(2026-09-29)+ 经验路由功能页 `routing.html`)。2026-10-07 前四页改版为深色自有风格;`use-time-conflicts.html` / `routing.html` 仍是旧的 anthropic 风,还依赖 `assets/anthropic.css` + `fonts.css`,换风格前别删这两个文件。
+- 已发布:github.com/TbusOS/whetstone(main)+ GitHub Pages **https://doc.tbusos.com/whetstone/**(源 /docs,Enforce HTTPS;含工具介绍 `index.html` + 通用 skills 介绍 `skills.html` + 验证实践记录 `why-verify.html` + `claude-md-layering.html` + 用时纠错功能页 `use-time-conflicts.html`(2026-09-29)+ 经验路由功能页 `routing.html`)。2026-10-07 六页全部改为深色自有风格(旧 anthropic.css / fonts.css 已删);原来的 SVG 图改成 HTML/CSS 画,文字能换行、手机不再超宽。
 - templates / commands / README / 本文件齐。
 
 **管道层 = 2026-06-18 补了一轮(按"真用得着 + 建了就实测"做,不空造):**
