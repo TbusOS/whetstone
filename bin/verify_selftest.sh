@@ -235,15 +235,24 @@ not_fires "$CLEAN" V22 "clean params has 替代记录"
 
 echo
 echo "[V25] the package's own prohibition list (§14)"
-d=$(mut m25); sed -i.bak '/^## 禁止/,/^## 平台参数/{/^## 平台参数/!d}' "$d/SKILL.md"; rm -f "$d"/*.bak
+# Remove the 禁止 section from a fixture, and fail loudly if the edit did not land.
+# BSD sed (macOS) rejects `{…!d}` without the `;` and leaves the file untouched —
+# which once made the "fires" case fail and, worse, let both "quiet" cases pass
+# against a package that still had its 禁止 section.
+strip_prohibit() {
+  sed -i.bak '/^## 禁止/,/^## 平台参数/{/^## 平台参数/!d;}' "$1/SKILL.md"; rm -f "$1"/*.bak
+  if grep -q '^## 禁止' "$1/SKILL.md"; then bad "V25 fixture edit did not apply — 禁止 section still in $(basename "$1")"; fi
+}
+d=$(mut m25); strip_prohibit "$d"
                                                                   fires "$d" V25 "package forbids nothing anywhere"
 not_fires "$CLEAN" V25 "clean package has a 禁止 section"
-d=$(mut m25p); sed -i.bak '/^## 禁止/,/^## 平台参数/{/^## 平台参数/!d}' "$d/SKILL.md"
-printf '\n## 反例:绝不这样做\n\n- 绝不跳过读回比对。\n' >> "$d/pitfalls.md"; rm -f "$d"/*.bak
+d=$(mut m25p); strip_prohibit "$d"
+printf '\n## 反例:绝不这样做\n\n- 绝不跳过读回比对。\n' >> "$d/pitfalls.md"
                                                           not_fires "$d" V25 "a list in pitfalls.md counts too"
-d=$(mut m25x); sed -i.bak '/^## 禁止/,/^## 平台参数/{/^## 平台参数/!d}' "$d/SKILL.md"
-sed -i.bak2 's|^# Demo Skill$|# Demo Skill\n\n<!-- blacklist-ok: 纯原理型,没有可点名的高危动作 -->|' "$d/SKILL.md"
-rm -f "$d"/*.bak "$d"/*.bak2
+d=$(mut m25x); strip_prohibit "$d"
+# awk, not sed: BSD sed does not turn \n in a replacement into a newline
+awk '{ print } /^# Demo Skill$/ { print ""; print "<!-- blacklist-ok: 纯原理型,没有可点名的高危动作 -->" }' "$d/SKILL.md" > "$d/SKILL.md.tmp" && mv "$d/SKILL.md.tmp" "$d/SKILL.md"
+if ! grep -q '^<!-- blacklist-ok:' "$d/SKILL.md"; then bad "V25 fixture edit did not apply — no blacklist-ok line in m25x"; fi
                                                           not_fires "$d" V25 "blacklist-ok exemption honoured"
 
 echo
