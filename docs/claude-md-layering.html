@@ -2,212 +2,254 @@
 <html lang="en" data-lang="en">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>CLAUDE.md layering · Whetstone</title>
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>CLAUDE.md layering — Whetstone</title>
 <meta name="description" content="A reusable way to layer agent instructions: keep the always-on CLAUDE.md lean and neutral, push heavy domain content into on-demand skills, share org conventions, deploy the same way on any machine.">
-<link rel="stylesheet" href="assets/fonts.css">
-<link rel="stylesheet" href="assets/anthropic.css">
+<meta name="theme-color" content="#0f1113">
+<meta property="og:title" content="Layer your CLAUDE.md. Keep the always-on part lean.">
+<meta property="og:description" content="Only on-demand skills stay out of context until they're needed. Everything else is paid for on every turn.">
+<meta property="og:url" content="https://doc.tbusos.com/whetstone/claude-md-layering.html">
+<meta property="og:image" content="https://doc.tbusos.com/whetstone/assets/og-home.png">
+<meta property="og:image:width" content="2400">
+<meta property="og:image:height" content="1260">
+<meta property="og:type" content="article">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:image" content="https://doc.tbusos.com/whetstone/assets/og-home.png">
+<script>(function(){var h=document.documentElement,l='en';h.classList.add('js');try{var q=new URLSearchParams(location.search).get('lang'),s=localStorage.getItem('whetstone-lang');l=(q==='zh'||q==='en')?q:(s==='zh'||s==='en')?s:((navigator.language||'').toLowerCase().indexOf('zh')===0?'zh':'en');}catch(e){}h.setAttribute('data-lang',l);})();</script>
+<link rel="stylesheet" href="assets/site.css">
 <style>
-  html[data-lang="en"] .lang-zh { display: none !important; }
-  html[data-lang="zh"] .lang-en { display: none !important; }
-  .lang-toggle {
-    background: transparent; border: 1px solid var(--anth-light-gray); color: var(--anth-text);
-    font-family: var(--font-heading); font-size: 13px; font-weight: 500;
-    padding: 6px 12px; border-radius: var(--radius-pill); cursor: pointer; letter-spacing: 0.05em;
-  }
-  .lang-toggle:hover { background: var(--anth-light-gray); }
-  html[data-lang="zh"] body, html[data-lang="zh"] p, html[data-lang="zh"] li,
-  html[data-lang="zh"] td, html[data-lang="zh"] th {
-    font-family: "Noto Sans SC", "Source Han Sans SC", "PingFang SC", sans-serif;
-  }
-  html[data-lang="zh"] h1, html[data-lang="zh"] h2, html[data-lang="zh"] h3, html[data-lang="zh"] .anth-badge {
-    font-family: "Noto Sans SC", "PingFang SC", sans-serif;
-  }
-
-  .layer-table { width:100%; border-collapse:collapse; font-family:var(--font-body); font-size:15.5px; }
-  .layer-table th, .layer-table td { text-align:left; padding:var(--space-4) var(--space-4); border-bottom:1px solid var(--anth-light-gray); vertical-align:top; }
-  .layer-table th { font-family:var(--font-heading); font-size:13px; font-weight:600; color:var(--anth-text-secondary); letter-spacing:0.02em; }
-  .layer-table tbody tr:last-child td { border-bottom:none; }
-  .layer-table .lyr { font-family:var(--font-heading); font-weight:700; white-space:nowrap; }
-  .layer-table .lyr--l1 { color:var(--anth-orange); }
-  .layer-table .lyr--l2 { color:#4a7bab; }
-  .layer-table .lyr--l3 { color:#5d7045; }
-  .layer-table .lyr--l4 { color:#8a5a2a; }
-  .layer-table code { font-family:var(--font-mono); font-size:13px; }
-
-  .scene-card { background:#ffffff; border:1px solid var(--anth-light-gray); border-radius:var(--radius-lg); padding:var(--space-6) var(--space-7); }
-  .rule-card { background:#fdf1ec; border:1px solid #f0cdbd; border-left:4px solid var(--anth-orange); border-radius:var(--radius-md); padding:var(--space-5) var(--space-6); }
-  .rule-card p { margin:0; font-family:var(--font-body); font-size:16px; line-height:1.7; color:var(--anth-text); }
-  figure { margin:0; }
-  figcaption { font-family:var(--font-heading); font-size:13px; color:var(--anth-text-secondary); text-align:center; margin-top:var(--space-3); }
-
-  pre.codeblock { background:#2b2825; color:#f3efe7; border-radius:var(--radius-md); padding:var(--space-5) var(--space-6); overflow-x:auto; font-family:var(--font-mono); font-size:13.5px; line-height:1.75; margin:0; }
-  pre.codeblock .cm { color:#9b978c; }
-  pre.codeblock .fl { color:#e0a074; }
+/* "what is in context on each turn" grid */
+.ctx { background: var(--panel); border: 1px solid var(--line); border-radius: 20px; padding: clamp(18px, 3vw, 30px); overflow-x: auto; }
+.ctx-grid { display: grid; grid-template-columns: minmax(150px, 1.1fr) repeat(12, minmax(22px, 1fr)); gap: 6px; align-items: center; min-width: 560px; }
+.ctx-h { font: 11px/1 var(--mono); color: var(--dim); text-align: center; }
+.ctx-h.now { color: var(--ember-2); }
+.ctx-lbl { font-size: 14px; line-height: 1.3; padding-right: 8px; }
+.ctx-lbl b { display: block; font: 700 12px/1.2 var(--mono); color: var(--lc); letter-spacing: .04em; }
+.ctx-lbl span { color: var(--muted); font-size: 12.5px; }
+.cell { height: 30px; border-radius: 6px; background: #121518; border: 1px solid var(--line); transition: background .35s, box-shadow .35s, border-color .35s; }
+.cell.on { background: color-mix(in srgb, var(--lc) 55%, #121518); border-color: var(--lc); }
+.cell.col { box-shadow: 0 0 0 2px rgba(255,122,61,.55); }
+.cell.trig { position: relative; }
+.cell.trig::after { content: "↯"; position: absolute; inset: 0; display: grid; place-items: center; font-size: 13px; color: #06231c; }
+.ctx-foot { display: flex; justify-content: space-between; gap: 12px; flex-wrap: wrap; margin-top: 16px; font: 12px/1.5 var(--mono); color: var(--dim); }
+.ctx-foot b { color: var(--l2); font-weight: 600; }
+.rules { display: grid; grid-template-columns: repeat(2, 1fr); gap: 14px; }
+.rules .card { position: relative; padding-left: 64px; }
+.rules .card::before { content: attr(data-n); position: absolute; left: 22px; top: 22px; font: 500 30px/1 var(--serif); color: var(--ember); }
+@media (max-width: 760px) { .rules { grid-template-columns: 1fr; } }
+.sec { padding-block: clamp(56px, 8vw, 96px); border-top: 1px solid rgba(255,255,255,.04); }
 </style>
 </head>
 <body>
 
-<!-- Nav -->
-<nav class="anth-nav"><div class="anth-nav-inner">
-  <a href="index.html" style="font-family:var(--font-heading); font-weight:600; font-size:18px; text-decoration:none; color:var(--anth-text);">Whetstone · 磨刀石</a>
-  <div>
-    <a href="index.html#architecture"><span class="lang-en">Architecture</span><span class="lang-zh">架构</span></a>
-    <a href="index.html#migrate"><span class="lang-en">Move machines</span><span class="lang-zh">迁移</span></a>
-    <a href="skills.html"><span class="lang-en">Skills</span><span class="lang-zh">技能</span></a>
+<nav class="nav" aria-label="Primary">
+  <div class="wrap">
+    <a class="brand" href="index.html">
+      <svg width="26" height="26" viewBox="0 0 32 32" aria-hidden="true"><rect x="3" y="12" width="26" height="9" rx="2.5" fill="#5a6068"/><rect x="3" y="12" width="26" height="3" rx="1.5" fill="#8a9098"/><path d="M8 9l3-5M16 8V3M24 9l-3-5" stroke="#ff7a3d" stroke-width="2" stroke-linecap="round"/><rect x="5" y="23" width="22" height="3" rx="1.5" fill="#8f96ff" opacity=".85"/></svg>
+      whetstone <small lang="zh-CN">· 磨刀石</small>
+    </a>
+    <div class="nav-links">
+      <a href="#layers"><span class="en">Four layers</span><span class="zh">四层</span></a>
+      <a href="#deploy"><span class="en">deploy.sh</span><span class="zh">deploy.sh</span></a>
+      <a href="#new-machine"><span class="en">New machine</span><span class="zh">换新机器</span></a>
+      <a href="#bites"><span class="en">Pitfalls</span><span class="zh">坑</span></a>
+      <a href="index.html#migrate"><span class="en">← Home</span><span class="zh">← 首页</span></a>
+    </div>
+    <div class="nav-act">
+      <button type="button" class="lang" aria-label="Switch language / 切换语言">中 / EN</button>
+      <a class="gh" href="https://github.com/TbusOS/whetstone"><svg width="15" height="15" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/></svg>GitHub</a>
+    </div>
   </div>
-  <div style="display:flex; gap:var(--space-3); align-items:center;">
-    <button type="button" class="lang-toggle" aria-label="Switch language">中 / EN</button>
-    <a class="anth-button" href="https://github.com/TbusOS/whetstone">GitHub</a>
-  </div>
-</div></nav>
+</nav>
 
-<!-- Header -->
-<section class="anth-hero">
-  <div class="anth-container" style="max-width:820px;">
-    <span class="anth-badge"><span class="lang-en">Reusable pattern</span><span class="lang-zh">可复用范式</span></span>
-    <h1 style="margin-top:var(--space-4);">
-      <span class="lang-en">Layer your CLAUDE.md.<br>Keep the always-on part lean.</span>
-      <span class="lang-zh">给 CLAUDE.md 分层。<br>常驻那部分保持精简。</span>
-    </h1>
-    <p style="font-size:19px; color:var(--anth-text-secondary); margin:var(--space-5) auto 0; line-height:1.6; max-width:680px; font-family:var(--font-body);">
-      <span class="lang-en">Sort persistent instructions by "does every turn need this?". The global CLAUDE.md loads in full every turn — pile too much in and you burn tokens, lower adherence, and (when it is dense with dual-use terms) trip server-side safety classifiers. Keep only neutral, always-needed rules there; push the rest to on-demand skills.</span>
-      <span class="lang-zh">把持久指令按「是否每轮都需要」分层。全局 CLAUDE.md 每轮全文载入 —— 堆太多就吃 token、降遵循度，内容密度高时还容易触发服务端安全分类器误报。那里只留中性、每轮都要的规则；其余推给按需 skill。</span>
+<header class="page-hero">
+  <div class="wrap">
+    <span class="kicker"><span class="en">Reusable pattern</span><span class="zh">可复用的做法</span></span>
+    <h1><span class="en">Layer your CLAUDE.md. Keep the always-on part lean.</span><span class="zh">给 CLAUDE.md 分层，常驻的那部分保持精简。</span></h1>
+    <p class="lede">
+      <span class="en">Sort persistent instructions by one question: does every turn need this? The global CLAUDE.md loads in full on every turn — pile too much in and you burn tokens, lower adherence, and (when it is dense with dual-use terms) trip server-side safety classifiers. Keep only neutral, always-needed rules there; push the rest into on-demand skills.</span>
+      <span class="zh">按一个问题给持久指令分层：每一轮都需要它吗？全局 CLAUDE.md 每轮全文载入 —— 堆太多就费 token、降低遵循度，内容里敏感的双用途词一密集，还容易触发服务端安全分类器误报。那里只留中性、每轮都要的规则，其余放进按需加载的 skill。</span>
     </p>
   </div>
-</section>
+</header>
 
-<!-- Four layers -->
-<section class="anth-section" style="padding-top:0;">
-  <div class="anth-container" style="max-width:1000px;">
-    <div style="max-width:680px; margin:0 auto var(--space-6); text-align:center;">
-      <span class="anth-badge"><span class="lang-en">Four layers</span><span class="lang-zh">四层</span></span>
-      <h2 style="margin-top:var(--space-3);"><span class="lang-en">Where each thing lives</span><span class="lang-zh">每样东西放哪</span></h2>
+<main>
+  <section class="sec" style="border-top:0; padding-top:0">
+    <div class="wrap">
+      <figure class="rv" style="margin:0">
+        <div class="ctx" id="ctx" role="img" aria-label="Twelve turns of one session inside a project. The always-on file, the imported org-shared file and the project CLAUDE.md occupy context on every turn; an on-demand skill occupies it only on the turns where its trigger matches."></div>
+        <figcaption class="cap"><span class="en">Illustration, not a measurement: twelve turns of one session inside a project. Three layers are paid for on every turn. Only the skill stays out until its trigger matches.</span><span class="zh">示意图，不是测量数据：在某个项目里的一次会话，共 12 轮。有三层每一轮都占上下文，只有 skill 在触发词命中之前不占。</span></figcaption>
+      </figure>
     </div>
-    <div class="scene-card">
-      <table class="layer-table">
-        <thead><tr>
-          <th><span class="lang-en">Layer</span><span class="lang-zh">层</span></th>
-          <th><span class="lang-en">Where</span><span class="lang-zh">存放</span></th>
-          <th><span class="lang-en">Loads</span><span class="lang-zh">何时加载</span></th>
-          <th><span class="lang-en">What goes here</span><span class="lang-zh">放什么</span></th>
-        </tr></thead>
-        <tbody>
-          <tr>
-            <td class="lyr lyr--l1"><span class="lang-en">Always-on</span><span class="lang-zh">常驻</span></td>
-            <td><code>base/conduct.md</code> → <code>~/.claude/CLAUDE.md</code></td>
-            <td><span class="lang-en">every turn</span><span class="lang-zh">每轮</span></td>
-            <td><span class="lang-en">Neutral universal rules — signing conventions, honesty/verification discipline, permissions, secret handling, style.</span><span class="lang-zh">通用中性规则 —— 署名规矩、诚实/查证纪律、权限、secret 处理、风格。</span></td>
-          </tr>
-          <tr>
-            <td class="lyr lyr--l2"><span class="lang-en">On-demand skill</span><span class="lang-zh">按需 skill</span></td>
-            <td><code>skills/&lt;name&gt;/</code> <span class="lang-en">(symlinked)</span><span class="lang-zh">(symlink)</span></td>
-            <td><span class="lang-en">only when its trigger matches</span><span class="lang-zh">触发词命中才载入</span></td>
-            <td><span class="lang-en">Domain methods / procedures — body is platform-agnostic, values sit in <code>params/&lt;platform&gt;.md</code>.</span><span class="lang-zh">领域方法 / 流程 —— 正文平台无关，具体值在 <code>params/&lt;platform&gt;.md</code>。</span></td>
-          </tr>
-          <tr>
-            <td class="lyr lyr--l3"><span class="lang-en">Org-shared</span><span class="lang-zh">组织共享</span></td>
-            <td><code>base/&lt;org&gt;-common.md</code></td>
-            <td><span class="lang-en">@import in a project CLAUDE.md</span><span class="lang-zh">项目 CLAUDE.md 里 @import</span></td>
-            <td><span class="lang-en">Conventions shared across products — commit rules, build env, path rules.</span><span class="lang-zh">跨产品共享的约定 —— 提交规范、编译环境、路径规矩。</span></td>
-          </tr>
-          <tr>
-            <td class="lyr lyr--l4"><span class="lang-en">Project state</span><span class="lang-zh">项目状态</span></td>
-            <td><code>&lt;project&gt;/CLAUDE.md</code></td>
-            <td><span class="lang-en">when you cd into it</span><span class="lang-zh">cd 进该目录</span></td>
-            <td><span class="lang-en">Current task / key paths + <code>@import</code> the org-shared layer.</span><span class="lang-zh">当前任务 / 关键路径 + <code>@import</code> 组织共享层。</span></td>
-          </tr>
-        </tbody>
-      </table>
-    </div>
+  </section>
 
-    <div class="rule-card" style="margin-top:var(--space-6);">
-      <p><strong><span class="lang-en">Iron rule:</span><span class="lang-zh">铁律：</span></strong>
-        <span class="lang-en">an always-on behavioral constraint must not become an on-demand skill. A skill needs a trigger; a rule like "never add a certain signature" or "output style" must apply every turn and has no trigger — as a skill it would silently fail to load most turns.</span>
-        <span class="lang-zh">常驻行为约束不能做成 on-demand skill。skill 要触发词才载入；像「禁某类署名」「输出风格」这种每轮都要生效、又没有触发场景的规则，做成 skill 大多数轮次不触发 = 静默失效。</span></p>
+  <section class="sec" id="layers">
+    <div class="wrap">
+      <div class="sec-head rv">
+        <span class="kicker"><span class="en">Four layers</span><span class="zh">四层</span></span>
+        <h2><span class="en">Where each thing lives.</span><span class="zh">每样东西放在哪。</span></h2>
+      </div>
+      <div class="tbl-wrap rv">
+        <table class="tbl">
+          <thead><tr><th><span class="en">Layer</span><span class="zh">层</span></th><th><span class="en">Where</span><span class="zh">存放</span></th><th><span class="en">Loads</span><span class="zh">何时加载</span></th><th><span class="en">What goes here</span><span class="zh">放什么</span></th></tr></thead>
+          <tbody>
+            <tr><td class="tag-lv c-em"><span class="en">Always-on</span><span class="zh">常驻</span></td><td><code>base/conduct.md</code> → <code>~/.claude/CLAUDE.md</code></td><td><span class="en">every turn</span><span class="zh">每轮</span></td><td><span class="en">Neutral universal rules — signing conventions, honesty and verification discipline, permissions, secret handling, style.</span><span class="zh">通用中性规则 —— 署名规矩、诚实与查证纪律、权限、secret 处理、风格。</span></td></tr>
+            <tr><td class="tag-lv c-l2"><span class="en">On-demand skill</span><span class="zh">按需 skill</span></td><td><code>skills/&lt;name&gt;/</code> <span class="en">(symlinked)</span><span class="zh">（软链）</span></td><td><span class="en">only when its trigger matches</span><span class="zh">触发词命中才载入</span></td><td><span class="en">Domain methods and procedures — the body is platform-agnostic, values sit in <code>params/&lt;platform&gt;.md</code>.</span><span class="zh">领域方法和流程 —— 正文跟平台无关，具体值放在 <code>params/&lt;platform&gt;.md</code>。</span></td></tr>
+            <tr><td class="tag-lv c-l1"><span class="en">Org-shared</span><span class="zh">组织共享</span></td><td><code>base/&lt;org&gt;-common.md</code></td><td><span class="en"><code>@import</code> in a project CLAUDE.md</span><span class="zh">项目 CLAUDE.md 里 <code>@import</code></span></td><td><span class="en">Conventions shared across products — commit rules, build environment, path rules.</span><span class="zh">跨产品共享的约定 —— 提交规范、编译环境、路径规矩。</span></td></tr>
+            <tr><td class="tag-lv c-l3"><span class="en">Project state</span><span class="zh">项目状态</span></td><td><code>&lt;project&gt;/CLAUDE.md</code></td><td><span class="en">when you work in that directory</span><span class="zh">在该目录下工作时</span></td><td><span class="en">Current task and key paths, plus an <code>@import</code> of the org-shared layer.</span><span class="zh">当前任务、关键路径，再 <code>@import</code> 组织共享层。</span></td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="callout rv" style="margin-top:20px">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#ff7a3d" stroke-width="2" stroke-linecap="round" aria-hidden="true" style="flex:none;margin-top:3px"><path d="M12 9v4M12 17h.01"/><path d="M10.3 3.9L1.8 18a2 2 0 001.7 3h17a2 2 0 001.7-3L13.7 3.9a2 2 0 00-3.4 0z"/></svg>
+        <p><b><span class="en">The one hard rule:</span><span class="zh">唯一的硬规则：</span></b>
+          <span class="en">an always-on behavioural constraint must never become an on-demand skill. A skill needs a trigger; a rule like “never add a certain signature” or “output style” has to apply every turn and has no trigger — as a skill it would quietly fail to load on most turns.</span>
+          <span class="zh">每轮都要生效的行为约束，绝不能做成按需 skill。skill 要靠触发词才载入；像「禁止某类署名」「输出风格」这种每轮都要生效、又没有触发场景的规则，做成 skill 后大多数轮次都不会载入，而且不会有任何报错。</span></p>
+      </div>
     </div>
-  </div>
-</section>
+  </section>
 
-<!-- Mechanism -->
-<section class="anth-section anth-section--subtle">
-  <div class="anth-container" style="max-width:920px;">
-    <div style="max-width:680px; margin:0 auto var(--space-6); text-align:center;">
-      <span class="anth-badge"><span class="lang-en">Mechanism</span><span class="lang-zh">机制</span></span>
-      <h2 style="margin-top:var(--space-3);"><span class="lang-en">Three deploy.sh modes</span><span class="lang-zh">deploy.sh 三模式</span></h2>
-    </div>
-    <figure>
-    <pre class="codeblock"><span class="cm"># 1) <span class="lang-en">deploy skills: symlink from the data repo into ~/.claude/skills (single source, no drift)</span><span class="lang-zh">部署 skills：从数据仓 symlink 进 ~/.claude/skills（单一真相，不漂移）</span></span>
+  <section class="sec" id="deploy" style="background:var(--bg-2)">
+    <div class="wrap">
+      <div class="sec-head rv">
+        <span class="kicker"><span class="en">Mechanism</span><span class="zh">机制</span></span>
+        <h2><span class="en">Three <code style="background:none;padding:0;font-size:.85em">deploy.sh</code> modes.</span><span class="zh"><code style="background:none;padding:0;font-size:.85em">deploy.sh</code> 的三种用法。</span></h2>
+      </div>
+      <div class="codeblock rv" style="max-width:920px">
+        <div class="bar"><i></i><i></i><i></i><span>bin/deploy.sh</span></div>
+<pre><code><span class="cm"># 1) <span class="en">deploy skills: symlink from the data repo into ~/.claude/skills (one source, no drift)</span><span class="zh">部署 skills：从数据仓软链进 ~/.claude/skills（只有一份源，不会两边不一致）</span></span>
 bin/deploy.sh <span class="fl">--link</span> &lt;data-repo&gt;
 
-<span class="cm"># 2) <span class="lang-en">generate the always-on file: base/conduct.md → ~/.claude/CLAUDE.md (backs up the old one)</span><span class="lang-zh">生成全局常驻文件：base/conduct.md → ~/.claude/CLAUDE.md（自动备份旧的）</span></span>
+<span class="cm"># 2) <span class="en">generate the always-on file: base/conduct.md → ~/.claude/CLAUDE.md (backs up the old one)</span><span class="zh">生成全局常驻文件：base/conduct.md → ~/.claude/CLAUDE.md（自动备份旧的）</span></span>
 bin/deploy.sh <span class="fl">--gen-claudemd</span> &lt;data-repo&gt;
 
-<span class="cm"># 3) <span class="lang-en">import the org-shared layer into a project (idempotent; --import takes any shared file)</span><span class="lang-zh">让某项目导入组织共享层（幂等；--import 传任意共享文件）</span></span>
-bin/deploy.sh <span class="fl">--add-import</span> &lt;project&gt;/CLAUDE.md <span class="fl">--import</span> &lt;data-repo&gt;/base/&lt;org&gt;-common.md</pre>
-    <figcaption><span class="lang-en">The tool does not hardcode your filenames — everything is a parameter.</span><span class="lang-zh">工具不写死你的文件名 —— 全走参数。</span></figcaption>
-    </figure>
-  </div>
-</section>
-
-<!-- New machine runbook -->
-<section class="anth-section">
-  <div class="anth-container" style="max-width:920px;">
-    <div style="max-width:680px; margin:0 auto var(--space-6); text-align:center;">
-      <span class="anth-badge"><span class="lang-en">New machine</span><span class="lang-zh">换新机器</span></span>
-      <h2 style="margin-top:var(--space-3);"><span class="lang-en">Clone two repos, deploy, done</span><span class="lang-zh">克隆两个仓，装回来，齐活</span></h2>
+<span class="cm"># 3) <span class="en">import the org-shared layer into a project (idempotent; --import takes any shared file)</span><span class="zh">让某个项目导入组织共享层（重复执行无副作用；--import 可传任意共享文件）</span></span>
+bin/deploy.sh <span class="fl">--add-import</span> &lt;project&gt;/CLAUDE.md <span class="fl">--import</span> &lt;data-repo&gt;/base/&lt;org&gt;-common.md</code></pre>
+      </div>
+      <p class="cap rv" style="color:var(--dim);font-size:13.5px"><span class="en">The tool hardcodes none of your filenames — everything is a parameter.</span><span class="zh">工具不写死你的任何文件名，全部走参数。</span></p>
     </div>
-    <figure>
-    <pre class="codeblock"><span class="cm"># a. <span class="lang-en">clone the public tool repo + your private data repo (base/ and skills/)</span><span class="lang-zh">拉工具仓（公开）+ 数据仓（私有，含 base/ 和 skills/)</span></span>
-git clone &lt;this-tool-repo&gt;
-git clone &lt;your-private-skills-data-repo&gt;   <span class="cm"># <span class="lang-en">keep private if it has real values</span><span class="lang-zh">含真实值就保持 private</span></span>
+  </section>
 
-<span class="cm"># b. <span class="lang-en">symlink skills + regenerate the always-on file</span><span class="lang-zh">skills symlink + 生成全局常驻文件</span></span>
-whetstone/bin/deploy.sh <span class="fl">--link</span>         &lt;data-repo&gt;
-whetstone/bin/deploy.sh <span class="fl">--gen-claudemd</span> &lt;data-repo&gt;
-
-<span class="cm"># c. <span class="lang-en">per project: build/ensure a project CLAUDE.md + import the org-shared layer</span><span class="lang-zh">每个项目：建/补 项目 CLAUDE.md + 导入组织共享层</span></span>
-whetstone/bin/deploy.sh <span class="fl">--add-import</span> &lt;project&gt;/CLAUDE.md \
-                        <span class="fl">--import</span> &lt;data-repo&gt;/base/&lt;org&gt;-common.md
-
-<span class="cm"># d. <span class="lang-en">first session per project: approve the one-time "external import" dialog</span><span class="lang-zh">每个项目首个 session：点一次「外部导入」批准框</span></span></pre>
-    <figcaption><span class="lang-en">Paths differ per machine — every command takes them as arguments, nothing is hardcoded.</span><span class="lang-zh">每台机路径不同 —— 命令都按参数走，不写死。</span></figcaption>
-    </figure>
-  </div>
-</section>
-
-<!-- Notes -->
-<section class="anth-section anth-section--subtle">
-  <div class="anth-container" style="max-width:820px;">
-    <div style="margin-bottom:var(--space-6); text-align:center;">
-      <span class="anth-badge"><span class="lang-en">Watch out</span><span class="lang-zh">注意</span></span>
-      <h2 style="margin-top:var(--space-3);"><span class="lang-en">Four things that bite</span><span class="lang-zh">四个坑</span></h2>
-    </div>
-    <div class="scene-card">
-      <ol style="margin:0; padding-left:1.2em; font-family:var(--font-body); font-size:16px; line-height:1.9; color:var(--anth-text);">
-        <li><span class="lang-en"><code>@import</code> loads in full at launch — it does <strong>not</strong> save context. Its value is single-source + organization, not fewer tokens. What actually stays out of context until needed is an on-demand skill — so keep heavy content in skills, not imports.</span><span class="lang-zh"><code>@import</code> 启动时全量载入，<strong>不</strong>省 context。它的价值是单一真相 + 组织，不是省 token。真正「不触发不载入」的是按需 skill —— 所以重内容留 skill，别 @import。</span></li>
-        <li><span class="lang-en">Keep the always-on layer neutral and low-density. That is what controls false positives — not any trick to route around a classifier.</span><span class="lang-zh">常驻层保持中性、低密度。这才是控制误报的办法，不是靠什么技巧绕过分类器。</span></li>
-        <li><span class="lang-en">If the data repo carries real values (internal paths, org names, platform params), make it <strong>private</strong>. The tool repo stays generic and public.</span><span class="lang-zh">数据仓若含真实值（内部路径 / 组织名 / 平台参数），设 <strong>private</strong>。工具仓保持通用、可公开。</span></li>
-        <li><span class="lang-en">Multi-root project (code and notes on different mounts): put a <code>CLAUDE.md</code> at each root; the thin one just <code>@import</code>s the main hub.</span><span class="lang-zh">多根项目（代码和笔记在不同挂载点）：每个根放一个 <code>CLAUDE.md</code>，薄的那个只 <code>@import</code> 主 hub。</span></li>
+  <section class="sec" id="new-machine">
+    <div class="wrap">
+      <div class="sec-head rv">
+        <span class="kicker"><span class="en">New machine</span><span class="zh">换新机器</span></span>
+        <h2><span class="en">Clone two repos, deploy, done.</span><span class="zh">克隆两个仓，装回来，就好了。</span></h2>
+      </div>
+      <ol class="tl-list">
+        <li class="rv"><span class="k">a</span><div>
+          <h3><span class="en">Clone the tool and your data</span><span class="zh">拉工具仓和数据仓</span></h3>
+          <div class="codeblock" style="margin-top:12px"><pre><code>git clone &lt;this-tool-repo&gt;
+git clone &lt;your-private-skills-data-repo&gt;   <span class="cm"># <span class="en">keep it private if it holds real values</span><span class="zh">含真实值就保持私有</span></span></code></pre></div>
+        </div></li>
+        <li class="rv"><span class="k">b</span><div>
+          <h3><span class="en">Symlink skills, regenerate the always-on file</span><span class="zh">软链 skills，生成全局常驻文件</span></h3>
+          <div class="codeblock" style="margin-top:12px"><pre><code>whetstone/bin/deploy.sh <span class="fl">--link</span>         &lt;data-repo&gt;
+whetstone/bin/deploy.sh <span class="fl">--gen-claudemd</span> &lt;data-repo&gt;</code></pre></div>
+        </div></li>
+        <li class="rv"><span class="k">c</span><div>
+          <h3><span class="en">Per project: import the org-shared layer</span><span class="zh">每个项目：导入组织共享层</span></h3>
+          <div class="codeblock" style="margin-top:12px"><pre><code>whetstone/bin/deploy.sh <span class="fl">--add-import</span> &lt;project&gt;/CLAUDE.md \
+                        <span class="fl">--import</span> &lt;data-repo&gt;/base/&lt;org&gt;-common.md</code></pre></div>
+        </div></li>
+        <li class="rv"><span class="k">d</span><div>
+          <h3><span class="en">First session per project</span><span class="zh">每个项目的第一次会话</span></h3>
+          <p><span class="en">Approve the one-time “external import” prompt. Paths differ per machine; every command takes them as arguments.</span><span class="zh">点一次「外部导入」的批准框。每台机器路径不同，所有命令都按参数传路径。</span></p>
+        </div></li>
       </ol>
     </div>
-    <p style="text-align:center; margin-top:var(--space-6);">
-      <a class="anth-link" href="index.html#migrate"><span class="lang-en">← Back to cross-machine deploy</span><span class="lang-zh">← 回到跨机部署</span></a>
-    </p>
-  </div>
-</section>
+  </section>
 
-<footer class="anth-footer">
-  <div class="anth-container" style="text-align:center;">
-    <p style="font-family:var(--font-heading); font-size:13px; color:var(--anth-text-secondary);">Whetstone · 磨刀石 — <span class="lang-en">distill engineering work into portable Agent Skills</span><span class="lang-zh">把工程经验蒸馏成可移植的 Agent Skill</span></p>
+  <section class="sec" id="bites" style="background:var(--bg-2)">
+    <div class="wrap">
+      <div class="sec-head rv">
+        <span class="kicker"><span class="en">Watch out</span><span class="zh">注意</span></span>
+        <h2><span class="en">Four things that bite.</span><span class="zh">四个坑。</span></h2>
+      </div>
+      <div class="rules">
+        <div class="card rv" data-n="1"><h3><span class="en"><code>@import</code> doesn't save context</span><span class="zh"><code>@import</code> 不省上下文</span></h3><p><span class="en">It loads in full at launch. Its value is one source and tidy organisation, not fewer tokens. What really stays out until needed is an on-demand skill — so keep heavy content in skills, not imports.</span><span class="zh">它在启动时全量载入。它的价值是只有一份源、组织清楚，而不是省 token。真正「不触发就不载入」的是按需 skill —— 所以重内容放 skill，别用 import。</span></p></div>
+        <div class="card rv d1" data-n="2"><h3><span class="en">Keep always-on neutral and sparse</span><span class="zh">常驻层保持中性、稀疏</span></h3><p><span class="en">That is what keeps false positives down — not any trick to route around a classifier.</span><span class="zh">这才是减少误报的办法，而不是靠什么技巧绕开分类器。</span></p></div>
+        <div class="card rv d2" data-n="3"><h3><span class="en">Real values → private repo</span><span class="zh">真实值放私有仓</span></h3><p><span class="en">If the data repo carries internal paths, org names or platform parameters, make it private. The tool repo stays generic and public.</span><span class="zh">数据仓里有内部路径、组织名或平台参数，就设成私有。工具仓保持通用、公开。</span></p></div>
+        <div class="card rv d3" data-n="4"><h3><span class="en">Multi-root projects</span><span class="zh">多根目录的项目</span></h3><p><span class="en">Code and notes on different mounts? Put a <code>CLAUDE.md</code> at each root; the thin one only <code>@import</code>s the main one.</span><span class="zh">代码和笔记在不同挂载点？每个根目录放一个 <code>CLAUDE.md</code>，薄的那个只 <code>@import</code> 主文件。</span></p></div>
+      </div>
+      <a class="back" href="index.html#migrate"><span class="en">← Back to moving machines</span><span class="zh">← 回到换机迁移</span></a>
+    </div>
+  </section>
+</main>
+
+<footer>
+  <div class="wrap">
+    <div class="foot">
+      <div>
+        <a class="brand" href="index.html" style="padding:0">whetstone <small lang="zh-CN">· 磨刀石</small></a>
+        <p><span class="en">Distill engineering work into portable Agent Skills. MIT · © 2026.</span><span class="zh">把工程经验蒸馏成可移植的 Agent Skill。MIT · © 2026。</span></p>
+      </div>
+      <div><h5><span class="en">Home</span><span class="zh">首页</span></h5><a href="index.html#why"><span class="en">Why</span><span class="zh">为什么</span></a><a href="index.html#evidence"><span class="en">Evidence</span><span class="zh">证据纪律</span></a><a href="index.html#layers"><span class="en">Layers</span><span class="zh">分层</span></a><a href="index.html#flow"><span class="en">How it works</span><span class="zh">流程</span></a></div>
+      <div><h5><span class="en">Read</span><span class="zh">延伸阅读</span></h5><a href="skills.html"><span class="en">Skills</span><span class="zh">技能</span></a><a href="use-time-conflicts.html"><span class="en">Use-time check</span><span class="zh">用时纠错</span></a><a href="routing.html"><span class="en">Routing</span><span class="zh">经验路由</span></a><a href="why-verify.html"><span class="en">Why verify</span><span class="zh">为什么要 verify</span></a><a href="claude-md-layering.html"><span class="en">CLAUDE.md layering</span><span class="zh">CLAUDE.md 分层</span></a></div>
+      <div><h5><span class="en">Related</span><span class="zh">相关</span></h5><a href="https://github.com/TbusOS/whetstone">GitHub</a><a href="https://github.com/TbusOS/whetstone-curator">whetstone-curator</a></div>
+    </div>
   </div>
 </footer>
 
+<script src="assets/site.js"></script>
 <script>
-  document.querySelector('.lang-toggle').addEventListener('click', function () {
-    var el = document.documentElement;
-    el.setAttribute('data-lang', el.getAttribute('data-lang') === 'en' ? 'zh' : 'en');
+(function () {
+  'use strict';
+  var WS = window.WS, T = WS.T, N = 12;
+  var rows = [
+    { c: 'var(--ember-2)', n: { en: 'Always-on', zh: '常驻' }, d: { en: '~/.claude/CLAUDE.md', zh: '~/.claude/CLAUDE.md' }, on: function () { return true; } },
+    { c: 'var(--l1)', n: { en: 'Org-shared', zh: '组织共享' }, d: { en: 'via @import', zh: '通过 @import' }, on: function () { return true; } },
+    { c: 'var(--l3)', n: { en: 'Project state', zh: '项目状态' }, d: { en: '<project>/CLAUDE.md', zh: '<project>/CLAUDE.md' }, on: function () { return true; } },
+    { c: 'var(--l2)', n: { en: 'On-demand skill', zh: '按需 skill' }, d: { en: 'loads on trigger', zh: '触发才载入' }, on: function (t) { return t === 4 || t === 5 || t === 9; } }
+  ];
+  var host = document.getElementById('ctx'), cells = [], heads = [];
+  function build() {
+    host.innerHTML = '';
+    var g = document.createElement('div'); g.className = 'ctx-grid';
+    var corner = document.createElement('div'); corner.className = 'ctx-h'; corner.style.textAlign = 'left';
+    corner.textContent = T({ en: 'turn →', zh: '第几轮 →' }); g.appendChild(corner);
+    heads = [];
+    for (var t = 1; t <= N; t++) { var h = document.createElement('div'); h.className = 'ctx-h'; h.textContent = t; g.appendChild(h); heads.push(h); }
+    cells = rows.map(function (r) {
+      var l = document.createElement('div'); l.className = 'ctx-lbl'; l.style.setProperty('--lc', r.c);
+      var b = document.createElement('b'); b.textContent = T(r.n);
+      var s = document.createElement('span'); s.textContent = T(r.d);
+      l.appendChild(b); l.appendChild(s); g.appendChild(l);
+      var row = [];
+      for (var t = 1; t <= N; t++) {
+        var c = document.createElement('div'); c.className = 'cell'; c.style.setProperty('--lc', r.c);
+        g.appendChild(c); row.push(c);
+      }
+      return row;
+    });
+    host.appendChild(g);
+    var foot = document.createElement('div'); foot.className = 'ctx-foot';
+    var a = document.createElement('span'); a.textContent = T({ en: 'filled = occupies context on that turn', zh: '填色 = 这一轮占用上下文' });
+    var b2 = document.createElement('span'); b2.innerHTML = '<b>↯</b> ' ; b2.appendChild(document.createTextNode(T({ en: 'skill trigger matched', zh: 'skill 触发词命中' })));
+    foot.appendChild(a); foot.appendChild(b2); host.appendChild(foot);
+  }
+  function paint(upto) {
+    rows.forEach(function (r, i) {
+      cells[i].forEach(function (c, k) {
+        var t = k + 1;
+        c.classList.toggle('on', t <= upto && r.on(t));
+        c.classList.toggle('trig', t <= upto && i === 3 && r.on(t));
+        c.classList.toggle('col', t === upto);
+      });
+    });
+    heads.forEach(function (h, k) { h.classList.toggle('now', k + 1 === upto); });
+  }
+  var cur = N, timer = null;
+  build(); paint(N);
+  document.addEventListener('langchange', function () { build(); paint(cur); });
+  if (WS.reduce) return;
+  WS.onScreen(host, function (v) {
+    clearInterval(timer);
+    if (!v) return;
+    cur = 0;
+    timer = setInterval(function () { cur = cur >= N + 3 ? 1 : cur + 1; paint(Math.min(cur, N)); }, 520);
   });
+})();
 </script>
 </body>
 </html>

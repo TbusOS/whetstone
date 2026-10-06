@@ -1,0 +1,90 @@
+<!doctype html>
+<!--
+  Source for assets/og-home.png (the link-preview image shown when the site is shared).
+  Rendered at 1200×630 CSS px with deviceScaleFactor 2 → 2400×1260 PNG, matching the og:image size in the pages.
+  To regenerate: open this file in a headless Chromium at a 1200×630 viewport, scale 2, and screenshot the viewport.
+-->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>og-home source</title>
+<style>
+  :root { --bg:#0f1113; --text:#ece7de; --muted:#a2a7ac; --dim:#6e757c; --line:#2a3036; --ember:#ff7a3d; --ember2:#ffb06b; --refuse:#ff5d6c;
+          --l1:#8f96ff; --l2:#3cc6a8; --l3:#e8b54d; --l4:#b9a48f;
+          --serif:"Iowan Old Style","Charter","Georgia","Songti SC","Noto Serif SC",serif;
+          --sans:-apple-system,"PingFang SC","Noto Sans SC",system-ui,sans-serif;
+          --mono:"SF Mono","JetBrains Mono",Menlo,monospace; }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; width: 1200px; height: 630px; overflow: hidden; background: var(--bg); color: var(--text); font-family: var(--sans); }
+  body { position: relative; }
+  .glow { position: absolute; width: 900px; height: 900px; right: -260px; top: -330px; background: radial-gradient(closest-side, rgba(255,122,61,.22), rgba(255,122,61,.05) 55%, transparent); }
+  .lines { position: absolute; inset: auto 0 0 0; height: 220px; opacity: .55; background: repeating-linear-gradient(180deg, transparent 0 34px, rgba(255,255,255,.04) 34px 35px); -webkit-mask-image: linear-gradient(transparent, #000); }
+  .grain { position: absolute; inset: 0; opacity: .05; mix-blend-mode: overlay; background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='180' height='180'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 1 0 0 0 0 1 0 0 0 0 1 0 0 0 .55 0'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>"); }
+  .left { position: absolute; left: 72px; top: 64px; width: 600px; }
+  .brand { display: flex; align-items: center; gap: 12px; font: 600 22px/1 var(--sans); }
+  .brand small { color: var(--dim); font-weight: 500; }
+  h1 { margin: 44px 0 0; font: 500 68px/1.02 var(--serif); letter-spacing: -.03em; }
+  .cut { color: var(--ember); position: relative; white-space: nowrap; }
+  .cut::after { content: ""; position: absolute; left: -2%; right: -2%; top: 55%; height: 5px; border-radius: 3px; background: var(--refuse); }
+  .zh { margin-top: 24px; font: 400 25px/1.4 var(--serif); color: var(--muted); }
+  .zh b { font-weight: 400; color: var(--ember2); }
+  .facts { position: absolute; left: 72px; bottom: 56px; display: flex; gap: 0; border: 1px solid var(--line); border-radius: 14px; background: rgba(25,29,33,.7); }
+  .facts div { padding: 14px 22px; font-size: 15px; color: var(--muted); }
+  .facts div + div { border-left: 1px solid var(--line); }
+  .facts b { font: 500 28px/1 var(--serif); color: var(--text); margin-right: 8px; }
+  .url { position: absolute; right: 72px; bottom: 70px; font: 15px/1 var(--mono); color: var(--dim); }
+  .panel { position: absolute; right: 72px; top: 64px; width: 400px; height: 420px; border-radius: 22px; border: 1px solid var(--line);
+           background: radial-gradient(120% 60% at 50% 30%, rgba(255,122,61,.12), transparent 60%), linear-gradient(180deg, #1a1e22, #121518); overflow: hidden; }
+  .chip { position: absolute; font: 13.5px/1 var(--mono); padding: 9px 12px; border-radius: 9px; background: #252a30; border: 1px solid #3a4148; white-space: nowrap; }
+  .chip.c1 { left: 50%; transform: translateX(-50%); top: 34px; }
+  .chip.bad { right: 18px; top: 160px; color: #ffd5d9; background: #3a1d22; border-color: var(--refuse); }
+  .chip.bad s { text-decoration-color: var(--refuse); text-decoration-thickness: 2px; }
+  .chip.bad em { font-style: normal; font-weight: 700; color: var(--refuse); margin-left: 8px; }
+  .stone { position: absolute; left: 28px; right: 28px; top: 120px; height: 28px; border-radius: 9px; background: linear-gradient(180deg, #6a7078, #484e55 45%, #2f3439); box-shadow: 0 0 0 1px rgba(255,122,61,.5), 0 0 36px -2px rgba(255,122,61,.55), inset 0 1px 0 rgba(255,255,255,.3); }
+  .spark { position: absolute; width: 4px; height: 4px; border-radius: 50%; background: var(--ember2); box-shadow: 0 0 8px 1px var(--ember); }
+  .bands { position: absolute; left: 16px; right: 16px; bottom: 16px; display: grid; gap: 5px; }
+  .band { --c: var(--l1); display: flex; align-items: center; justify-content: space-between; height: 44px; padding: 0 16px; border-radius: 10px; border-left: 3px solid var(--c);
+          background: linear-gradient(90deg, color-mix(in srgb, var(--c) 24%, transparent), color-mix(in srgb, var(--c) 8%, transparent)); font: 13px/1 var(--mono); color: var(--muted); }
+  .band b { color: var(--c); font-size: 14px; margin-right: 12px; }
+  .band span { flex: 1; }
+  .band output { font: 600 18px/1 var(--mono); color: var(--text); }
+  .band.l4 { --c: var(--l4); border-left-style: dashed; height: 38px; }
+  .band.l3 { --c: var(--l3); } .band.l2 { --c: var(--l2); } .band.l1 { height: 52px; }
+</style>
+</head>
+<body>
+  <div class="glow"></div><div class="lines"></div>
+
+  <div class="left">
+    <div class="brand">
+      <svg width="34" height="34" viewBox="0 0 32 32"><rect x="3" y="12" width="26" height="9" rx="2.5" fill="#5a6068"/><rect x="3" y="12" width="26" height="3" rx="1.5" fill="#8a9098"/><path d="M8 9l3-5M16 8V3M24 9l-3-5" stroke="#ff7a3d" stroke-width="2" stroke-linecap="round"/><rect x="5" y="23" width="22" height="3" rx="1.5" fill="#8f96ff" opacity=".85"/></svg>
+      whetstone <small>· 磨刀石</small>
+    </div>
+    <h1>Distill the session.<br>Refuse what it<br><span class="cut">can't prove.</span></h1>
+    <div class="zh">把会话蒸馏成 skill，再把<b>证不出来的</b>挡在门外。</div>
+  </div>
+
+  <div class="panel">
+    <div class="chip c1">compare both hashes byte by byte</div>
+    <div class="stone"></div>
+    <i class="spark" style="left:150px;top:104px"></i><i class="spark" style="left:178px;top:92px"></i><i class="spark" style="left:214px;top:98px"></i>
+    <i class="spark" style="left:236px;top:110px;width:3px;height:3px"></i><i class="spark" style="left:128px;top:96px;width:3px;height:3px"></i><i class="spark" style="left:200px;top:80px;width:3px;height:3px"></i>
+    <div class="chip bad"><s>“high” — one platform</s><em>V12</em></div>
+    <div class="bands">
+      <div class="band l4"><b>L4</b><span>state → memory</span><output>2</output></div>
+      <div class="band l3"><b>L3</b><span>platform value → params/</span><output>3</output></div>
+      <div class="band l2"><b>L2</b><span>method · pitfall</span><output>2</output></div>
+      <div class="band l1"><b>L1</b><span>principle</span><output>2</output></div>
+    </div>
+  </div>
+
+  <div class="facts">
+    <div><b>38</b>checks</div>
+    <div><b>4</b>layers</div>
+    <div><b>2</b>human gates</div>
+    <div><b>0</b>dependencies</div>
+  </div>
+  <div class="url">github.com/TbusOS/whetstone</div>
+  <div class="grain"></div>
+</body>
+</html>

@@ -2,393 +2,296 @@
 <html lang="en" data-lang="en">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>I marked 61 entries “high confidence.” Not one named a test. — Whetstone</title>
 <meta name="description" content="A rule that only a model enforces is one context window away from not existing. What happened when I finally ran a checker against my own skill library.">
+<meta name="theme-color" content="#0f1113">
 <meta property="og:title" content="I marked 61 entries “high confidence.” Not one named a test.">
 <meta property="og:description" content="A rule that only a model enforces is one context window away from not existing. What happened when I finally ran a checker against my own skill library.">
-<meta property="og:url" content="https://doc.tbusos.com/whetstone/">
+<meta property="og:url" content="https://doc.tbusos.com/whetstone/why-verify.html">
 <meta property="og:image" content="https://doc.tbusos.com/whetstone/assets/og-home.png">
 <meta property="og:image:width" content="2400">
 <meta property="og:image:height" content="1260">
+<meta property="og:type" content="article">
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:image" content="https://doc.tbusos.com/whetstone/assets/og-home.png">
-<meta property="og:type" content="article">
-<link rel="stylesheet" href="assets/fonts.css">
-<link rel="stylesheet" href="assets/anthropic.css">
+<script>(function(){var h=document.documentElement,l='en';h.classList.add('js');try{var q=new URLSearchParams(location.search).get('lang'),s=localStorage.getItem('whetstone-lang');l=(q==='zh'||q==='en')?q:(s==='zh'||s==='en')?s:((navigator.language||'').toLowerCase().indexOf('zh')===0?'zh':'en');}catch(e){}h.setAttribute('data-lang',l);})();</script>
+<link rel="stylesheet" href="assets/site.css">
 <style>
-  html[data-lang="en"] .lang-zh { display: none !important; }
-  html[data-lang="zh"] .lang-en { display: none !important; }
-  .lang-toggle {
-    background: transparent; border: 1px solid var(--anth-light-gray); color: var(--anth-text);
-    font-family: var(--font-heading); font-size: 13px; font-weight: 500;
-    padding: 6px 12px; border-radius: var(--radius-pill); cursor: pointer; letter-spacing: 0.05em;
-  }
-  .lang-toggle:hover { background: var(--anth-light-gray); }
-  html[data-lang="zh"] body, html[data-lang="zh"] p, html[data-lang="zh"] li,
-  html[data-lang="zh"] .feat-card__body, html[data-lang="zh"] td, html[data-lang="zh"] th {
-    font-family: "Noto Sans SC", "Source Han Sans SC", "PingFang SC", sans-serif;
-  }
-  html[data-lang="zh"] h1, html[data-lang="zh"] h2, html[data-lang="zh"] h3,
-  html[data-lang="zh"] .feat-card__title, html[data-lang="zh"] .anth-badge,
-  html[data-lang="zh"] .feat-card__kicker, html[data-lang="zh"] .stat-strip .num,
-  html[data-lang="zh"] .stat-strip .lbl {
-    font-family: "Noto Sans SC", "PingFang SC", sans-serif;
-  }
-  html[data-lang="zh"] .test-card blockquote {
-    font-family: "Noto Serif SC", "Source Han Serif SC", "PingFang SC", serif; font-style: normal;
-  }
-
-  .feat-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:var(--space-5); }
-  .feat-card { background:#ffffff; border:1px solid var(--anth-light-gray); border-radius:var(--radius-lg); padding:var(--space-7); }
-  .feat-card__kicker { font-family:var(--font-heading); font-size:11.5px; letter-spacing:0.14em; text-transform:uppercase; color:var(--anth-orange-ink); font-weight:700; }
-  html[data-lang="zh"] .feat-card__kicker { text-transform:none; letter-spacing:0.04em; }
-  .feat-card__title { font-family:var(--font-heading); font-size:22px; font-weight:600; letter-spacing:-0.01em; color:var(--anth-text); margin:var(--space-2) 0 var(--space-3); }
-  .feat-card__body { font-family:var(--font-body); font-size:16px; line-height:1.65; color:var(--anth-text); margin:0; }
-  .feat-card__icon { width:56px; height:56px; border-radius:var(--radius-md); display:grid; place-items:center; margin-bottom:var(--space-4); }
-
-  .stat-strip { display:grid; grid-template-columns:repeat(4, 1fr); gap:var(--space-5); padding:var(--space-7) var(--space-6); background:#ffffff; border:1px solid var(--anth-light-gray); border-radius:var(--radius-md); }
-  .stat-strip > div { text-align:center; }
-  .stat-strip .num { display:block; font-family:var(--font-heading); font-size:44px; font-weight:600; color:var(--anth-text); letter-spacing:-0.02em; line-height:1; }
-  .stat-strip .lbl { display:block; margin-top:var(--space-2); font-family:var(--font-heading); font-size:13px; color:var(--anth-text-secondary); letter-spacing:0.02em; }
-
-  figure { margin:0; }
-  figcaption { font-family:var(--font-heading); font-size:13px; color:var(--anth-text-secondary); text-align:center; margin-top:var(--space-3); }
-
-  .layer-table { width:100%; border-collapse:collapse; font-family:var(--font-body); font-size:15.5px; }
-  .layer-table th, .layer-table td { text-align:left; padding:var(--space-4) var(--space-4); border-bottom:1px solid var(--anth-light-gray); vertical-align:top; }
-  .layer-table th { font-family:var(--font-heading); font-size:13px; font-weight:600; color:var(--anth-text-secondary); letter-spacing:0.02em; }
-  .layer-table tbody tr:last-child td { border-bottom:none; }
-  .layer-table .lyr { font-family:var(--font-heading); font-weight:700; white-space:nowrap; }
-  .layer-table .lyr--l1 { color:var(--anth-orange-ink); }
-  .layer-table .lyr--l2 { color:#3f6796; }
-  .layer-table .lyr--l3 { color:#5d7045; }
-  .layer-table .lyr--l4 { color:#8a5a2a; }
-  .layer-table .lyr--hi { color:var(--anth-orange-ink); }
-  .layer-table .lyr--md { color:#3f6796; }
-  .layer-table .lyr--lo { color:#65645a; }
-  .ref-grid { display:grid; grid-template-columns:repeat(2,1fr); gap:var(--space-5); }
-  .ref-card { background:#ffffff; border:1px solid var(--anth-light-gray); border-radius:var(--radius-md); padding:var(--space-5) var(--space-6); }
-  .ref-card h3 { font-family:var(--font-heading); font-size:16px; font-weight:600; margin:0 0 var(--space-2); color:var(--anth-text); }
-  .ref-card p { font-family:var(--font-body); font-size:14.5px; line-height:1.6; color:var(--anth-text-secondary); margin:0; }
-  .ref-card .no { font-family:var(--font-heading); font-size:11px; font-weight:700; letter-spacing:0.1em; text-transform:uppercase; color:var(--anth-orange-ink); }
-  @media (max-width:860px) { .ref-grid { grid-template-columns:1fr; } }
-
-  .feat-grid--two { grid-template-columns:repeat(2,1fr); }
-  .mate-row { display:grid; grid-template-columns:repeat(3,1fr); gap:var(--space-5); }
-  .mate-card { background:#ffffff; border:1px solid var(--anth-light-gray); border-radius:var(--radius-md); padding:var(--space-6); }
-  .mate-card h3 { font-family:var(--font-heading); font-size:18px; font-weight:600; margin:0 0 var(--space-2); color:var(--anth-text); }
-  .mate-card .opt { font-family:var(--font-heading); font-size:11px; font-weight:700; letter-spacing:0.1em; text-transform:uppercase; color:#4a6a3a; }
-  .mate-card p { font-family:var(--font-body); font-size:15px; line-height:1.6; color:var(--anth-text-secondary); margin:var(--space-2) 0 0; }
-
-  .install-table { width:100%; border-collapse:collapse; font-family:var(--font-body); font-size:15.5px; background:#ffffff; border:1px solid var(--anth-light-gray); border-radius:var(--radius-md); overflow:hidden; }
-  .install-table th, .install-table td { text-align:left; padding:var(--space-4); border-bottom:1px solid var(--anth-light-gray); }
-  .install-table th { font-family:var(--font-heading); font-size:13px; font-weight:600; color:var(--anth-text-secondary); }
-  .install-table tbody tr:last-child td { border-bottom:none; }
-  .install-table code { font-family:var(--font-mono); font-size:13.5px; }
-
-  .scene-card { background:#ffffff; border:1px solid var(--anth-light-gray); border-radius:var(--radius-lg); padding:var(--space-7); }
-
-  .art-lede { font-family:var(--font-body); font-size:20px; line-height:1.65; color:var(--anth-text-secondary); margin:var(--space-5) 0 var(--space-6); }
-  article p { font-family:var(--font-body); font-size:17px; line-height:1.75; margin:0 0 var(--space-5); }
-  article h2 { font-family:var(--font-heading); font-size:27px; font-weight:600; margin:var(--space-7) 0 var(--space-4); }
-  article ul, article ol { font-family:var(--font-body); font-size:17px; line-height:1.7; padding-left:1.3em; margin:0 0 var(--space-5); }
-  article li { margin-bottom:var(--space-3); }
-  .art-quote { border-left:3px solid var(--anth-orange); background:var(--anth-bg-subtle); margin:0 0 var(--space-5); padding:var(--space-4) var(--space-5); font-family:var(--font-body); font-size:18px; line-height:1.6; }
-  .art-note { font-size:14.5px !important; color:var(--anth-text-secondary); margin-top:calc(-1 * var(--space-3)) !important; }
-  .art-stats { display:grid; grid-template-columns:repeat(4,1fr); gap:var(--space-4); margin:var(--space-6) 0; }
-  .art-stats > div { background:#ffffff; border:1px solid var(--anth-light-gray); border-radius:var(--radius-md); padding:var(--space-4); text-align:center; }
-  .art-stats strong { display:block; font-family:var(--font-heading); font-size:34px; font-weight:700; color:var(--anth-orange-ink); line-height:1.1; }
-  .art-stats span { display:block; font-family:var(--font-body); font-size:13px; line-height:1.45; color:var(--anth-text-secondary); margin-top:6px; }
-  .art-term { background:#1f1e1b; color:#e9e6dd; border-radius:var(--radius-md); padding:var(--space-5); overflow-x:auto; font-size:13px; line-height:1.6; margin:0 0 var(--space-4); }
-  .art-term code { font-family:ui-monospace,SFMono-Regular,Menlo,monospace; background:none; color:inherit; padding:0; }
-  .art-attacks { list-style:none; padding-left:0; counter-reset:atk; }
-  .art-attacks > li { counter-increment:atk; position:relative; padding-left:52px; margin-bottom:var(--space-5); }
-  .art-attacks > li::before { content:counter(atk); position:absolute; left:0; top:2px; width:32px; height:32px; border-radius:50%; background:var(--anth-orange-ink); color:#ffffff; font-family:var(--font-heading); font-weight:700; font-size:15px; display:flex; align-items:center; justify-content:center; }
-  .art-attacks h3 { font-family:var(--font-heading); font-size:18px; font-weight:600; margin:2px 0 var(--space-2); }
-  .art-attacks p { font-size:16px; margin-bottom:0; }
-  .art-table { width:100%; border-collapse:collapse; font-family:var(--font-body); font-size:16px; }
-  .art-table th, .art-table td { text-align:left; padding:var(--space-4); border-bottom:1px solid var(--anth-light-gray); vertical-align:top; }
-  .art-table th { font-family:var(--font-heading); font-size:13px; font-weight:600; color:var(--anth-text-secondary); }
-  .art-table tbody tr:last-child td { border-bottom:none; }
-  .art-table .lv { font-family:var(--font-heading); font-weight:700; white-space:nowrap; }
-  .art-table .lv--hi { color:var(--anth-orange-ink); }
-  .art-table .lv--md { color:#3f6796; }
-  .art-table .lv--lo { color:#65645a; }
-  .art-cta { background:var(--anth-bg-subtle); border-radius:var(--radius-lg); padding:var(--space-6); margin-top:var(--space-7); }
-  .art-cta p { font-size:16px; }
-  .art-cta .anth-button { margin-right:var(--space-3); }
-  @media (max-width:760px) { .art-stats { grid-template-columns:repeat(2,1fr); } article h2 { font-size:23px; } }
-  /* the nav is a fixed 64px; on a narrow screen its links would wrap past it and
-     sit on top of the page, so they step aside (the footer carries the same links) */
-  @media (max-width:768px) {
-    .anth-nav-inner > div:nth-child(2) { display:none; }
-  }
+/* the 61-dot figure */
+.tally { display: grid; grid-template-columns: 1.1fr 1fr; gap: clamp(24px, 4vw, 48px); align-items: center; margin: 12px 0 40px; padding: clamp(22px, 3vw, 32px); background: var(--panel); border: 1px solid var(--line); border-radius: 20px; }
+.dots61 { display: grid; grid-template-columns: repeat(11, 1fr); gap: 7px; }
+.dots61 i { aspect-ratio: 1; border-radius: 50%; background: #2a3036; border: 1px solid #39414a; transition: background .4s, border-color .4s, box-shadow .4s, transform .4s; }
+.dots61 i.hi { background: #4d5560; border-color: #5d6670; }
+.dots61 i.over { background: var(--refuse); border-color: var(--refuse); box-shadow: 0 0 10px -2px var(--refuse); }
+.nums { display: grid; grid-template-columns: 1fr 1fr; gap: 22px 18px; }
+.nums b { display: block; font: 500 clamp(40px, 5vw, 58px)/1 var(--serif); letter-spacing: -.03em; }
+.nums span { display: block; margin-top: 6px; color: var(--muted); font-size: 13.5px; line-height: 1.45; }
+.nums .r b { color: var(--refuse); } .nums .z b { color: var(--ember); }
+.tally-key { grid-column: 1 / -1; display: flex; flex-wrap: wrap; gap: 8px 18px; font: 12px/1.4 var(--mono); color: var(--muted); border-top: 1px solid var(--line); padding-top: 14px; }
+.tally-key i { display: inline-block; width: 9px; height: 9px; border-radius: 50%; margin-right: 6px; }
+@media (max-width: 760px) { .tally { grid-template-columns: 1fr; } }
+/* the four bypasses */
+.prose .atk { list-style: none; margin: 8px 0 28px; padding: 0; display: grid; gap: 14px; }
+.atk li { display: grid; grid-template-columns: 56px 1fr; gap: 18px; padding: 22px; border-radius: 16px; background: var(--panel); border: 1px solid var(--line); }
+.atk .n { font: 500 44px/1 var(--serif); color: var(--refuse); }
+.atk h3 { font-size: 20px; }
+.atk p { margin: 8px 0 0 !important; font-size: 15.5px !important; color: var(--muted) !important; }
+.atk .fixed { display: inline-block; margin-top: 10px; font: 600 11px/1 var(--mono); letter-spacing: .1em; color: var(--ok); padding: 6px 8px; border-radius: 6px; background: rgba(122,212,140,.1); border: 1px solid rgba(122,212,140,.3); }
+.cta-card { margin-top: 56px; padding: 28px; border-radius: 20px; border: 1px solid var(--line); background: linear-gradient(135deg, rgba(255,122,61,.10), var(--panel) 55%); }
+.cta-card p { font-size: 16px !important; }
+.cta-card .cta { display: flex; gap: 12px; flex-wrap: wrap; margin-top: 8px; }
 </style>
 </head>
 <body>
 
-<!-- Nav -->
-<nav class="anth-nav"><div class="anth-nav-inner">
-  <a href="index.html" style="font-family:var(--font-heading); font-weight:600; font-size:18px; text-decoration:none; color:var(--anth-text);">Whetstone · <span lang="zh-CN">磨刀石</span></a>
-  <div>
-    <a href="index.html#why"><span class="lang-en">Why</span><span class="lang-zh">为什么</span></a>
-    <a href="index.html#evidence"><span class="lang-en">Evidence</span><span class="lang-zh">证据</span></a>
-    <a href="use-time-conflicts.html"><span class="lang-en">Use-time check</span><span class="lang-zh">用时纠错</span></a>
-    <a href="routing.html"><span class="lang-en">Routing</span><span class="lang-zh">经验路由</span></a>
-    <a href="index.html#architecture"><span class="lang-en">Architecture</span><span class="lang-zh">架构</span></a>
-    <a href="index.html#flow"><span class="lang-en">How it works</span><span class="lang-zh">流程</span></a>
-    <a href="skills.html"><span class="lang-en">Skills</span><span class="lang-zh">技能</span></a>
-    <a href="index.html#install"><span class="lang-en">Install</span><span class="lang-zh">安装</span></a>
-    <a href="index.html#migrate"><span class="lang-en">Move</span><span class="lang-zh">迁移</span></a>
-    <a href="index.html#index-hygiene"><span class="lang-en">Index</span><span class="lang-zh">索引</span></a>
-  </div>
-  <div style="display:flex; gap:var(--space-3); align-items:center;">
-    <button type="button" class="lang-toggle" aria-label="Switch language">中 / EN</button>
-    <a class="anth-button" href="https://github.com/TbusOS/whetstone">GitHub</a>
-  </div>
-</div></nav>
-
-<article class="anth-section" style="padding-top:var(--space-7);">
-  <div class="anth-container" style="max-width:720px;">
-
-    <span class="anth-badge"><span class="lang-en">Field note · 2026-09-02</span><span class="lang-zh">实践记录 · 2026-09-02</span></span>
-
-    <h1 style="margin-top:var(--space-4); font-size:44px; line-height:1.15;">
-      <span class="lang-en">I marked 61 entries “high confidence.”<br>Not one of them named a test.</span>
-      <span class="lang-zh">我给 61 条经验标了「高置信度」<br>没有一条说得出验证方式</span>
-    </h1>
-
-    <p class="art-lede">
-      <span class="lang-en">I keep a skill library. It is a folder of markdown files my coding agent loads when a task matches: secure boot, SDK migration, partition layouts. After I finish something I write down what I learned, so the next project does not start from zero.</span>
-      <span class="lang-zh">我维护一个 skill 库。就是一个 markdown 文件夹，任务匹配上了编程 agent 就加载：安全启动、SDK 升级、分区布局。每做完一件事我把学到的写下来，下个项目就不用从零开始。</span>
-    </p>
-
-    <p>
-      <span class="lang-en">Months ago I put a rule at the top of the framework document that governs those files:</span>
-      <span class="lang-zh">几个月前，我在管着这些文件的框架文档开头写下一条规矩：</span>
-    </p>
-
-    <blockquote class="art-quote">
-      <span class="lang-en">No entry may be marked <code>high</code> confidence without an executable check that actually passed.</span>
-      <span class="lang-zh">没有一条实测通过的可执行检查，不许标 <code>high</code>。</span>
-    </blockquote>
-
-    <p>
-      <span class="lang-en">Last week I wrote the checker that enforces it, and pointed it at the two packages the framework had produced.</span>
-      <span class="lang-zh">上周我把执行这条规矩的检查器写了出来，拿它对准这套框架自己产出的两个包。</span>
-    </p>
-
-    <div class="art-stats">
-      <div><strong>61</strong><span class="lang-en">entries marked <code>high</code></span><span class="lang-zh">条标着 <code>high</code></span></div>
-      <div><strong>0</strong><span class="lang-en">of them named a test</span><span class="lang-zh">条说得出验证方式</span></div>
-      <div><strong>54</strong><span class="lang-en">graded above what my own table permits</span><span class="lang-zh">条高过我自己那张表的上限</span></div>
-      <div><strong>180</strong><span class="lang-en">errors in two files I had been using</span><span class="lang-zh">个错，在两个我一直在用的文件里</span></div>
+<nav class="nav" aria-label="Primary">
+  <div class="wrap">
+    <a class="brand" href="index.html">
+      <svg width="26" height="26" viewBox="0 0 32 32" aria-hidden="true"><rect x="3" y="12" width="26" height="9" rx="2.5" fill="#5a6068"/><rect x="3" y="12" width="26" height="3" rx="1.5" fill="#8a9098"/><path d="M8 9l3-5M16 8V3M24 9l-3-5" stroke="#ff7a3d" stroke-width="2" stroke-linecap="round"/><rect x="5" y="23" width="22" height="3" rx="1.5" fill="#8f96ff" opacity=".85"/></svg>
+      whetstone <small lang="zh-CN">· 磨刀石</small>
+    </a>
+    <div class="nav-links">
+      <a href="index.html#evidence"><span class="en">Evidence</span><span class="zh">证据纪律</span></a>
+      <a href="index.html#layers"><span class="en">Layers</span><span class="zh">分层</span></a>
+      <a href="index.html#flow"><span class="en">How it works</span><span class="zh">流程</span></a>
+      <a href="use-time-conflicts.html"><span class="en">Use-time check</span><span class="zh">用时纠错</span></a>
+      <a href="routing.html"><span class="en">Routing</span><span class="zh">经验路由</span></a>
+      <a href="index.html#install"><span class="en">Install</span><span class="zh">安装</span></a>
     </div>
+    <div class="nav-act">
+      <button type="button" class="lang" aria-label="Switch language / 切换语言">中 / EN</button>
+      <a class="gh" href="https://github.com/TbusOS/whetstone"><svg width="15" height="15" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/></svg>GitHub</a>
+    </div>
+  </div>
+</nav>
 
+<header class="page-hero">
+  <div class="wrap">
+    <span class="kicker"><span class="en">Field note · 2026-09-02</span><span class="zh">实践记录 · 2026-09-02</span></span>
+    <h1>
+      <span class="en">I marked 61 entries “high confidence.” Not one of them named a test.</span>
+      <span class="zh">我给 61 条经验标了「高置信度」，没有一条说得出验证方式。</span>
+    </h1>
+    <p class="lede">
+      <span class="en">I keep a skill library — a folder of markdown files my coding agent loads when a task matches: secure boot, SDK migration, partition layouts. After I finish something I write down what I learned, so the next project doesn't start from zero.</span>
+      <span class="zh">我维护一个 skill 库，就是一个 markdown 文件夹，任务匹配上了编程 agent 就加载：安全启动、SDK 升级、分区布局。每做完一件事我把学到的写下来，下个项目就不用从零开始。</span>
+    </p>
+  </div>
+</header>
+
+<main class="wrap">
+  <article class="prose">
     <p>
-      <span class="lang-en">Nobody had broken the rule. Nothing had ever enforced it.</span>
-      <span class="lang-zh">没有人违反过这条规矩。只是从来没有任何东西执行过它。</span>
+      <span class="en">Months ago I put a rule at the top of the framework document that governs those files:</span>
+      <span class="zh">几个月前，我在管着这些文件的框架文档开头写下一条规矩：</span>
     </p>
-
-    <h2><span class="lang-en">Why written rules stop working</span><span class="lang-zh">写下来的规矩为什么会失效</span></h2>
-
+    <blockquote class="pull">
+      <span class="en">No entry may be marked <code>high</code> confidence without an executable check that actually passed.</span>
+      <span class="zh">没有一条实测通过的可执行检查，不许标 <code>high</code>。</span>
+    </blockquote>
     <p>
-      <span class="lang-en">I do not think this is specific to me. You put a discipline in a document. The model reads it at the start of a session and follows it. Forty messages later the document has been summarised, the context has rolled over, and the entries coming out still have the right fields and the same confident label. The format is what carries across a summarisation. The reason the format exists does not, and nothing in the output tells you which of the two you are looking at.</span>
-      <span class="lang-zh">我不认为这只发生在我身上。你把一条纪律写进文档。模型在会话开头读到它，照做。四十条消息之后，文档被摘要压缩了，上下文已经滚过一轮，产出的条目仍然带着对的字段和一样自信的标签。能扛过一次摘要压缩的是格式，格式存在的那个理由扛不过去，而输出里没有任何东西告诉你眼前这条是哪一种。</span>
+      <span class="en">Last week I wrote the checker that enforces it, and pointed it at the two packages the framework had produced.</span>
+      <span class="zh">上周我把执行这条规矩的检查器写了出来，拿它对准这套框架自己产出的两个包。</span>
     </p>
+  </article>
 
+  <figure class="tally rv" id="tally" style="max-width:920px">
+    <div class="dots61" id="dots61" role="img" aria-label="61 dots, one per entry marked high; 54 of them turn red because they are graded above what the table permits."></div>
+    <div class="nums">
+      <div><b>61</b><span class="en">entries marked <code>high</code></span><span class="zh">条标着 <code>high</code></span></div>
+      <div class="z"><b>0</b><span class="en">of them named a test</span><span class="zh">条说得出验证方式</span></div>
+      <div class="r"><b>54</b><span class="en">graded above what my own table permits</span><span class="zh">条高过我自己那张表的上限</span></div>
+      <div><b>180</b><span class="en">errors in two files I had been using</span><span class="zh">个错误，出在两个我一直在用的文件里</span></div>
+    </div>
+    <figcaption class="tally-key"><span><i style="background:var(--refuse)"></i><span class="en">claims more than the evidence allows</span><span class="zh">标的比证据允许的高</span></span><span><i style="background:#4d5560"></i><span class="en">marked high, within the cap on other grounds</span><span class="zh">标了 high，按其他依据未超上限</span></span><span><span class="en">one dot = one entry</span><span class="zh">一个点 = 一条经验</span></span></figcaption>
+  </figure>
+
+  <article class="prose">
     <p>
-      <span class="lang-en">You do not notice, because nothing breaks. A wrong <code>high</code> just sits there looking authoritative. Six months later someone acts on advice that was true once, on one board, and is not any more.</span>
-      <span class="lang-zh">你不会发现，因为什么都没坏。一个标错的 <code>high</code> 就那么摆着，一副权威的样子。半年后有人照着一条曾经在某一块板上成立、现在已经不成立的建议动手。</span>
+      <span class="en">Nobody had broken the rule. Nothing had ever enforced it.</span>
+      <span class="zh">没有人违反过这条规矩。只是从来没有任何东西执行过它。</span>
     </p>
 
+    <h2><span class="en">Why written rules stop working</span><span class="zh">写下来的规矩为什么会失效</span></h2>
     <p>
-      <span class="lang-en">That is the argument for making rules executable, and it is why I had stopped trusting the document version of mine.</span>
-      <span class="lang-zh">这就是把规矩做成能跑的东西的理由，也是我后来不再相信自己那份文档版规矩的原因。</span>
+      <span class="en">I don't think this is specific to me. You put a discipline in a document. The model reads it at the start of a session and follows it. Forty messages later the document has been summarised, the context has rolled over, and the entries coming out still have the right fields and the same confident label. The format is what carries across a summarisation. The reason the format exists does not, and nothing in the output tells you which of the two you are looking at.</span>
+      <span class="zh">我不认为这只发生在我身上。你把一条纪律写进文档，模型在会话开头读到它、照做。四十条消息之后，文档被摘要压缩了，上下文已经滚过一轮，产出的条目仍然带着对的字段和一样自信的标签。能扛过一次摘要压缩的是格式，格式存在的那个理由扛不过去，而输出里没有任何东西告诉你眼前这条是哪一种。</span>
     </p>
-
-    <h2><span class="lang-en">What I could and could not turn into a check</span><span class="lang-zh">哪些能变成检查，哪些不能</span></h2>
-
     <p>
-      <span class="lang-en">Some of the discipline needs judgement. Is this principle really exception-free? Was that contradiction preserved, or averaged away? Mechanising those would just produce false positives, and a checker that fires on good input gets ignored, which leaves you worse off than before.</span>
-      <span class="lang-zh">有些纪律需要判断力。这条原理是不是真的举不出反例？那个矛盾是被保留了，还是被和成了平均值？把这些硬做成机械判断只会制造假阳性，而一个在好输入上乱报的检查器会被人忽略，那比原来还糟。</span>
+      <span class="en">You don't notice, because nothing breaks. A wrong <code>high</code> just sits there looking authoritative. Six months later someone acts on advice that was true once, on one board, and isn't any more.</span>
+      <span class="zh">你不会发现，因为什么都没坏。一个标错的 <code>high</code> 就那么摆着，一副权威的样子。半年后有人照着一条曾经在某一块板上成立、现在已经不成立的建议动手。</span>
     </p>
-
     <p>
-      <span class="lang-en">Plenty of it is decidable, though. Does the entry have a source, a date, a reproduction record, a verification method? Is the date absolute, or does it say “recently”? Given the evidence actually present, is the declared confidence higher than the table permits? Is the reproduction record a list of platforms, or did someone just type “3 times”? Was the pitfall split into a transferable lesson and a platform-specific fact, or is the lesson still welded to the one chip where I learned it?</span>
-      <span class="lang-zh">但相当一部分是可判的。这条有没有来源、日期、复现记录、验证方式？日期是绝对日期，还是写着「最近」？按实际拿得出的证据，标的置信度有没有高过表允许的上限？复现记录是一张平台列表，还是有人随手打了个「3 次」？这条坑拆成了可迁移的教训和平台专属的事实，还是教训仍然焊死在我学到它的那一颗芯片上？</span>
+      <span class="en">That is the argument for making rules executable, and it is why I had stopped trusting the document version of mine.</span>
+      <span class="zh">这就是把规矩做成能跑的东西的理由，也是我后来不再相信自己那份文档版规矩的原因。</span>
     </p>
 
+    <h2><span class="en">What I could and couldn't turn into a check</span><span class="zh">哪些能变成检查，哪些不能</span></h2>
     <p>
-      <span class="lang-en">That came to 37 checks. It prints findings and exits non-zero.</span>
-      <span class="lang-zh">数下来 37 条检查。它打印问题，退出码非零。</span>
+      <span class="en">Some of the discipline needs judgement. Is this principle really exception-free? Was that contradiction preserved, or averaged away? Mechanising those would just produce false positives, and a checker that fires on good input gets ignored, which leaves you worse off than before.</span>
+      <span class="zh">有些纪律需要判断力。这条原理是不是真的举不出反例？那个矛盾是被保留了，还是被和成了平均值？把这些硬做成机械判断只会制造误报，而一个在好输入上乱报的检查器会被人忽略，那比原来还糟。</span>
     </p>
-
-    <pre class="art-term"><code>$ whetstone verify examples/demo-skill --brief
-
-ERROR (5)
-  ✗ SKILL.md:31        [V16] <span lang="zh-CN">复现记录</span> has two lines for the same platform
-  ✗ SKILL.md:31        [V12] L2 claims <span lang="zh-CN">置信度</span> high, the table allows only low
-  ✗ pitfalls.md:5      [V14] <span lang="zh-CN">复现记录</span> is a bare count <span lang="zh-CN">「2 次」</span>
-  ✗ params/soc-x.md:6  [V10] L3 claims high, <span lang="zh-CN">验证方式</span> never passed a test
-
-summary: 5 error(s), 2 warning(s), 0 info</code></pre>
-
-    <p class="art-note">
-      <span class="lang-en">Trimmed for width; the real lines also carry the entry name. <code>examples/demo-skill</code> ships in the repo, deliberately flawed, so you can run it and see the untrimmed version.</span>
-      <span class="lang-zh">为宽度做了截短，真实的行还带条目名。<code>examples/demo-skill</code> 就在仓库里，故意写坏的，跑一遍就能看到未截短的版本。</span>
-    </p>
-
     <p>
-      <span class="lang-en">The grading is asymmetric on purpose: a reviewer can downgrade any entry but cannot upgrade past the conditions, so going above the cap is an error while going below it is only a note. I have never once caught myself being too harsh on my own notes, and the checker is built around that.</span>
-      <span class="lang-zh">这个评级是故意做成不对称的：人审可以把任何一条下调，但不能越过条件上调，所以高过上限报错，低于上限只是提示。我从来没有一次抓到自己把笔记标得太严，检查器就是照着这一点造的。</span>
+      <span class="en">Plenty of it is decidable, though. Does the entry have a source, a date, a reproduction record, a verification method? Is the date absolute, or does it say “recently”? Given the evidence actually present, is the declared confidence higher than the table permits? Is the reproduction record a list of platforms, or did someone just type “3 times”? Was the pitfall split into a transferable lesson and a platform-specific fact, or is the lesson still welded to the one chip where I learned it?</span>
+      <span class="zh">但相当一部分是可判的。这条有没有来源、日期、复现记录、验证方式？日期是绝对日期，还是写着「最近」？按实际拿得出的证据，标的置信度有没有高过表允许的上限？复现记录是一张平台列表，还是有人随手打了个「3 次」？这个坑拆成了可迁移的教训和平台专属的事实，还是教训仍然焊死在我学到它的那一颗芯片上？</span>
     </p>
+    <p>
+      <span class="en">That came to 37 checks. It prints findings and exits non-zero.</span>
+      <span class="zh">数下来 37 条检查。它打印问题，退出码非零。</span>
+    </p>
+    <p class="note">
+      <span class="en">Update: it is 38 now — V25, which asks whether a package says what must never be done, was added two days after this note.</span>
+      <span class="zh">后记：现在是 38 条 —— 两天后加了 V25，查一个包有没有写明这个领域里绝对不能做的事。</span>
+    </p>
+  </article>
 
-    <figure style="margin:var(--space-6) 0;">
-      <table class="art-table">
-        <thead><tr>
-          <th><span class="lang-en">Level</span><span class="lang-zh">等级</span></th>
-          <th><span class="lang-en">What the evidence has to show</span><span class="lang-zh">证据必须能拿出什么</span></th>
-        </tr></thead>
+  <div style="max-width:920px">
+    <div class="codeblock rv">
+      <div class="bar"><i></i><i></i><i></i><span>whetstone verify examples/demo-skill --brief</span></div>
+<pre style="white-space:pre-wrap;word-break:break-word"><code><span class="p">$</span> whetstone verify examples/demo-skill --brief
+
+<span class="e">ERROR (5)</span>
+<span class="e">  ✗ SKILL.md:31  [V16] [溯源] 复现记录 has two lines for the same platform/project: 'soc-x'</span>
+<span class="e">  ✗ SKILL.md:31  [V12] [溯源] L2 claims 置信度 high, the table allows only low — 复现记录 has 1 line(s), needs 2 (single-platform L1/L2 is capped at low — the §7 constraint outranks the table)</span>
+<span class="e">  ✗ pitfalls.md:5  [V14] [从上层状态反推底层状态会看错] 复现记录 is a bare count 「2 次」</span>
+<span class="e">  ✗ pitfalls.md:5  [V12] [从上层状态反推底层状态会看错] L2 claims 置信度 high, the table allows only low — 复现记录 has 0 line(s), needs 2 (single-platform L1/L2 is capped at low — the §7 constraint outranks the table)</span>
+<span class="e">  ✗ params/soc-x.md:6  [V10] [存储起始位置] L3 claims 置信度 high, the table allows only low — 验证方式 never passed a test; 复现记录 has 1 line(s), needs 2</span>
+
+<span class="w">WARN (3)</span>
+<span class="w">  ! SKILL.md:18  [V19] concrete value in the body (hex address/value): '0x1A40'</span>
+<span class="w">  ! SKILL.md  [V25] no section says what must NEVER be done in this domain</span>
+<span class="w">  ! params/soc-x.md  [V22] no 替代记录 section</span>
+
+<span class="s">summary: 5 error(s), 3 warning(s), 0 info</span></code></pre>
+    </div>
+  </div>
+
+  <article class="prose">
+    <p class="note">
+      <span class="en">Today's real output, unedited — <code>--brief</code> only drops the “→ how to fix” hint under each line. <code>examples/demo-skill</code> ships in the repo, deliberately flawed — run it and compare.</span>
+      <span class="zh">这是今天的真实输出，没有改动 —— <code>--brief</code> 只是去掉了每行下面那句「→ 怎么改」的提示。<code>examples/demo-skill</code> 就在仓库里，故意写坏的，跑一遍就能对照。</span>
+    </p>
+    <p>
+      <span class="en">The grading is asymmetric on purpose: a reviewer can downgrade any entry but cannot upgrade past the conditions, so going above the cap is an error while going below it is only a note. I have never once caught myself being too harsh on my own notes, and the checker is built around that.</span>
+      <span class="zh">这个评级是故意做成不对称的：人审可以把任何一条下调，但不能越过条件上调，所以高过上限报错，低于上限只是提示。我从来没有一次抓到自己把笔记标得太严，检查器就是照着这一点造的。</span>
+    </p>
+  </article>
+
+  <figure class="rv" style="max-width:920px; margin: 8px 0 0">
+    <div class="tbl-wrap">
+      <table class="tbl">
+        <thead><tr><th><span class="en">Level</span><span class="zh">等级</span></th><th><span class="en">What the evidence has to show</span><span class="zh">证据必须能拿出什么</span></th></tr></thead>
         <tbody>
-          <tr><td class="lv lv--hi">high</td><td><span class="lang-en">An executable check that passed, plus reproduction on at least two distinct platforms or projects.</span><span class="lang-zh">一条可执行检查实测通过，加上在至少两个不同平台或项目上复现过。</span></td></tr>
-          <tr><td class="lv lv--md">med</td><td><span class="lang-en">Reproduction on two or more. Or verified once, and that second route is open to platform facts only.</span><span class="lang-zh">在两个以上平台复现过。或者实测通过一次，而后一条路只对平台事实开放。</span></td></tr>
-          <tr><td class="lv lv--lo">low</td><td><span class="lang-en">Everything else, including a method that passed its check on the single platform where you first met it.</span><span class="lang-zh">其余全部，包括那种在你第一次遇到它的那个平台上验证通过了的做法。</span></td></tr>
+          <tr><td class="tag-lv c-hi">high</td><td><span class="en">An executable check that passed, plus reproduction on at least two distinct platforms or projects.</span><span class="zh">一条可执行检查实测通过，加上在至少两个不同平台或项目上复现过。</span></td></tr>
+          <tr><td class="tag-lv c-md">med</td><td><span class="en">Reproduction on two or more. Or verified once — and that second route is open to platform facts only.</span><span class="zh">在两个以上平台复现过。或者实测通过一次 —— 而后一条路只对平台事实开放。</span></td></tr>
+          <tr><td class="tag-lv c-lo">low</td><td><span class="en">Everything else, including a method that passed its check on the single platform where you first met it.</span><span class="zh">其余全部，包括那种在你第一次遇到它的那个平台上验证通过了的做法。</span></td></tr>
         </tbody>
       </table>
-      <figcaption><span class="lang-en">The whole table. Verifying a method once does not make it general, which is why a single-platform lesson is capped at <code>low</code> even when its check passes.</span><span class="lang-zh">整张表就这么大。一个做法只验过一次不等于它通用，所以单平台的经验即使验证通过也封顶 <code>low</code>。</span></figcaption>
-    </figure>
-
-    <h2><span class="lang-en">Four ways past it</span><span class="lang-zh">四条绕过去的路</span></h2>
-
-    <p>
-      <span class="lang-en">I asked three reviews to attack the checker, each in a separate context so none of them started from my assumptions. The third came back blocking, with four ways to get a single-platform lesson graded <code>high</code> without a single warning.</span>
-      <span class="lang-zh">我请三份评审去攻击这个检查器，各自在独立的上下文里跑，谁都不从我的预设出发。第三份回来判定阻塞，给出四条能让单平台的经验拿到 <code>high</code> 而且一个告警都不出的路。</span>
-    </p>
-
-    <ol class="art-attacks">
-      <li>
-        <h3><span class="lang-en">Delete a separator</span><span class="lang-zh">删掉一个分隔符</span></h3>
-        <p><span class="lang-en">Reproduction lines read <code>platform · date · pointer</code> and are keyed on the platform field. Take out the <code>·</code> and the whole line becomes the key, so two records from the same board count as two platforms. The gate against double-counting one project came apart when someone removed a dot.</span><span class="lang-zh">复现记录的格式是 <code>平台 · 日期 · 指针</code>，按平台字段做键。把 <code>·</code> 去掉，整行就成了键，于是同一块板的两条记录算成两个平台。那道防止一个项目被算两次的关口，被人删掉一个点就散了。</span></p>
-      </li>
-      <li>
-        <h3><span class="lang-en">Put “L3” in a heading</span><span class="lang-zh">在标题里写「L3」</span></h3>
-        <p><span class="lang-en">Layer was inferred from the nearest heading containing L1 to L4. A section called “Don’t put L3 values in the body”, an instruction against doing the thing, reclassified everything beneath it and raised the ceiling.</span><span class="lang-zh">层级是从最近的、含 L1 到 L4 的标题推断的。一个叫「不要把 L3 的值写进正文」的小节，一句反对这么做的告诫，把它底下所有条目重新分了类，还把上限抬高了。</span></p>
-      </li>
-      <li>
-        <h3><span class="lang-en">Add a suffix</span><span class="lang-zh">加个后缀</span></h3>
-        <p><span class="lang-en"><code>soc-x</code> and <code>soc-x(second run)</code> normalised to two different keys, which got the same board counted as two and cleared the gate.</span><span class="lang-zh"><code>soc-x</code> 和 <code>soc-x(第二次)</code> 归一化成两个不同的键，同一块板因此被算成两个，关口就过了。</span></p>
-      </li>
-      <li>
-        <h3><span class="lang-en">Drop the leading pipe</span><span class="lang-zh">不写前导竖线</span></h3>
-        <p><span class="lang-en">GFM tables do not require <code>|</code> at the start of a line. My parser did. An entire platform-parameter file could be invisible to every check while the run reported no problems. That included the check whose only job was to notice a table with no confidence column, because it tested for the leading pipe the same way the parser did, so it could not see the table either.</span><span class="lang-zh">GFM 表格不要求行首有 <code>|</code>，我的解析器要求。于是一整份平台参数文件可以对所有检查隐形，而那一次运行报告零问题。这里面还包括那条唯一职责就是发现「这张表没有置信度列」的检查：它判前导竖线的方式跟解析器一模一样，所以它也看不见这张表。</span></p>
-      </li>
-    </ol>
-
-    <p>
-      <span class="lang-en">All four are fixed. Each one is now a mutation-test entry: remove the fix and the suite has to fail.</span>
-      <span class="lang-zh">四条都修了。每一条现在都是一个变异测试条目：把修法拿掉，整套测试必须失败。</span>
-    </p>
-
-    <h2><span class="lang-en">Two of my tests were fake</span><span class="lang-zh">我有两条测试是假的</span></h2>
-
-    <p>
-      <span class="lang-en">Making the tests prove the fixes turned up something worse. One test was watching the wrong error code, so it passed because a different rule fired. Another declared <code>high</code> in its own fixture data, which meant it errored whether or not the bug existed. It had been green the entire time and proving nothing.</span>
-      <span class="lang-zh">让测试去证明那些修法的时候，翻出了更难看的东西。一条测试盯的是错误的检查码，它能通过是因为另一条规则响了。另一条在自己的测试数据里就写了 <code>high</code>，于是不管 bug 在不在都会报错。它一直是绿的，什么也没证明。</span>
-    </p>
-
-    <p>
-      <span class="lang-en">The coverage check I had added specifically to catch this had its own problem. Its failures ran inside a pipeline, so the counter incremented in a subshell and disappeared. It printed FAIL and reported 0 failed.</span>
-      <span class="lang-zh">我专门为了抓这种事加的覆盖率检查，自己也有毛病。它的失败跑在管道里，计数在子 shell 里加，加完就没了。它打印 FAIL，然后报告 0 failed。</span>
-    </p>
-
-    <p>
-      <span class="lang-en">I found all three the same way, by deleting checking logic and requiring the suite to go red. A test that passes and a test that would fail are different things, and breaking the code on purpose is the only way I know to tell them apart. This is the 61 entries again with one more layer on it, since I had written both the rule and the test that was supposed to hold me to it, and neither was doing any work.</span>
-      <span class="lang-zh">这三个我都是用同一个办法找出来的：删掉检查逻辑，要求整套测试变成失败。「测试通过了」和「这条测试真的会失败」是两回事，而故意把代码弄坏是我知道的唯一区分办法。这就是那 61 条又来了一遍，只是上面多压了一层：规矩是我写的，本该管住我的那条测试也是我写的，两个都没在干活。</span>
-    </p>
-
-    <h2><span class="lang-en">If you keep this kind of thing</span><span class="lang-zh">如果你也维护这类东西</span></h2>
-
-    <p>
-      <span class="lang-en">If you keep a skill library, a rules file, a CLAUDE.md, or any corpus you curate by hand, the question worth asking is which of your rules would still be obeyed after you stopped believing in them. A rule is either run by a command, or checked by a person on some schedule, or it is decoration, and decoration is what you get when nobody chooses. All three look the same from outside the file, which is why mine sat there for months without anyone noticing, me included.</span>
-      <span class="lang-zh">如果你也维护 skill 库、规则文件、CLAUDE.md，或者任何手工整理的语料，值得问的问题是：你那些规矩里，哪几条在你不再相信它们之后还会被遵守。一条规矩要么有命令在执行它，要么有人按某个周期检查它，要么就是装饰，而没人去选的时候，得到的就是装饰。从文件外面看，这三种长得一模一样，所以我那条在那儿摆了几个月都没人发现，包括我自己。</span>
-    </p>
-
-    <div class="art-cta">
-      <p>
-        <span class="lang-en">The tool is whetstone. MIT, standard library only, works with any runtime that reads the Agent Skills layout. There is a deliberately broken example package in the repo so the checker has something to catch, and <code>--explain</code> prints what it checks, where each check is narrower than the rule behind it, and what it will not judge at all.</span>
-        <span class="lang-zh">工具叫 whetstone。MIT，只用标准库，任何读 Agent Skills 布局的 runtime 都能装。仓库里有一个故意写坏的示例包，好让检查器有东西可抓；<code>--explain</code> 会打印它查什么、每条检查比背后那条规则窄在哪、以及它压根不判什么。</span>
-      </p>
-      <a class="anth-button" href="https://github.com/TbusOS/whetstone"><span class="lang-en">whetstone on GitHub</span><span class="lang-zh">在 GitHub 上看 whetstone</span></a>
-      <a class="anth-button anth-button--ghost" href="index.html"><span class="lang-en">What the tool does</span><span class="lang-zh">这个工具是干嘛的</span></a>
     </div>
+    <figcaption class="cap"><span class="en">The whole table. Verifying a method once doesn't make it general, which is why a single-platform lesson is capped at <code>low</code> even when its check passes. <a href="index.html#evidence" style="color:var(--ember-2)">Try it interactively →</a></span><span class="zh">整张表就这么大。一个做法只验过一次不等于它通用，所以单平台的经验即使验证通过也封顶 <code>low</code>。<a href="index.html#evidence" style="color:var(--ember-2)">在首页亲手试一下 →</a></span></figcaption>
+  </figure>
 
-  </div>
-</article>
+  <article class="prose">
+    <h2><span class="en">Four ways past it</span><span class="zh">四条绕过去的路</span></h2>
+    <p>
+      <span class="en">I asked three reviews to attack the checker, each in a separate context so none of them started from my assumptions. The third came back blocking, with four ways to get a single-platform lesson graded <code>high</code> without a single warning.</span>
+      <span class="zh">我请三份评审去攻击这个检查器，各自在独立的上下文里跑，谁都不从我的预设出发。第三份回来判定阻塞，给出四条能让单平台的经验拿到 <code>high</code>、而且一个告警都不出的路。</span>
+    </p>
+    <ol class="atk">
+      <li class="rv"><span class="n">1</span><div>
+        <h3><span class="en">Delete a separator</span><span class="zh">删掉一个分隔符</span></h3>
+        <p><span class="en">Reproduction lines read <code>platform · date · pointer</code> and are keyed on the platform field. Take out the <code>·</code> and the whole line becomes the key, so two records from the same board count as two platforms.</span><span class="zh">复现记录的格式是 <code>平台 · 日期 · 指针</code>，按平台字段做键。把 <code>·</code> 去掉，整行就成了键，于是同一块板的两条记录算成两个平台。</span></p>
+        <span class="fixed">FIXED · MUTATION-TESTED</span>
+      </div></li>
+      <li class="rv"><span class="n">2</span><div>
+        <h3><span class="en">Put “L3” in a heading</span><span class="zh">在标题里写「L3」</span></h3>
+        <p><span class="en">Layer was inferred from the nearest heading containing L1 to L4. A section called “Don't put L3 values in the body” — an instruction <em>against</em> doing the thing — reclassified everything beneath it and raised the ceiling.</span><span class="zh">层级是从最近的、含 L1 到 L4 的标题推断的。一个叫「不要把 L3 的值写进正文」的小节 —— 一句<em>反对</em>这么做的告诫 —— 把它底下所有条目重新分了类，还把上限抬高了。</span></p>
+        <span class="fixed">FIXED · MUTATION-TESTED</span>
+      </div></li>
+      <li class="rv"><span class="n">3</span><div>
+        <h3><span class="en">Add a suffix</span><span class="zh">加个后缀</span></h3>
+        <p><span class="en"><code>soc-x</code> and <code>soc-x(second run)</code> normalised to two different keys, which got the same board counted twice and cleared the gate.</span><span class="zh"><code>soc-x</code> 和 <code>soc-x(第二次)</code> 归一化成两个不同的键，同一块板因此被算成两个，就过了升级条件。</span></p>
+        <span class="fixed">FIXED · MUTATION-TESTED</span>
+      </div></li>
+      <li class="rv"><span class="n">4</span><div>
+        <h3><span class="en">Drop the leading pipe</span><span class="zh">不写前导竖线</span></h3>
+        <p><span class="en">GFM tables don't require <code>|</code> at the start of a line. My parser did. An entire platform-parameter file could be invisible to every check while the run reported no problems — including the check whose only job was to notice a table with no confidence column, because it looked for the leading pipe the same way.</span><span class="zh">GFM 表格不要求行首有 <code>|</code>，我的解析器要求。于是一整份平台参数文件可以对所有检查隐形，而那次运行报告零问题 —— 连那条唯一职责就是发现「这张表没有置信度列」的检查也一样，因为它判前导竖线的方式跟解析器一模一样。</span></p>
+        <span class="fixed">FIXED · MUTATION-TESTED</span>
+      </div></li>
+    </ol>
+    <p>
+      <span class="en">All four are fixed. Each one is now a mutation-test entry: remove the fix and the suite has to fail.</span>
+      <span class="zh">四条都修了。每一条现在都是一个变异测试条目：把修法拿掉，整套测试必须失败。</span>
+    </p>
 
+    <h2><span class="en">Two of my tests were fake</span><span class="zh">我有两条测试是假的</span></h2>
+    <p>
+      <span class="en">Making the tests prove the fixes turned up something worse. One test was watching the wrong error code, so it passed because a different rule fired. Another declared <code>high</code> in its own fixture data, which meant it errored whether or not the bug existed. It had been green the entire time and proving nothing.</span>
+      <span class="zh">让测试去证明那些修法的时候，翻出了更难看的东西。一条测试盯的是错误的检查码，它能通过是因为另一条规则响了。另一条在自己的测试数据里就写了 <code>high</code>，于是不管 bug 在不在都会报错。它一直是绿的，什么也没证明。</span>
+    </p>
+    <p>
+      <span class="en">The coverage check I had added specifically to catch this had its own problem. Its failures ran inside a pipeline, so the counter incremented in a subshell and disappeared. It printed FAIL and reported 0 failed.</span>
+      <span class="zh">我专门为了抓这种事加的覆盖率检查，自己也有毛病。它的失败跑在管道里，计数在子 shell 里加，加完就没了。它打印 FAIL，然后报告 0 failed。</span>
+    </p>
+    <p>
+      <span class="en">I found all three the same way: by deleting checking logic and requiring the suite to go red. A test that passes and a test that <em>would</em> fail are different things, and breaking the code on purpose is the only way I know to tell them apart. This is the 61 entries again with one more layer on it — I had written both the rule and the test that was supposed to hold me to it, and neither was doing any work.</span>
+      <span class="zh">这三个我都是用同一个办法找出来的：删掉检查逻辑，要求整套测试变成失败。「测试通过了」和「这条测试真的会失败」是两回事，而故意把代码弄坏是我知道的唯一区分办法。这就是那 61 条又来了一遍，只是上面多压了一层：规矩是我写的，本该管住我的那条测试也是我写的，两个都没在干活。</span>
+    </p>
 
-<footer class="anth-footer">
-  <div class="anth-footer-grid">
-    <div class="anth-footer-group"><h5>Whetstone</h5><a href="index.html#why"><span class="lang-en">Why</span><span class="lang-zh">为什么</span></a><a href="use-time-conflicts.html"><span class="lang-en">Use-time check</span><span class="lang-zh">用时纠错</span></a><a href="routing.html"><span class="lang-en">Routing</span><span class="lang-zh">经验路由</span></a><a href="index.html#architecture"><span class="lang-en">Architecture</span><span class="lang-zh">架构</span></a><a href="index.html#flow"><span class="lang-en">How it works</span><span class="lang-zh">流程</span></a><a href="index.html#install"><span class="lang-en">Install</span><span class="lang-zh">安装</span></a></div>
-    <div class="anth-footer-group"><h5><span class="lang-en">Output</span><span class="lang-zh">产物</span></h5><a href="index.html#architecture"><span class="lang-en">Skill package</span><span class="lang-zh">Skill 包</span></a><a href="index.html#flow">L1–L4</a><a href="index.html#scenario"><span class="lang-en">Scenario</span><span class="lang-zh">场景</span></a></div>
-    <div class="anth-footer-group"><h5><span class="lang-en">Companions</span><span class="lang-zh">搭档</span></h5><a href="https://github.com/TbusOS">engram</a><a href="https://github.com/TbusOS">llm-wiki</a><a href="https://github.com/alchaincyf/darwin-skill">darwin</a></div>
-    <div class="anth-footer-group"><h5><span class="lang-en">Credits</span><span class="lang-zh">致谢</span></h5><a href="https://github.com/alchaincyf/nuwa-skill">nuwa-skill</a><a href="https://github.com/alchaincyf/darwin-skill">darwin-skill</a><a href="https://github.com/TbusOS">TbusOS</a></div>
-  </div>
-  <div class="anth-footer-legal">
-    <span>© 2026 Whetstone · <span lang="zh-CN">磨刀石</span> · MIT</span>
-    <span><span class="lang-en">Distillation architecture inspired by nuwa-skill · ratchet discipline by darwin-skill (3rd-party). Theory: EvolveR · AgentFactory · MemoryBank · SkillLens.</span><span class="lang-zh">蒸馏架构借鉴 nuwa-skill · 棘轮纪律借鉴 darwin-skill（第三方）。理论：EvolveR · AgentFactory · MemoryBank · SkillLens。</span></span>
+    <h2><span class="en">If you keep this kind of thing</span><span class="zh">如果你也维护这类东西</span></h2>
+    <p>
+      <span class="en">If you keep a skill library, a rules file, a CLAUDE.md, or any corpus you curate by hand, the question worth asking is which of your rules would still be obeyed after you stopped believing in them. A rule is either run by a command, or checked by a person on some schedule, or it is decoration — and decoration is what you get when nobody chooses. All three look the same from outside the file, which is why mine sat there for months without anyone noticing, me included.</span>
+      <span class="zh">如果你也维护 skill 库、规则文件、CLAUDE.md，或者任何手工整理的语料，值得问的问题是：你那些规矩里，哪几条在你不再相信它们之后还会被遵守。一条规矩要么有命令在执行它，要么有人按某个周期检查它，要么就是装饰 —— 而没人去选的时候，得到的就是装饰。从文件外面看，这三种长得一模一样，所以我那条在那儿摆了几个月都没人发现，包括我自己。</span>
+    </p>
+
+    <div class="cta-card rv">
+      <p>
+        <span class="en">The tool is whetstone. MIT, standard library only, works with any runtime that reads the Agent Skills layout. There's a deliberately broken example package in the repo so the checker has something to catch, and <code>--explain</code> prints what it checks, where each check is narrower than the rule behind it, and what it will not judge at all.</span>
+        <span class="zh">工具叫 whetstone。MIT，只用标准库，任何读 Agent Skills 布局的 runtime 都能装。仓库里有一个故意写坏的示例包，好让检查器有东西可抓；<code>--explain</code> 会打印它查什么、每条检查比背后那条规则窄在哪、以及它压根不判什么。</span>
+      </p>
+      <div class="cta">
+        <a class="btn btn--hot" href="https://github.com/TbusOS/whetstone"><span class="en">whetstone on GitHub</span><span class="zh">在 GitHub 上看 whetstone</span></a>
+        <a class="btn btn--ghost" href="index.html"><span class="en">What the tool does</span><span class="zh">这个工具是干嘛的</span></a>
+      </div>
+    </div>
+  </article>
+</main>
+
+<footer style="margin-top:clamp(72px,10vw,120px)">
+  <div class="wrap">
+    <div class="foot">
+      <div>
+        <a class="brand" href="index.html" style="padding:0">whetstone <small lang="zh-CN">· 磨刀石</small></a>
+        <p><span class="en">MIT · © 2026. Distillation structure inspired by nuwa-skill; ratchet discipline by darwin-skill (3rd-party). Theory: EvolveR · AgentFactory · MemoryBank · SkillLens.</span><span class="zh">MIT · © 2026。蒸馏结构借鉴 nuwa-skill；棘轮纪律借鉴 darwin-skill（第三方）。理论：EvolveR · AgentFactory · MemoryBank · SkillLens。</span></p>
+      </div>
+      <div><h5><span class="en">Home</span><span class="zh">首页</span></h5><a href="index.html#why"><span class="en">Why</span><span class="zh">为什么</span></a><a href="index.html#evidence"><span class="en">Evidence</span><span class="zh">证据纪律</span></a><a href="index.html#layers"><span class="en">Layers</span><span class="zh">分层</span></a><a href="index.html#flow"><span class="en">How it works</span><span class="zh">流程</span></a></div>
+      <div><h5><span class="en">Read</span><span class="zh">延伸阅读</span></h5><a href="skills.html"><span class="en">Skills</span><span class="zh">技能</span></a><a href="use-time-conflicts.html"><span class="en">Use-time check</span><span class="zh">用时纠错</span></a><a href="routing.html"><span class="en">Routing</span><span class="zh">经验路由</span></a><a href="why-verify.html"><span class="en">Why verify</span><span class="zh">为什么要 verify</span></a><a href="claude-md-layering.html"><span class="en">CLAUDE.md layering</span><span class="zh">CLAUDE.md 分层</span></a></div>
+      <div><h5><span class="en">Related</span><span class="zh">相关</span></h5><a href="https://github.com/TbusOS/whetstone">GitHub</a><a href="https://github.com/TbusOS/whetstone-curator">whetstone-curator</a><a href="https://github.com/alchaincyf/darwin-skill">darwin-skill</a><a href="https://github.com/alchaincyf/nuwa-skill">nuwa-skill</a></div>
+    </div>
   </div>
 </footer>
 
+<script src="assets/site.js"></script>
 <script>
 (function () {
-  var html = document.documentElement;
-  var queryLang = new URLSearchParams(location.search).get('lang');
-  var saved;
-  if (queryLang === 'zh' || queryLang === 'en') { saved = queryLang; }
-  else {
-    try { saved = localStorage.getItem('whetstone-lang'); } catch (e) {}
-    if (!saved) { saved = (navigator.language || 'en').toLowerCase().indexOf('zh') === 0 ? 'zh' : 'en'; }
-  }
-  function apply(lang) {
-    html.setAttribute('data-lang', lang);
-    html.setAttribute('lang', lang === 'zh' ? 'zh-CN' : 'en');
-    try { localStorage.setItem('whetstone-lang', lang); } catch (e) {}
-    document.querySelectorAll('.lang-toggle').forEach(function (btn) { btn.textContent = lang === 'zh' ? 'EN / 中' : '中 / EN'; });
-  }
-  apply(saved);
-  document.addEventListener('DOMContentLoaded', function () {
-    document.querySelectorAll('.lang-toggle').forEach(function (btn) {
-      btn.addEventListener('click', function () { apply(html.getAttribute('data-lang') === 'zh' ? 'en' : 'zh'); });
-    });
+  'use strict';
+  /* 61 entries marked high; 54 of them graded above the table's cap (figures from the 2026-09-02 run) */
+  var box = document.getElementById('dots61'), dots = [];
+  for (var i = 0; i < 61; i++) { var d = document.createElement('i'); box.appendChild(d); dots.push(d); }
+  var over = dots.map(function (_, k) { return k; });
+  for (var j = over.length - 1; j > 0; j--) { var r = Math.floor(Math.random() * (j + 1)); var t = over[j]; over[j] = over[r]; over[r] = t; }
+  over = over.slice(0, 54);
+  function finalState() { dots.forEach(function (d) { d.classList.add('hi'); }); over.forEach(function (k) { dots[k].classList.add('over'); }); }
+  if (window.WS.reduce || !window.WS.hasIO) { finalState(); return; }
+  var done = false;
+  window.WS.onScreen(document.getElementById('tally'), function (v) {
+    if (!v || done) return;
+    done = true;
+    dots.forEach(function (d, k) { setTimeout(function () { d.classList.add('hi'); }, k * 18); });
+    over.forEach(function (k, n) { setTimeout(function () { dots[k].classList.add('over'); }, 1300 + n * 28); });
   });
 })();
 </script>
-
-<!-- design-review:self-diff v1
-Skill: anthropic
-Page-type: landing
-Created: 2026-06-17 · original (tool intro for Whetstone)
-Revised: 2026-09-02 · repositioned around evidence discipline; added #evidence section
-
-Decisions (8):
-1. [hero-three-line-stack] Three-line noun-phrase headline per canonical signature. Revised 2026-09-02 from "Distill once. / Reuse forever. / Hand it to anyone." to "Distill the session. / Then refuse what / it cannot prove." — the old line was indistinguishable from every competing distillation tool's first sentence; the new one names the differentiator (refusal) in the same cadence.
-2. [hero-svg-as-product] hero SVG is a realistic split mock (left: a terminal showing a finished session + `whetstone distill` log; right: the generated verified-boot/ package tree + SKILL.md snippet) over abstract shapes — Whetstone's "product" is the distillation act, so the mock shows session→package, the strongest "here's what it does" proof.
-3. [testimonials→scenario] replaced the canonical's 3 testimonials with a single honest 5-step scenario card (secure-boot done once → handed to a Cursor teammate). Because: the tool is brand-new with no real users; fabricating attributed quotes would be dishonest. The scenario carries the same "make it concrete" job without inventing people.
-4. [two-engineering-diagrams] two SVG figures — a 3-layer architecture (orange distiller / blue portable package / olive optional sinks, ≥3 semantic hues, tinted zones not solid bands) and a 6-phase flow with two orange human-gate pills — satisfy the diagram-density contract for "system structure" and "≥3-step process".
-5. [L1-L4-table] the layering ruler is a 4-row table with per-layer hue-coded labels (orange/blue/olive/gold) rather than prose, so "how far does this carry" is scannable.
-6. [optional-everywhere] engram/llm-wiki/darwin are presented as "Optional" badged cards and the olive bottom zone of the architecture, never as requirements — encoding the zero-runtime-dependency, runtime-neutral positioning the whole tool rests on.
-7. [evidence-section-as-terminal-cards] the new #evidence section shows `whetstone verify` output as a window mock whose findings are structured cards (code badge / file:line / one-line message) rather than raw monospace lines. Because: the real messages run ~190 chars and SVG text cannot wrap, so a faithful transcript would be illegible at any usable font size — and a shortened fake transcript would be a fabricated screenshot on a page whose whole argument is "we do not fake evidence". The cards are honestly an illustration, and the figcaption says four of five plus "run it yourself".
-8. [refusal-cards-over-feature-cards] the section closes with four cards titled by what the tool REFUSES (double-counting, silent overwrite, self-grading) and one titled by what it will not pretend to judge. A feature list would read like every competitor's; a refusal list is falsifiable and is the actual design.
-
-Known trade-offs:
-- The hero and architecture SVGs are hand-maintained; if the package layout or phase names change, the mocks must be hand-updated or they drift. Accepted for the scalable hand-drawn anthropic feel over screenshot PNGs.
-- Single scenario instead of three testimonials means less "social proof" surface; chosen deliberately over fabricated quotes for a pre-release tool (honesty > pitch-deck density).
-- Bilingual EN/zh doubles copy maintenance; kept because the repo is open-sourced for an international + Chinese audience and §G expects a language toggle.
-- The #evidence terminal mock names four checks by id (V16/V12/V14/V10); if those ids are renumbered the figure drifts silently. Accepted — ids are part of the published `--explain` contract and are meant to be stable.
-- The 46.4% self-judgement figure is the only external number on the page; it is now attributed to SkillLens (Microsoft) inline in the flow section, since an unsourced number would violate the very standard this section argues for.
-/design-review:self-diff -->
-
 </body>
 </html>

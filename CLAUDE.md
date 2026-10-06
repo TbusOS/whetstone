@@ -13,7 +13,7 @@ Whetstone 是一个**蒸馏工具**(不是单个 skill):开发完一个功能,�
 - 主入口:`SKILL.md`(distiller 流程 Phase 0–5)
 - 灵魂:`references/extraction-framework.md`(L1–L4 分层 schema)
 - 交付物规范:`spec/skill-package.md`(可移植 skill 包格式)
-- 介绍页:`docs/index.html`(anthropic 风格,GitHub Pages 用,已过设计三闸)
+- 介绍页:`docs/index.html`(GitHub Pages 用;2026-10-07 改版为自有的深色「磨刀石 + 岩层」风格,4 个页面共用 `docs/assets/site.css` + `site.js`)
 
 ## 定位决定(已定,别再推翻除非有新理由)
 
@@ -39,13 +39,14 @@ Whetstone 是一个**蒸馏工具**(不是单个 skill):开发完一个功能,�
   - 反面教材 2026-06-17:第一个试点蒸出的 `verified-boot`(带某芯片真实平台值)正确地产在 `~/.claude/skills/`(内部),没进本仓库 —— 当时差点建议把它做成公开 demo,被用户挡下。
 - **commit message 禁止任何 Claude / Anthropic 署名**(全局铁律)。本仓库是开源/个人工具,commit 邮箱用你的公开身份,message 格式自由。
 - 脚本开头锁 PATH(`/usr/local/...`)+ `PYTHONNOUSERSITE=1`;临时文件不用 /tmp;路径用 SCRIPT_DIR 相对。
-- 设计 HTML 一律走 anthropic-design skill + 发布前三闸(`~/.claude/skills/design-review/dr-cli docs/index.html`)。
+- `docs/` 页面用自有风格(2026-10-07 user 定:不再套 anthropic-design 等现成设计 skill)。公共样式 / 中英切换在 `docs/assets/site.css`、`site.js`,页面专属样式写在各页内联 `<style>`;分享预览图 `assets/og-home.png` 由 `assets/og-home.src.html` 渲染(1200×630,2 倍)。
+  页面上手写的数字(检查条数 38、demo-skill 的 verify 输出、阶段名)不会自动跟着代码变,改了 verify / SKILL.md 要回来同步。
 
 ## 当前状态:v0.2.0(核心完成 2026-06-17;verify / decision 后续加)
 
 **核心(思考层)= 完成 + 验证:**
 - `SKILL.md`(Phase 0-5)· `references/extraction-framework.md`(L1-L4,跨领域压测过)· `spec/skill-package.md` —— **2 次真实试点跑通**(蒸出 verified-boot / sdk-migration 两个内部 skill 包),还反哺出 Phase 3 的"doc + git/code 双查"规则。
-- 已发布:github.com/TbusOS/whetstone(main)+ GitHub Pages **https://doc.tbusos.com/whetstone/**(源 /docs,Enforce HTTPS;含工具介绍 `index.html` + 通用 skills 介绍 `skills.html` + 验证实践记录 `why-verify.html` + 用时纠错功能页 `use-time-conflicts.html`(2026-09-29),anthropic 风,过设计三闸)。
+- 已发布:github.com/TbusOS/whetstone(main)+ GitHub Pages **https://doc.tbusos.com/whetstone/**(源 /docs,Enforce HTTPS;含工具介绍 `index.html` + 通用 skills 介绍 `skills.html` + 验证实践记录 `why-verify.html` + `claude-md-layering.html` + 用时纠错功能页 `use-time-conflicts.html`(2026-09-29)+ 经验路由功能页 `routing.html`)。2026-10-07 前四页改版为深色自有风格;`use-time-conflicts.html` / `routing.html` 仍是旧的 anthropic 风,还依赖 `assets/anthropic.css` + `fonts.css`,换风格前别删这两个文件。
 - templates / commands / README / 本文件齐。
 
 **管道层 = 2026-06-18 补了一轮(按"真用得着 + 建了就实测"做,不空造):**
