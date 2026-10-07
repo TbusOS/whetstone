@@ -20,7 +20,7 @@
 <style>
 /* page-specific styles; shared tokens, nav, footer and type live in assets/site.css */
 /* ───────────────────────── hero ───────────────────────── */
-.hero { padding-block: clamp(48px, 7vw, 96px) clamp(64px, 8vw, 110px); overflow: hidden; }
+.hero { position: relative; padding-block: clamp(48px, 7vw, 96px) clamp(64px, 8vw, 110px); overflow: hidden; }
 .hero::before {
   content: ""; position: absolute; width: 900px; height: 900px; right: -260px; top: -220px; pointer-events: none;
   background: radial-gradient(closest-side, rgba(255,122,61,.16), rgba(255,122,61,.04) 55%, transparent);
@@ -192,7 +192,7 @@ html[data-lang="zh"] .ctl-lbl { letter-spacing: .04em; }
 
 /* refusal tickets */
 .tickets { margin-top: clamp(64px, 8vw, 100px); display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; }
-.ticket { position: relative; background: #ebe5d8; color: #23201b; border-radius: 6px; padding: 24px 20px 22px; min-height: 250px;
+.ticket { position: relative; overflow: hidden; background: #ebe5d8; color: #23201b; border-radius: 6px; padding: 24px 20px 22px; min-height: 250px;
   -webkit-mask: radial-gradient(circle 7px at 0 64px, transparent 98%, #000) , radial-gradient(circle 7px at 100% 64px, transparent 98%, #000);
   -webkit-mask-composite: source-in; mask-composite: intersect;
   box-shadow: 0 20px 40px -24px rgba(0,0,0,.9); }
