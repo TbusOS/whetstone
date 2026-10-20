@@ -43,7 +43,10 @@ Whetstone 是一个**蒸馏工具**(不是单个 skill):开发完一个功能,�
   页面上手写的数字(检查条数 40、demo-skill 的 verify 输出、阶段名)不会自动跟着代码变,改了 verify / SKILL.md 要回来同步。
   **README.md / README.zh.md 不用手动核**(2026-10-20 起):里面摘的文件片段标了 `<!-- excerpt: 文件 -->`、
   verify 输出标了 `<!-- output: whetstone verify … -->`,`verify_selftest.sh` 的 [docs] 一节逐行比对原文件、重跑命令比对输出,
-  对不上就报红(故意改坏一行摘录、一行输出、删一个标记,三种都验过会红)。docs/ 页面没有这道检查。
+  对不上就报红(故意改坏一行摘录、一行输出、删一个标记,三种都验过会红)。
+  首页 `docs/index.html` 第 02 节同样受查:`<pre data-excerpt="文件">` / `<pre data-output="whetstone verify …">`,去掉标签后逐行比对。
+  **没查到的**:首页第 03 节那段终端动画(数据写在 JS 数组里)、其余 5 个页面,改了 verify 输出要手动同步。
+  首页 2026-10-20 改成先讲流程:首屏标题「Finish a feature. Next time, your agent already knows it.」,01 一条经验怎么走(原来的阶段进度条并进这里)、02 写对的包、03 写错会怎样。
   README 开头讲的是写对的样例 `examples/good-skill/`;`examples/demo-skill/` 是它故意改坏 6 处的版本,`diff -r` 两个目录看得出改了哪里。
 
 ## 当前状态:v0.2.0(核心完成 2026-06-17;verify / decision 后续加)

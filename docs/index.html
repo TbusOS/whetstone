@@ -41,6 +41,9 @@ html[data-lang="zh"] .hero h1 { font-size: clamp(34px, 4.4vw, 60px); line-height
 }
 @keyframes strike { to { transform: scaleX(1); } }
 .hero .lede { font-size: clamp(17px, 1.7vw, 19.5px); margin-top: 26px; }
+.hero .lede .cut { position: relative; color: var(--ember); white-space: nowrap; }
+.hero .lede .cut::after { content: ""; position: absolute; left: -2%; right: -2%; top: 55%; height: 2px; background: var(--refuse);
+  transform: scaleX(0); transform-origin: left; border-radius: 2px; animation: strike 1s 1.1s cubic-bezier(.7,0,.2,1) forwards; }
 .cta { display: flex; gap: 12px; flex-wrap: wrap; margin-top: 34px; }
 .runtimes { margin-top: 26px; color: var(--dim); font: 13px/1.6 var(--mono); }
 .stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 0; margin-top: clamp(48px, 6vw, 80px); border: 1px solid var(--line); border-radius: var(--r); position: relative; z-index: 1; background: rgba(25,29,33,.6); }
@@ -283,6 +286,35 @@ html[data-lang="zh"] .bound h2 { max-width: 14em; }
 }
 
 /* ───────────────────────── architecture ───────────────────────── */
+/* travel: three steps, each with its owner (classes are .leg, not .step — .step is the phase track) */
+.legs { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+.leg { position: relative; background: var(--panel); border: 1px solid var(--line); border-radius: 18px; padding: 24px 24px 22px; display: flex; flex-direction: column; }
+.leg + .leg::before { content: "→"; position: absolute; left: -8px; top: 46px; transform: translate(-50%, -50%); color: var(--ember); font: 600 16px/1 var(--mono); }
+.leg .no { font: 500 30px/1 var(--serif); color: var(--ember); }
+.leg h3 { font-size: 22px; margin-top: 14px; }
+.leg p { margin: 8px 0 0; color: var(--muted); font-size: 15px; flex: 1; }
+.leg .owner { align-self: flex-start; margin-top: 18px; font: 600 11.5px/1 var(--mono); letter-spacing: .04em; padding: 8px 11px; border-radius: 999px; border: 1px solid var(--line-2); color: var(--ember-2); }
+.legs-note, .pkg-note { margin-top: 18px; color: var(--muted); font-size: 14.5px; max-width: 86ch; }
+.flow-fold { margin-top: clamp(44px, 5vw, 68px); }
+.flow-head { font: 600 12px/1 var(--mono); letter-spacing: .1em; text-transform: uppercase; color: var(--muted); margin: 0 0 12px; }
+@media (max-width: 860px) { .legs { grid-template-columns: 1fr; } .leg + .leg::before { content: "↓"; left: 50%; top: -8px; } }
+/* package: the good example, quoted from its files */
+.pkg-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 18px 24px; align-items: start; }
+.pkg-grid > * { min-width: 0; }   /* a grid item defaults to its content's width: the wide params table would stretch the page */
+#package .tbl th { color: var(--muted); }
+/* not .bar: on this page .bar is the check-group chart (10px tall, width animated from 0) */
+.cb-bar { display: flex; gap: 7px; align-items: center; padding: 11px 14px; background: #14171a; border-bottom: 1px solid var(--line); font: 12px/1 var(--mono); color: var(--muted); }
+.cb-bar i { width: 10px; height: 10px; border-radius: 50%; background: #3a3f45; }
+.cb-bar i:nth-child(1) { background: #ff6159; } .cb-bar i:nth-child(2) { background: #ffbd2e; } .cb-bar i:nth-child(3) { background: #28c941; }
+.cb-bar span { margin-left: 8px; }
+.pkg-tree { margin-bottom: 22px; }
+#package .tbl { min-width: 560px; }   /* on a phone the table scrolls inside its frame instead of wrapping word by word */
+.pkg-grid .codeblock { margin-bottom: 18px; }
+.pkg-cap { color: var(--muted); font-size: 15px; margin: 0 0 10px; }
+.pkg-cap b { color: var(--text); font-weight: 600; font-family: var(--mono); font-size: 14px; }
+.pkg-wide { margin-top: 18px; }
+.codeblock pre.wrapline { white-space: pre-wrap; overflow-wrap: anywhere; }
+@media (max-width: 960px) { .pkg-grid { grid-template-columns: 1fr; } }
 .arch { display: grid; gap: 14px; }
 .tier { position: relative; display: grid; grid-template-columns: 220px 1fr; gap: 24px; align-items: center; padding: 22px 24px; border-radius: 18px; border: 1px solid var(--line); background: var(--panel); }
 .tier .tl { font: 700 11.5px/1.5 var(--mono); letter-spacing: .1em; text-transform: uppercase; color: var(--tc); }
@@ -378,10 +410,10 @@ html[data-lang="zh"] .tier .tl { letter-spacing: .04em; }
       whetstone <small lang="zh-CN">· 磨刀石</small>
     </a>
     <div class="nav-links">
-      <a href="#why"><span class="en">Why</span><span class="zh">为什么</span></a>
+      <a href="#travel"><span class="en">How it travels</span><span class="zh">怎么走</span></a>
+      <a href="#package"><span class="en">Package</span><span class="zh">包</span></a>
       <a href="#evidence"><span class="en">Evidence</span><span class="zh">证据纪律</span></a>
       <a href="#layers"><span class="en">Layers</span><span class="zh">分层</span></a>
-      <a href="#flow"><span class="en">How it works</span><span class="zh">流程</span></a>
       <a href="use-time-conflicts.html"><span class="en">Use-time check</span><span class="zh">用时纠错</span></a>
       <a href="routing.html"><span class="en">Routing</span><span class="zh">经验路由</span></a>
       <a href="#install"><span class="en">Install</span><span class="zh">安装</span></a>
@@ -411,19 +443,19 @@ html[data-lang="zh"] .tier .tl { letter-spacing: .04em; }
       <div>
         <span class="kicker"><span class="en">Self-contained · zero runtime dependency</span><span class="zh">自包含 · 零运行时依赖</span></span>
         <h1>
-          <span class="en">Distill the session.<br>Refuse what it<br><span class="cut">can't prove.</span></span>
-          <span class="zh">把会话蒸馏成 skill，<br>再把<span class="cut">证不出来的</span><br>挡在门外。</span>
+          <span class="en">Finish a feature.<br>Next time, your agent<br><em class="hl">already knows it.</em></span>
+          <span class="zh">做完一个功能，<br>下次 agent<br><em class="hl">自己就会了。</em></span>
         </h1>
         <p class="lede">
-          <span class="en">Whetstone turns a finished dev session — transcript, git diff, the pitfalls you hit — into a portable Agent Skill. Then it holds that skill to an evidence standard you can actually run.</span>
-          <span class="zh">Whetstone 把一次做完的开发 —— transcript、git diff、踩过的坑 —— 蒸馏成可移植的 Agent Skill，再用一条能跑的命令守住证据纪律。</span>
+          <span class="en">Whetstone turns what a session taught you into a skill package for your own library, and the next time you do that kind of work your agent picks it up. Every entry says where it came from; what it <span class="cut">can't prove</span> stays out.</span>
+          <span class="zh">Whetstone 把一次会话里学到的东西提炼成 skill 包，放进你自己的库；下次做同类的事，agent 会自己用上。每一条都写明出处，<span class="cut">证不出来的</span>进不了库。</span>
         </p>
         <div class="cta">
           <a class="btn btn--hot" href="https://github.com/TbusOS/whetstone">
             <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M8 .25a.75.75 0 01.673.418l1.882 3.815 4.21.612a.75.75 0 01.416 1.279l-3.046 2.97.719 4.192a.75.75 0 01-1.088.791L8 12.347l-3.766 1.98a.75.75 0 01-1.088-.79l.72-4.194L.818 6.374a.75.75 0 01.416-1.28l4.21-.611L7.327.668A.75.75 0 018 .25z"/></svg>
             <span class="en">Star on GitHub</span><span class="zh">去 GitHub 点个 Star</span>
           </a>
-          <a class="btn btn--ghost" href="#evidence"><span class="en">See what it refuses</span><span class="zh">看它拒收什么</span> →</a>
+          <a class="btn btn--ghost" href="#travel"><span class="en">See how one lesson travels</span><span class="zh">看一条经验怎么走</span> ↓</a>
         </div>
         <p class="runtimes">Claude Code · Codex · Cursor · <span class="en">any skills-compatible runtime</span><span class="zh">任何支持 skills 的 runtime</span></p>
       </div>
@@ -451,47 +483,122 @@ html[data-lang="zh"] .tier .tl { letter-spacing: .04em; }
   </div>
 </header>
 
-<!-- ───────────── why ───────────── -->
-<section id="why">
+<!-- ───────────── travel ───────────── -->
+<section id="travel">
   <div class="wrap">
     <div class="sec-head rv">
-      <span class="kicker">01 · <span class="en">Why</span><span class="zh">为什么</span></span>
-      <h2><span class="en">Every session ends. What you learned usually ends with it.</span><span class="zh">会话一结束，学到的东西大多跟着没了。</span></h2>
+      <span class="kicker">01 · <span class="en">How one lesson travels</span><span class="zh">一条经验怎么走</span></span>
+      <h2><span class="en">From one session to the next time you need it.</span><span class="zh">从这一次会话，到下次用得上的时候。</span></h2>
+      <p class="lede"><span class="en">Three steps, three different owners, on purpose. The model reads; a command and a person decide what gets in; your runtime does the rest.</span><span class="zh">三步，各由不同的一方来做，这是有意分开的：模型负责读，命令和人决定什么能进库，剩下的交给你的运行时。</span></p>
     </div>
-    <div class="why-grid">
-      <figure class="chart rv" id="why-chart" style="margin:0">
-        <svg viewBox="0 0 620 300" role="img" aria-label="Illustration: without whetstone the reusable knowledge you keep drops to zero after every session; with whetstone the floor rises session by session.">
-          <defs>
-            <linearGradient id="gArea" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ff7a3d" stop-opacity=".28"/><stop offset="1" stop-color="#ff7a3d" stop-opacity="0"/></linearGradient>
-          </defs>
-          <g id="chart-grid" stroke="#262b31" stroke-width="1"></g>
-          <path id="chart-area" fill="url(#gArea)" opacity="0"/>
-          <path class="ln a" id="ln-a" stroke="#6e757c"/>
-          <path class="ln b" id="ln-b" stroke="#ff7a3d"/>
-          <g font-family="SF Mono, Menlo, monospace" font-size="11" fill="#6e757c" id="chart-x"></g>
-          <text x="40" y="22" font-family="SF Mono, Menlo, monospace" font-size="11" fill="#a2a7ac" class="en-svg">reusable knowledge you still have</text>
-          <text x="40" y="22" font-family="PingFang SC, sans-serif" font-size="12" fill="#a2a7ac" class="zh-svg">手里还剩多少能复用的经验</text>
-        </svg>
-        <figcaption class="chart-note">
-          <span><span style="color:#ff7a3d">━</span> <span class="en">with whetstone: the floor rises</span><span class="zh">用 whetstone：底线一次比一次高</span> &nbsp; <span style="color:#6e757c">━</span> <span class="en">without: back to zero</span><span class="zh">不用：每次归零</span></span>
-          <span class="en">illustration, not measured data</span><span class="zh">示意图，不是测量数据</span>
-        </figcaption>
-      </figure>
-      <ol class="leaks">
-        <li class="rv d1"><span class="n">1</span><div>
-          <h3><span class="en">New platform, same explanation — again.</span><span class="zh">换个平台，又从头讲一遍。</span></h3>
-          <p><span class="en">The design and pitfalls live in the skill body. Addresses, key lengths, tool names live in one <code>params/&lt;platform&gt;.md</code>. A new chip is a new table, nothing else.</span><span class="zh">设计和坑留在 skill 正文；地址、密钥长度、工具名放进一张 <code>params/&lt;platform&gt;.md</code>。换芯片就新加一张表，别的不动。</span></p>
-        </div></li>
-        <li class="rv d2"><span class="n">2</span><div>
-          <h3><span class="en">Your teammate can't get it at all.</span><span class="zh">同事根本拿不到。</span></h3>
-          <p><span class="en">The output is a plain-markdown folder with no runtime binding. Hand it to someone on Cursor or Codex; they drop it in and have your know-how.</span><span class="zh">产物是一个纯 markdown 目录，不绑定任何 runtime。递给用 Cursor 或 Codex 的同事，放进去就能用。</span></p>
-        </div></li>
-        <li class="rv d3"><span class="n">3</span><div>
-          <h3><span class="en">A better fix on B never reaches A.</span><span class="zh">在 B 上学到的，A 永远用不上。</span></h3>
-          <p><span class="en">Each new session is reconciled against the library: duplicates merge, changed facts are superseded, evidence for old entries accumulates. The library grows instead of resetting.</span><span class="zh">每次新蒸馏都和已有库比对：重复的合并，变了的事实标注替代，旧条目的证据继续累加。库在长，而不是每次归零。</span></p>
-        </div></li>
-      </ol>
+    <ol class="legs">
+      <li class="leg rv d1">
+        <span class="no">1</span>
+        <h3><span class="en">Distill</span><span class="zh">提炼</span></h3>
+        <p><span class="en">The agent reads the transcript and the git diff and follows <code>SKILL.md</code>: what changed, what broke, what was decided, which values turned up. Every entry cites a commit or a session.</span><span class="zh">agent 读会话记录和 git diff，照 <code>SKILL.md</code> 的步骤摘出：改了什么、踩了什么坑、为什么这么定、发现了哪些具体值。每一条都写明来自哪个提交或哪次会话。</span></p>
+        <span class="owner"><span class="en">done by · the model</span><span class="zh">谁做 · 模型</span></span>
+      </li>
+      <li class="leg rv d2">
+        <span class="no">2</span>
+        <h3><span class="en">Gate</span><span class="zh">把关</span></h3>
+        <p><span class="en">A model fills gaps and grades itself generously, so it is not trusted here. <code>whetstone verify</code> checks the evidence with no model involved; then a person reviews twice: is the mining right, does it go in.</span><span class="zh">模型会补没有的东西，也会给自己打高分，所以这一步不信它。<code>whetstone verify</code> 查证据，过程中不用模型；然后人审两次：挖得对不对，进不进库。</span></p>
+        <span class="owner"><span class="en">done by · a command + you</span><span class="zh">谁做 · 命令 + 你</span></span>
+      </li>
+      <li class="leg rv d3">
+        <span class="no">3</span>
+        <h3><span class="en">Reuse</span><span class="zh">再用</span></h3>
+        <p><span class="en">The package sits in your own skill library. Your runtime shows the model each package's name and description; when the topic matches, the model reads <code>SKILL.md</code>, and <code>params/&lt;platform&gt;.md</code> when it reaches that step.</span><span class="zh">包放在你自己的 skill 库里。运行时把每个包的 name 和 description 放进菜单给模型看；话题对上了，模型才读 <code>SKILL.md</code> 正文，做到那一步再读 <code>params/&lt;平台&gt;.md</code>。</span></p>
+        <span class="owner"><span class="en">done by · your runtime</span><span class="zh">谁做 · 你的运行时</span></span>
+      </li>
+    </ol>
+    <p class="legs-note rv"><span class="en">Whetstone triggers nothing in step 3. It keeps the menu entry good (<code>lint</code>) and the library reachable once the menu is too long to show in full (<code>find</code>). The packages never live in this repository: they carry real platform values.</span><span class="zh">第 3 步不是 whetstone 触发的。它只管两件事：菜单上那两行写得好不好（<code>lint</code>），菜单太长显示不全时还能搜到（<code>find</code>）。提炼出来的包也不放进本仓库：里面有真实的平台值。</span></p>
+
+    <div id="flow" class="flow-fold">
+      <p class="flow-head rv"><span class="en">Steps 1 and 2, phase by phase</span><span class="zh">第 1、2 步展开：逐个阶段</span></p>
+      <div class="track rv" id="track"><span class="fill-line" id="fill-line"></span></div>
+      <div class="flow-panel rv" id="flow-panel" aria-live="polite"></div>
     </div>
+  </div>
+</section>
+
+<!-- ───────────── package ───────────── -->
+<section id="package" style="background:var(--bg-2)">
+  <div class="wrap">
+    <div class="sec-head rv">
+      <span class="kicker">02 · <span class="en">What you get</span><span class="zh">得到什么</span></span>
+      <h2><span class="en">One directory, three files, evidence on every line.</span><span class="zh">一个目录，三个文件，每一条都带证据。</span></h2>
+      <p class="lede"><span class="en"><code>examples/good-skill/</code> is a complete package for a made-up domain: storage you can write only once. <code>whetstone verify</code> finds nothing wrong with it.</span><span class="zh"><code>examples/good-skill/</code> 是一个完整的包，领域是编的：只能写一次的存储。<code>whetstone verify</code> 在它身上挑不出毛病。</span></p>
+    </div>
+
+    <div class="codeblock pkg-tree rv"><div class="cb-bar"><i></i><i></i><i></i><span>examples/good-skill/</span></div>
+<pre class="en"><code>examples/good-skill/
+├── SKILL.md          how it gets picked (name + description),
+│                     then principle · method · never-do · pointers
+├── pitfalls.md       what went wrong: symptom · cause · fix · values
+└── params/soc-x.md   values true on soc-x only; one file per platform</code></pre>
+<pre class="zh"><code>examples/good-skill/
+├── SKILL.md          靠什么被选中（name + description），
+│                     然后是原理 · 做法 · 禁止 · 指向另两个文件
+├── pitfalls.md       踩过的坑：症状 · 真因 · 修法 · 涉及的值
+└── params/soc-x.md   只在 soc-x 成立的值；一个平台一个文件</code></pre>
+    </div>
+
+    <div class="pkg-grid">
+      <div class="rv">
+        <p class="pkg-cap"><span class="en"><b>SKILL.md</b>: until the topic matches, the runtime shows the model only these two lines. The description says what the package is for and the words that should bring it up.</span><span class="zh"><b>SKILL.md</b>：话题对上之前，运行时只把这两行给模型看。description 写清楚这个包管什么，以及哪些说法该让它出来。</span></p>
+        <div class="codeblock"><div class="cb-bar"><i></i><i></i><i></i><span>SKILL.md · frontmatter</span></div>
+<pre class="wrapline" data-excerpt="examples/good-skill/SKILL.md"><code>name: good-skill
+description: "一次性写入的存储(写坏就回不去)怎么写、怎么核对:写前先存原始内容,写后直接读回底层比对。触发词:一次性写入 / 写入前备份 / 读回比对 / write-once storage。"</code></pre>
+        </div>
+      </div>
+      <div class="rv d2">
+        <p class="pkg-cap"><span class="en"><b>pitfalls.md</b>: one pitfall. “Reading the low-level state off a higher layer gets it wrong”: symptom, root cause, fix, and which values it involves. Its evidence block follows, with the same fields as the table below.</span><span class="zh"><b>pitfalls.md</b>：一条坑。症状、真因、修法，以及涉及哪些值。后面跟着它的证据，字段和下面那张表一样。</span></p>
+        <div class="codeblock"><div class="cb-bar"><i></i><i></i><i></i><span>pitfalls.md</span></div>
+<pre class="wrapline" data-excerpt="examples/good-skill/pitfalls.md"><code>## 从上层状态反推底层状态会看错
+
+- 症状:上层字段显示未生效,底层其实已经生效。
+- 真因:中间层缓存了一份过期副本。
+- 修法:直接读底层,不看中间层。
+- 涉及事实:见 `params/soc-x.md`</code></pre>
+        </div>
+      </div>
+    </div>
+
+    <p class="pkg-cap pkg-wide rv"><span class="en"><b>params/soc-x.md</b>: the values, each with its evidence.</span><span class="zh"><b>params/soc-x.md</b>：具体值，每个值都带证据。</span></p>
+    <div class="codeblock rv"><div class="cb-bar"><i></i><i></i><i></i><span>params/soc-x.md</span></div>
+<pre data-excerpt="examples/good-skill/params/soc-x.md"><code>| 参数 | 值 | 来源 · 日期 | 验证方式 · 实测 | 复现记录 | 置信度 |
+|---|---|---|---|---|---|
+| 存储起始位置 | `SLOT_A` | commit 1a2b3c4d · 2026-08-01 | 读回比对 · 实测:通过 2026-09-01 | 2026-08-01 · commit 1a2b3c4d; 2026-09-01 · commit 5e6f7a8b | high |
+| 读回起始地址 | `0x1A40` | commit 1a2b3c4d · 2026-08-01 | 读回比对 · 实测:通过 2026-09-01 | 2026-08-01 · commit 1a2b3c4d | med |</code></pre>
+    </div>
+
+    <div class="tbl-wrap pkg-wide rv">
+      <table class="tbl">
+        <thead><tr><th><span class="en">Column</span><span class="zh">列</span></th><th><span class="en">What it holds</span><span class="zh">写什么</span></th><th><span class="en">First row</span><span class="zh">第一行写的</span></th></tr></thead>
+        <tbody>
+          <tr><td>参数<span class="en"> · parameter</span></td><td><span class="en">what the value is</span><span class="zh">这个值叫什么</span></td><td><span class="en">storage start</span><span class="zh">存储起始位置</span></td></tr>
+          <tr><td>值<span class="en"> · value</span></td><td><span class="en">the value, true on this platform only</span><span class="zh">具体是多少，只在这个平台成立</span></td><td><code>SLOT_A</code></td></tr>
+          <tr><td>来源 · 日期<span class="en"> · source, date</span></td><td><span class="en">the commit it came from, and the day</span><span class="zh">从哪个提交得来、哪天</span></td><td>commit 1a2b3c4d · 2026-08-01</td></tr>
+          <tr><td>验证方式 · 实测<span class="en"> · check, tested</span></td><td><span class="en">how to re-check it, and whether that was actually run</span><span class="zh">怎么复查，真跑过没有</span></td><td><span class="en">read back and compare · passed 2026-09-01</span><span class="zh">读回比对 · 2026-09-01 实测通过</span></td></tr>
+          <tr><td>复现记录<span class="en"> · reproductions</span></td><td><span class="en">every later confirmation, one line each</span><span class="zh">之后每核实一次记一行</span></td><td><span class="en">2 lines</span><span class="zh">2 行</span></td></tr>
+          <tr><td>置信度<span class="en"> · confidence</span></td><td><span class="en">computed from the two columns before it, never typed by feel</span><span class="zh">由前两列按规则算出来，不能凭感觉填</span></td><td><code>high</code></td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p class="pkg-note rv"><span class="en">The two rows differ for a reason. The first was tested and confirmed twice, so it may say <code>high</code>. The second was tested once, which is enough for <code>med</code> on a value. A <em>method</em> seen on one platform stays <code>low</code> however well it tested: once does not make it general.</span><span class="zh">两行的置信度不一样是有原因的。第一行实测通过、又核实过两次，所以可以写 <code>high</code>。第二行只实测过一次，对一个值来说够得上 <code>med</code>。如果是一条<b>做法</b>，只在一个平台上见过，测得再好也只能是 <code>low</code>：见过一次说明不了它到处都成立。</span></p>
+
+    <div class="codeblock pkg-wide rv"><div class="cb-bar"><i></i><i></i><i></i><span>whetstone verify examples/good-skill --brief</span></div>
+<pre class="wrapline" data-output="whetstone verify examples/good-skill --brief"><code><span class="p">$</span> whetstone verify examples/good-skill --brief
+
+whetstone verify — examples/good-skill
+
+INFO (2)
+  i pitfalls.md:5  [V18] [从上层状态反推底层状态会看错] reproduced on 2 distinct platforms/projects — eligible to move into the SKILL.md L2 body
+  i good-skill  [V08d] 2 commit hash(es) cited in 来源 / 复现记录, none checked against git
+
+<span class="s">summary: 0 error(s), 0 warning(s), 2 info</span></code></pre>
+    </div>
+    <p class="pkg-note rv"><span class="en">No errors, no warnings. The pitfall has been seen on two projects, so it may move up into the <code>SKILL.md</code> body (V18). The commit hashes are made up for the example, so none was looked up in git (V08d; pass <code>--repo</code> to check them). Next: the same package with six things broken.</span><span class="zh">没有错误，也没有警告。那条坑已经在两个项目上见过，可以升进 <code>SKILL.md</code> 正文（V18）。示例里的提交号是编的，所以没去 git 里查（V08d；加上 <code>--repo</code> 就会查）。下一节：同一个包故意改坏 6 处。</span></p>
   </div>
 </section>
 
@@ -499,9 +606,9 @@ html[data-lang="zh"] .tier .tl { letter-spacing: .04em; }
 <section class="ev" id="evidence">
   <div class="wrap">
     <div class="sec-head rv">
-      <span class="kicker">02 · <span class="en">Evidence discipline</span><span class="zh">证据纪律</span></span>
+      <span class="kicker">03 · <span class="en">Evidence discipline</span><span class="zh">证据纪律</span></span>
       <h2><span class="en">A rule only the model obeys is one context window from gone.</span><span class="zh">只靠模型自觉遵守的规则，离「不存在」只差一个上下文窗口。</span></h2>
-      <p class="lede"><span class="en">A skill library doesn't fail loudly. It fills up with plausible, once-true advice that still wears a confident label. So every rule a machine can decide became a check with an exit code. Below is a real run on <code>examples/demo-skill</code>, a deliberately broken package that ships with the repo.</span><span class="zh">skill 库不会大声地坏掉，它会慢慢塞满听着有理、只在当时成立、却还顶着高置信标签的条目。所以凡是机器能判的规则，都做成了带退出码的检查。下面是对仓库自带的、故意写坏的 <code>examples/demo-skill</code> 的一次真实运行。</span></p>
+      <p class="lede"><span class="en">A skill library doesn't fail loudly. It fills up with plausible, once-true advice that still wears a confident label. So every rule a machine can decide became a check with an exit code. Below is a real run on <code>examples/demo-skill</code>: the package from 02 with six things broken on purpose.</span><span class="zh">skill 库不会大声地坏掉，它会慢慢塞满听着有理、只在当时成立、却还顶着高置信标签的条目。所以凡是机器能判的规则，都做成了带退出码的检查。下面是对 <code>examples/demo-skill</code> 的一次真实运行：它就是 02 节那个包，故意改坏了 6 处。</span></p>
     </div>
 
     <div class="ev-grid">
@@ -590,11 +697,55 @@ html[data-lang="zh"] .tier .tl { letter-spacing: .04em; }
   </div>
 </section>
 
+<!-- ───────────── why ───────────── -->
+<section id="why">
+  <div class="wrap">
+    <div class="sec-head rv">
+      <span class="kicker">04 · <span class="en">Why</span><span class="zh">为什么</span></span>
+      <h2><span class="en">Every session ends. What you learned usually ends with it.</span><span class="zh">会话一结束，学到的东西大多跟着没了。</span></h2>
+    </div>
+    <div class="why-grid">
+      <figure class="chart rv" id="why-chart" style="margin:0">
+        <svg viewBox="0 0 620 300" role="img" aria-label="Illustration: without whetstone the reusable knowledge you keep drops to zero after every session; with whetstone the floor rises session by session.">
+          <defs>
+            <linearGradient id="gArea" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ff7a3d" stop-opacity=".28"/><stop offset="1" stop-color="#ff7a3d" stop-opacity="0"/></linearGradient>
+          </defs>
+          <g id="chart-grid" stroke="#262b31" stroke-width="1"></g>
+          <path id="chart-area" fill="url(#gArea)" opacity="0"/>
+          <path class="ln a" id="ln-a" stroke="#6e757c"/>
+          <path class="ln b" id="ln-b" stroke="#ff7a3d"/>
+          <g font-family="SF Mono, Menlo, monospace" font-size="11" fill="#6e757c" id="chart-x"></g>
+          <text x="40" y="22" font-family="SF Mono, Menlo, monospace" font-size="11" fill="#a2a7ac" class="en-svg">reusable knowledge you still have</text>
+          <text x="40" y="22" font-family="PingFang SC, sans-serif" font-size="12" fill="#a2a7ac" class="zh-svg">手里还剩多少能复用的经验</text>
+        </svg>
+        <figcaption class="chart-note">
+          <span><span style="color:#ff7a3d">━</span> <span class="en">with whetstone: the floor rises</span><span class="zh">用 whetstone：底线一次比一次高</span> &nbsp; <span style="color:#6e757c">━</span> <span class="en">without: back to zero</span><span class="zh">不用：每次归零</span></span>
+          <span class="en">illustration, not measured data</span><span class="zh">示意图，不是测量数据</span>
+        </figcaption>
+      </figure>
+      <ol class="leaks">
+        <li class="rv d1"><span class="n">1</span><div>
+          <h3><span class="en">New platform, same explanation — again.</span><span class="zh">换个平台，又从头讲一遍。</span></h3>
+          <p><span class="en">The design and pitfalls live in the skill body. Addresses, key lengths, tool names live in one <code>params/&lt;platform&gt;.md</code>. A new chip is a new table, nothing else.</span><span class="zh">设计和坑留在 skill 正文；地址、密钥长度、工具名放进一张 <code>params/&lt;platform&gt;.md</code>。换芯片就新加一张表，别的不动。</span></p>
+        </div></li>
+        <li class="rv d2"><span class="n">2</span><div>
+          <h3><span class="en">Your teammate can't get it at all.</span><span class="zh">同事根本拿不到。</span></h3>
+          <p><span class="en">The output is a plain-markdown folder with no runtime binding. Hand it to someone on Cursor or Codex; they drop it in and have your know-how.</span><span class="zh">产物是一个纯 markdown 目录，不绑定任何 runtime。递给用 Cursor 或 Codex 的同事，放进去就能用。</span></p>
+        </div></li>
+        <li class="rv d3"><span class="n">3</span><div>
+          <h3><span class="en">A better fix on B never reaches A.</span><span class="zh">在 B 上学到的，A 永远用不上。</span></h3>
+          <p><span class="en">Each new session is reconciled against the library: duplicates merge, changed facts are superseded, evidence for old entries accumulates. The library grows instead of resetting.</span><span class="zh">每次新蒸馏都和已有库比对：重复的合并，变了的事实标注替代，旧条目的证据继续累加。库在长，而不是每次归零。</span></p>
+        </div></li>
+      </ol>
+    </div>
+  </div>
+</section>
+
 <!-- ───────────── boundary ───────────── -->
 <section class="bound">
   <div class="wrap">
     <div class="rv">
-        <span class="kicker">03 · <span class="en">The honest limit</span><span class="zh">它管不到的地方</span></span>
+        <span class="kicker">05 · <span class="en">The honest limit</span><span class="zh">它管不到的地方</span></span>
         <h2><span class="en">A green run is not a good skill.</span><span class="zh"><code style="font-size:.8em;background:none;padding:0">verify</code> 全绿，不等于 skill 好用。</span></h2>
       </div>
     <div class="bound-grid">
@@ -611,7 +762,7 @@ html[data-lang="zh"] .tier .tl { letter-spacing: .04em; }
 <section id="layers">
   <div class="wrap">
     <div class="sec-head rv">
-      <span class="kicker">04 · <span class="en">The ruler</span><span class="zh">一把尺子</span></span>
+      <span class="kicker">06 · <span class="en">The ruler</span><span class="zh">一把尺子</span></span>
       <h2><span class="en">One question sorts everything: how far does it carry?</span><span class="zh">只问一个问题：这条知识能走多远？</span></h2>
       <p class="lede"><span class="en">Think of it as strata. The deeper a piece of knowledge sits, the more platforms it survives — and the closer it lives to the reusable skill body. Click a layer.</span><span class="zh">把它想成岩层：越往下的知识，换越多平台仍然成立，也越靠近可复用的 skill 正文。点任意一层看看。</span></p>
     </div>
@@ -630,24 +781,11 @@ html[data-lang="zh"] .tier .tl { letter-spacing: .04em; }
   </div>
 </section>
 
-<!-- ───────────── flow ───────────── -->
-<section id="flow" style="background:var(--bg-2)">
-  <div class="wrap">
-    <div class="sec-head rv">
-      <span class="kicker">05 · <span class="en">How it works</span><span class="zh">怎么工作</span></span>
-      <h2><span class="en">Mine. Layer. Reconcile. You approve.</span><span class="zh">挖掘，分层，比对，你点头。</span></h2>
-      <p class="lede"><span class="en">Two human gates bracket an automatic middle. Nothing reaches your library without your sign-off.</span><span class="zh">两道人审关夹着中间的自动流程。没有你点头，什么都进不了正式库。</span></p>
-    </div>
-    <div class="track rv" id="track"><span class="fill-line" id="fill-line"></span></div>
-    <div class="flow-panel rv" id="flow-panel" aria-live="polite"></div>
-  </div>
-</section>
-
 <!-- ───────────── architecture ───────────── -->
 <section id="architecture">
   <div class="wrap">
     <div class="sec-head rv">
-      <span class="kicker">06 · <span class="en">Architecture</span><span class="zh">架构</span></span>
+      <span class="kicker">07 · <span class="en">Architecture</span><span class="zh">架构</span></span>
       <h2><span class="en">A distiller, a portable package, optional extras.</span><span class="zh">一个蒸馏器，一个可移植的包，几个可选的下游。</span></h2>
       <p class="lede"><span class="en">Runtime-specific code is fenced into one thin capture adapter. What you share is plain markdown. Everything below the dashed line is optional — installed, it helps; absent, nothing breaks.</span><span class="zh">跟 runtime 绑定的代码只放在薄薄一层采集适配器里。对外分享的是纯 markdown。虚线以下全是可选：装了能增强，不装也不影响使用。</span></p>
     </div>
@@ -688,7 +826,7 @@ html[data-lang="zh"] .tier .tl { letter-spacing: .04em; }
 <section id="scenario" style="background:var(--bg-2)">
   <div class="wrap">
     <div class="sec-head rv">
-      <span class="kicker">07 · <span class="en">One real scenario</span><span class="zh">一个真实场景</span></span>
+      <span class="kicker">08 · <span class="en">One real scenario</span><span class="zh">一个真实场景</span></span>
       <h2><span class="en">Secure boot, done once — owned by the whole team.</span><span class="zh">安全启动做一次，整个团队都会。</span></h2>
     </div>
     <ol class="tl-list">
@@ -705,7 +843,7 @@ html[data-lang="zh"] .tier .tl { letter-spacing: .04em; }
 <section id="index-hygiene">
   <div class="wrap">
     <div class="sec-head rv">
-      <span class="kicker">08 · <span class="en">Index hygiene</span><span class="zh">索引卫生</span></span>
+      <span class="kicker">09 · <span class="en">Index hygiene</span><span class="zh">索引卫生</span></span>
       <h2><span class="en">More skills shouldn't mean a noisier menu.</span><span class="zh">skill 越多，菜单不该越乱。</span></h2>
       <p class="lede"><span class="en">A runtime keeps every skill's name + description in context to choose between them. Bodies load only after a pick. So the noise lives in the menu — and that's where <code>lint</code> looks.</span><span class="zh">runtime 把每个 skill 的 name + description 常驻在上下文里用来挑选，正文要等被选中才加载。所以乱就乱在菜单上，<code>lint</code> 查的也正是这里。</span></p>
     </div>
@@ -734,7 +872,7 @@ html[data-lang="zh"] .tier .tl { letter-spacing: .04em; }
   <div class="wrap">
     <div class="inst-grid">
       <div class="rv">
-        <span class="kicker">09 · <span class="en">Install</span><span class="zh">安装</span></span>
+        <span class="kicker">10 · <span class="en">Install</span><span class="zh">安装</span></span>
         <h2><span class="en">Drop the folder into any runtime.</span><span class="zh">把目录放进任何 runtime。</span></h2>
         <p class="lede"><span class="en">Whetstone ships as an Agent Skill plus plain scripts. No package manager, no service, no dependencies.</span><span class="zh">Whetstone 就是一个 Agent Skill 加几个普通脚本。不用包管理器，不起服务，零依赖。</span></p>
         <div class="clone"><code id="clone-cmd">git clone https://github.com/TbusOS/whetstone.git</code><button class="copy" type="button" data-copy="clone-cmd">copy</button></div>
@@ -755,7 +893,7 @@ html[data-lang="zh"] .tier .tl { letter-spacing: .04em; }
 <section id="migrate">
   <div class="wrap">
     <div class="sec-head rv">
-      <span class="kicker">10 · <span class="en">Move machines</span><span class="zh">换机迁移</span></span>
+      <span class="kicker">11 · <span class="en">Move machines</span><span class="zh">换机迁移</span></span>
       <h2><span class="en">New laptop? Clone two repos and you're back.</span><span class="zh">换电脑？克隆两个仓，能力全回来。</span></h2>
       <p class="lede"><span class="en">The tool is public. Your distilled library — with real platform values — lives in a private repo. Keeping them apart means the public one never carries your internal data.</span><span class="zh">工具是公开的；你蒸出来、带真实平台值的 skill 库放在私有仓。两者分开，公开仓就永远不会带出你的内部数据。</span></p>
     </div>
@@ -809,7 +947,7 @@ html[data-lang="zh"] .tier .tl { letter-spacing: .04em; }
         <a class="brand" href="#top" style="padding:0">whetstone <small lang="zh-CN">· 磨刀石</small></a>
         <p><span class="en">MIT · © 2026. Distillation structure inspired by nuwa-skill; ratchet discipline by darwin-skill (3rd-party). Theory: EvolveR · AgentFactory · MemoryBank · SkillLens.</span><span class="zh">MIT · © 2026。蒸馏结构借鉴 nuwa-skill；棘轮纪律借鉴 darwin-skill（第三方）。理论：EvolveR · AgentFactory · MemoryBank · SkillLens。</span></p>
       </div>
-      <div><h5><span class="en">Page</span><span class="zh">本页</span></h5><a href="#why"><span class="en">Why</span><span class="zh">为什么</span></a><a href="#evidence"><span class="en">Evidence</span><span class="zh">证据纪律</span></a><a href="#layers"><span class="en">Layers</span><span class="zh">分层</span></a><a href="#flow"><span class="en">How it works</span><span class="zh">流程</span></a></div>
+      <div><h5><span class="en">Page</span><span class="zh">本页</span></h5><a href="#travel"><span class="en">How it travels</span><span class="zh">怎么走</span></a><a href="#package"><span class="en">Package</span><span class="zh">包</span></a><a href="#evidence"><span class="en">Evidence</span><span class="zh">证据纪律</span></a><a href="#why"><span class="en">Why</span><span class="zh">为什么</span></a><a href="#layers"><span class="en">Layers</span><span class="zh">分层</span></a></div>
       <div><h5><span class="en">Read</span><span class="zh">延伸阅读</span></h5><a href="skills.html"><span class="en">Skills</span><span class="zh">技能</span></a><a href="use-time-conflicts.html"><span class="en">Use-time check</span><span class="zh">用时纠错</span></a><a href="routing.html"><span class="en">Routing</span><span class="zh">经验路由</span></a><a href="why-verify.html"><span class="en">Why verify</span><span class="zh">为什么要 verify</span></a><a href="claude-md-layering.html"><span class="en">CLAUDE.md layering</span><span class="zh">CLAUDE.md 分层</span></a></div>
       <div><h5><span class="en">Related</span><span class="zh">相关</span></h5><a href="https://github.com/TbusOS/whetstone">GitHub</a><a href="https://github.com/TbusOS/whetstone-curator">whetstone-curator</a><a href="https://github.com/alchaincyf/darwin-skill">darwin-skill</a><a href="https://github.com/alchaincyf/nuwa-skill">nuwa-skill</a></div>
     </div>
