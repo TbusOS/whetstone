@@ -7,7 +7,7 @@ description: "A deliberately flawed package, shipped so `whetstone verify` has s
 
 > 这个包**故意违反**证据纪律,用来演示 `whetstone verify` 抓什么。
 > Deliberately breaks the evidence rules so `verify` has something to find.
-> 合规的对照版在 `bin/verify_selftest.sh` 的 `mkclean` 夹具里。
+> 写对的对照版在 `examples/good-skill`,`diff -r` 两个目录就看得出改坏了哪几处。
 
 ## 原理与约束 (L1)
 

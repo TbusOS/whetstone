@@ -617,6 +617,89 @@ case "$out" in
 esac
 
 echo
+echo "[docs] what the READMEs quote must still be true"
+# A README that quotes a file or a run goes stale without a sound: adding V08d changed the
+# demo output, and three hand-kept copies had to be found and edited. Each quote is marked
+#   <!-- excerpt: <file> -->            every line of the block below is a line of <file>
+#   <!-- output: whetstone verify … --> the block below is that command's output, exactly
+# The mutation battery sets VERIFY_SELFTEST_SKIP_DOCS=1: any change to verify.py alters the
+# demo output, and letting this block catch every mutation would hide whether the targeted
+# test still does.
+if [ "${VERIFY_SELFTEST_SKIP_DOCS:-}" = 1 ]; then
+  echo "  skip - VERIFY_SELFTEST_SKIP_DOCS=1"
+else
+  python3 - "$REPO_DIR" "$VERIFY" README.md README.zh.md > "$STAGE/docs.txt" <<'PY'
+import os, re, subprocess, sys
+repo, verify, docs = sys.argv[1], sys.argv[2], sys.argv[3:]
+MARK = re.compile(r"\s*<!--\s*(excerpt|output):\s*(.+?)\s*-->\s*$")
+for doc in docs:
+    path = os.path.join(repo, doc)
+    if not os.path.isfile(path):
+        print(f"BAD|{doc} does not exist"); continue
+    lines = open(path, encoding="utf-8").read().splitlines()
+    n = {"excerpt": 0, "output": 0}
+    i = 0
+    while i < len(lines):
+        m = MARK.match(lines[i])
+        if not m:
+            i += 1; continue
+        kind, arg = m.groups()
+        j = i + 1
+        while j < len(lines) and not lines[j].strip():
+            j += 1
+        if j < len(lines) and lines[j].lstrip().startswith("```"):
+            k = j + 1
+            while k < len(lines) and not lines[k].lstrip().startswith("```"):
+                k += 1
+            block = lines[j + 1:k]
+        else:                                   # a bare block, e.g. a rendered table
+            k = j
+            while k < len(lines) and lines[k].strip():
+                k += 1
+            block = lines[j:k]
+        n[kind] += 1
+        where = f"{doc}:{i + 1}"
+        if kind == "excerpt":
+            src = os.path.join(repo, arg)
+            if not os.path.isfile(src):
+                print(f"BAD|{where} quotes a file that does not exist: {arg}")
+            else:
+                have = set(open(src, encoding="utf-8").read().splitlines())
+                gone = [b for b in block if b.strip() and b not in have]
+                if not block or gone:
+                    print(f"BAD|{where} no longer matches {arg}: {(gone or ['(empty block)'])[0][:70]!r}")
+        else:
+            argv = arg.split()
+            if argv[:2] != ["whetstone", "verify"]:
+                print(f"BAD|{where} can only replay 'whetstone verify ...', got {arg!r}"); i = k + 1; continue
+            run = subprocess.run([sys.executable, verify] + argv[2:], cwd=repo,
+                                 stdout=subprocess.PIPE, stderr=subprocess.STDOUT, universal_newlines=True)
+            want = [w.rstrip() for w in run.stdout.rstrip("\n").splitlines()]
+            got = [g.rstrip() for g in block]
+            if got and got[0].startswith("$ "):
+                got = got[1:]
+            while got and not got[0]:
+                got = got[1:]
+            if got != want:
+                at = next((x for x in range(max(len(got), len(want)))
+                           if x >= len(got) or x >= len(want) or got[x] != want[x]), 0)
+                real = want[at] if at < len(want) else "(output ended)"
+                print(f"BAD|{where} '{arg}' prints something else now — first difference: {real[:70]!r}")
+        i = k + 1
+    # a quote check that finds no quotes passes for the wrong reason
+    if n["excerpt"] < 3 or n["output"] < 2:
+        print(f"BAD|{doc} has {n['excerpt']} excerpt / {n['output']} output markers, expected >=3 / >=2")
+    print(f"OK|{doc}: {n['excerpt']} excerpts and {n['output']} replayed outputs checked")
+PY
+  while IFS= read -r line; do
+    case "$line" in
+      BAD\|*) bad "docs: ${line#BAD|}" ;;
+      OK\|*)  ok  "docs: ${line#OK|}" ;;
+    esac
+  done < "$STAGE/docs.txt"
+fi
+
+echo
 echo "[coverage] every published check code must have BOTH directions"
 python3 - "$0" "$VERIFY" > "$STAGE/coverage.txt" <<'PY'
 import re, subprocess, sys

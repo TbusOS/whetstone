@@ -1,13 +1,133 @@
 # Whetstone · 磨刀石
 
-**Every "distill your sessions into skills" tool writes knowledge in. This one also refuses it.**
+Finish a feature, and whetstone turns what the session taught you into a skill package for
+your own skill library. The next time you do that kind of work, your agent picks the package
+up by itself. Every entry has to say where it came from; an entry that cannot is not let in.
 
-Whetstone turns a finished dev session into a portable Agent Skill — and then holds that
-skill to an evidence standard you can run as a command. Confidence levels come from a
-mechanical table, not from a model's mood. A lesson seen on one platform cannot enter the
-skill body. A fact is appended and marked superseded, never quietly replaced. None of that
-is a paragraph of documentation — it is `whetstone verify`, exit code and all.
+*Every "distill your sessions into skills" tool writes knowledge in. This one also refuses it.*
 
+中文版:[README.zh.md](README.zh.md)
+
+## How one lesson travels
+
+```
+session transcript + git diff
+   │ 1. distill: the agent follows SKILL.md; every entry cites its source
+   ▼
+a skill package: one directory, three files
+   │ 2. gate: whetstone verify checks the evidence, then a human reviews
+   ▼
+your own skill library (~/.claude/skills/, ~/.agents/skills/, ...)
+   │ 3. reuse: the runtime shows the model every package's name + description
+   ▼
+the topic matches → the model reads SKILL.md → reads params/<platform>.md
+                                                 when it gets to that step
+```
+
+Each step has a different owner, on purpose:
+
+- **Step 1 is model work.** Telling a lesson from chatter takes reading, not rules, so the
+  distiller is a set of instructions for the agent ([`SKILL.md`](SKILL.md), Phase 0-5), not a
+  program. `whetstone distill` only tells you to run it inside your agent.
+- **Step 2 is where the model is not trusted.** A model fills gaps and grades its own work
+  generously. What it writes must cite a commit or a session, pass a command that involves no
+  model, and get past a person, twice: *is the mining right*, then *does it go in*.
+- **Step 3 is your runtime's own skill mechanism.** Whetstone triggers nothing. It keeps the
+  menu entry good (`whetstone lint`) and keeps the library reachable once the menu is too
+  long to show in full (`whetstone find`).
+- The packages live in **your** library, never in this repository: they carry real platform
+  values. This repository is the tool.
+
+## What a correct package looks like
+
+[`examples/good-skill/`](examples/good-skill) is a complete package for a made-up domain:
+storage that can be written only once. `whetstone verify` finds nothing wrong with it.
+
+```
+examples/good-skill/
+├── SKILL.md          how it gets picked (name + description), then
+│                     principle · method · never-do list · pointers
+├── pitfalls.md       what went wrong: symptom · cause · fix · values
+└── params/soc-x.md   values true on soc-x only; one file per platform
+```
+
+**`SKILL.md`: the two lines that get it picked.** Until the topic matches, the runtime shows
+the model only these. The description says what the package is for (writing and checking
+write-once storage) and the words that should bring it up.
+
+<!-- excerpt: examples/good-skill/SKILL.md -->
+```yaml
+name: good-skill
+description: "一次性写入的存储(写坏就回不去)怎么写、怎么核对:写前先存原始内容,写后直接读回底层比对。触发词:一次性写入 / 写入前备份 / 读回比对 / write-once storage。"
+```
+
+The body has one section per kind of knowledge: 原理与约束 (principle, L1) · 设计与流程
+(method, L2) · 坑 (pitfalls, pointing at `pitfalls.md`) · 禁止 (what never to do) ·
+平台参数 (pointing at `params/soc-x.md`) · 溯源 (where it all came from).
+
+**`pitfalls.md`: one pitfall.** "Reading the low-level state off a higher layer gets it
+wrong": symptom, root cause, fix, and which values it involves. Its evidence block follows,
+with the same fields as the table below.
+
+<!-- excerpt: examples/good-skill/pitfalls.md -->
+```markdown
+## 从上层状态反推底层状态会看错
+
+- 症状:上层字段显示未生效,底层其实已经生效。
+- 真因:中间层缓存了一份过期副本。
+- 修法:直接读底层,不看中间层。
+- 涉及事实:见 `params/soc-x.md`
+```
+
+**`params/soc-x.md`: the values, each with its evidence.**
+
+<!-- excerpt: examples/good-skill/params/soc-x.md -->
+| 参数 | 值 | 来源 · 日期 | 验证方式 · 实测 | 复现记录 | 置信度 |
+|---|---|---|---|---|---|
+| 存储起始位置 | `SLOT_A` | commit 1a2b3c4d · 2026-08-01 | 读回比对 · 实测:通过 2026-09-01 | 2026-08-01 · commit 1a2b3c4d; 2026-09-01 · commit 5e6f7a8b | high |
+| 读回起始地址 | `0x1A40` | commit 1a2b3c4d · 2026-08-01 | 读回比对 · 实测:通过 2026-09-01 | 2026-08-01 · commit 1a2b3c4d | med |
+
+| Column | What it holds | First row |
+|---|---|---|
+| 参数 · parameter | what the value is | storage start |
+| 值 · value | the value, true on this platform only | `SLOT_A` |
+| 来源 · 日期 · source · date | the commit it came from, and the day | commit 1a2b3c4d · 2026-08-01 |
+| 验证方式 · 实测 · check · tested | how to re-check it, and whether that was actually run | read back and compare · passed 2026-09-01 |
+| 复现记录 · reproductions | every later confirmation, one line each | 2 lines |
+| 置信度 · confidence | computed from the two columns before it, never typed by feel | `high` |
+
+The two rows differ for a reason. The first was tested and confirmed twice, so it may say
+`high`. The second was tested once, which is enough for `med` on a value. A *method* seen on
+one platform stays `low` however well it tested: once does not make it general. The full rule
+is [the confidence table](#the-confidence-table-is-a-table-not-a-vibe) below.
+
+<!-- output: whetstone verify examples/good-skill --brief -->
+```console
+$ whetstone verify examples/good-skill --brief
+
+whetstone verify — examples/good-skill
+
+INFO (2)
+  i pitfalls.md:5  [V18] [从上层状态反推底层状态会看错] reproduced on 2 distinct platforms/projects — eligible to move into the SKILL.md L2 body
+  i good-skill  [V08d] 2 commit hash(es) cited in 来源 / 复现记录, none checked against git
+
+summary: 0 error(s), 0 warning(s), 2 info
+```
+
+No errors, no warnings. The pitfall has been seen on two projects, so it may move up into the
+`SKILL.md` body (V18). The commit hashes are made up for the example, so none was looked up
+in git (V08d; pass `--repo <git repo>` to check them).
+
+## What a broken one gets
+
+[`examples/demo-skill/`](examples/demo-skill) is the same package with six things broken on
+purpose; `diff -r examples/good-skill examples/demo-skill` shows each one. This is the part
+of whetstone that says no. Confidence comes from a mechanical table, not from a model's mood;
+a lesson seen on one platform cannot enter the skill body; a fact is appended and marked
+superseded, never quietly replaced. None of that is a paragraph of documentation: it is
+`whetstone verify`, exit code and all.
+
+<!-- output: whetstone verify examples/demo-skill --brief -->
 ```console
 $ whetstone verify examples/demo-skill --brief
 
@@ -31,22 +151,21 @@ INFO (1)
 summary: 5 error(s), 3 warning(s), 1 info
 ```
 
-Five refusals, in order: the same platform counted twice to fake cross-platform evidence ·
-a method claiming `high` on one platform · a reproduction count written as a number instead
-of a record · the same again · a platform value claiming `high` that was never actually
-tested. Drop `--brief` and every line gains the rule it came from.
+Six breaks, eight findings. Five refusals, in order: the same platform counted twice to fake
+cross-platform evidence · a method claiming `high` on one platform · a reproduction count
+written as a number instead of a record · the same again · a platform value claiming `high`
+that was never actually tested. Three warnings: a value in the body that belongs in
+`params/` · no list of what must never be done · no record of replaced values. Drop
+`--brief` and every line gains the rule it came from.
 
 The INFO line is a check that did not run. The demo's commit hashes are made up; pass
 `--repo <git repo>` and each one becomes an error (V08c), because a source that cites a commit
 nobody can find is no source at all. Without `--repo` the check is skipped, and says so.
 
-That transcript is copied from a real run. `examples/demo-skill` ships in this repo,
-deliberately flawed, so you can reproduce it in one command. Field names stay in Chinese
-because that is what they are called inside the files you would be editing.
-
-> 中文说明:把开发经验蒸馏成可移植 Agent Skill,并用一条能跑的命令守住证据纪律 ——
-> 置信度按机械表判、单平台经验进不了正文、事实不许被悄悄改掉。规矩不是散文,是退出码。
-> 详见 [`references/extraction-framework.md`](references/extraction-framework.md)。
+Both transcripts are copied from real runs, and the selftest runs them again and fails if
+this README no longer matches; the excerpts above are checked against their files the same
+way. Field names stay in Chinese because that is what they are called inside the files you
+would be editing.
 
 ---
 
@@ -136,8 +255,9 @@ are Python standard library, and everything it produces is plain markdown.
 ```bash
 git clone https://github.com/TbusOS/whetstone.git
 cd whetstone
-bash bin/verify_selftest.sh                       # 137 assertions across 40 checks
+bash bin/verify_selftest.sh                       # 139 assertions across 40 checks
 bash bin/verify_mutation_test.sh                  # delete each check; the suite must go red
+./cli/whetstone verify examples/good-skill --brief
 ./cli/whetstone verify examples/demo-skill --brief
 ```
 
@@ -227,7 +347,7 @@ spec/review-decisions.md            what a recorded review decision looks like, 
 spec/routing.md                     experience routing: three layers, the neutral event format, six runtimes
 commands/                           /distill and /promote slash-command definitions
 bin/verify.py                       evidence discipline, executable
-bin/verify_selftest.sh              137 assertions, both directions, coverage-enforced
+bin/verify_selftest.sh              139 assertions, both directions, coverage-enforced; replays README quotes
 bin/verify_mutation_test.sh         deletes each check in turn; the suite must go red
 bin/decision.py                     the review-decision log (record only; 46 assertions)
 bin/decision_mutation_test.sh       deletes each decision check; the suite must go red
@@ -238,7 +358,8 @@ bin/route_selftest.sh               73 assertions, both directions; route_mutati
 bin/pack.sh · bin/deploy.sh · bin/promote.sh   move and install packages
 cli/whetstone                       runtime-agnostic CLI, pure bash
 templates/                          skeletons for a distilled skill / params / pitfalls
-examples/demo-skill/                deliberately flawed package behind the demo above
+examples/good-skill/                a correct package: the walkthrough at the top
+examples/demo-skill/                the same package with six things broken, behind the verify demo
 inbox/ · journal/                   proposals awaiting review; mined source material
 adapters/capture · adapters/sync    optional: session capture, optional sinks
 adapters/menu                       the menu a runtime actually sent, and its sessions as neutral events (Claude Code)

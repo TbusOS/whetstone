@@ -28,8 +28,10 @@ mut() { # $1 = label, $2 = python source that mutates bin/verify.py
     echo "  --  MUTATION DID NOT APPLY: $1"; skipped=$((skipped+1))
     cp "$S/verify.orig.py" bin/verify.py; return
   fi
-  # a mutation may remove a loop guard, so the suite must be able to time out
-  if timeout 180 bash bin/verify_selftest.sh >/dev/null 2>&1; then
+  # a mutation may remove a loop guard, so the suite must be able to time out.
+  # SKIP_DOCS: the README replay would catch almost any mutation, which says nothing
+  # about whether the test written for that check still catches it
+  if VERIFY_SELFTEST_SKIP_DOCS=1 timeout 180 bash bin/verify_selftest.sh >/dev/null 2>&1; then
     echo "  MISS  $1"; missed=$((missed+1))
   else
     echo "  ok    $1"; caught=$((caught+1))
