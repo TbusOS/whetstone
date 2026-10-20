@@ -259,3 +259,27 @@ The frontmatter parser read one line of a quoted description. A description whos
 line starts at column 0 (legal inside quotes) was cut short and its second line read as a new
 key. The fix was checked against PyYAML on every skill in the library, not on fixtures alone.
 
+
+---
+
+## 2026-10-20 · a cited commit must exist
+
+### What was missing
+V08b checks that 来源 carries a commit hash or a session marker. It cannot tell a real hash
+from a plausible one that names no commit at all — and a model writing provenance can produce
+the second kind as easily as the first.
+
+### What changed
+`verify --repo <dir>` (repeatable) asks git about every hash cited in 来源 and 复现记录, in one
+`git cat-file --batch-check` per repository. A hash that names no commit in any of them is V08c,
+an error; a hash that names a blob or tree counts as missing, because the lookup asks for
+`<hash>^{commit}`. Without `--repo` nothing is checked, and V08d (info) says so — a skipped
+check must not look like a passed one. A `--repo` that is not a git repository exits 2.
+
+### What the real library showed
+Run over one machine's library: 12 commits cited in 5 packages. With all three repositories they
+live in, 0 errors; with only one, 4 errors, every one a commit from the other two. The same
+library writes session ids as 8 hex characters, so a hash counts as a cited commit only right
+after the word commit / 提交. The cost: 3 real commits written without that word are not
+checked. V08c proves a commit exists, not that it shows what the entry claims.
+Selftest 137 assertions; mutation battery 22 of 22 caught.

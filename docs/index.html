@@ -399,8 +399,8 @@ html[data-lang="zh"] .tier .tl { letter-spacing: .04em; }
 <div class="banner" id="top">
   <div class="wrap">
     <span class="tag">0.2.0</span>
-    <span class="en"><b>whetstone decision</b> now keeps every call you make in review — and <b>verify</b> runs 38 checks that exit non-zero.</span>
-    <span class="zh"><b>whetstone decision</b> 会把你在人审里做的每个决定记下来；<b>verify</b> 现在有 38 条检查，不合格就返回非零退出码。</span>
+    <span class="en"><b>whetstone decision</b> now keeps every call you make in review — and <b>verify</b> runs 40 checks that exit non-zero.</span>
+    <span class="zh"><b>whetstone decision</b> 会把你在人审里做的每个决定记下来；<b>verify</b> 现在有 40 条检查，不合格就返回非零退出码。</span>
   </div>
 </div>
 
@@ -444,7 +444,7 @@ html[data-lang="zh"] .tier .tl { letter-spacing: .04em; }
 
     <div class="stats rv">
       <div><b>4</b><span class="en">layers, by how far knowledge carries</span><span class="zh">层，按知识能走多远来分</span></div>
-      <div><b>38</b><span class="en">mechanical checks in <code>verify</code></span><span class="zh"><code>verify</code> 里的机械检查</span></div>
+      <div><b>40</b><span class="en">mechanical checks in <code>verify</code></span><span class="zh"><code>verify</code> 里的机械检查</span></div>
       <div><b>2</b><span class="en">human review gates</span><span class="zh">道人审关</span></div>
       <div><b>0</b><span class="en">runtime dependencies</span><span class="zh">运行时依赖</span></div>
     </div>
@@ -510,7 +510,7 @@ html[data-lang="zh"] .tier .tl { letter-spacing: .04em; }
         <pre id="term" aria-live="off"></pre>
       </div>
       <div class="checks rv d2" id="checks">
-        <div class="checks-num"><b>38</b><span class="en">checks, grouped by what they guard</span><span class="zh">条检查，按守的是什么分组</span></div>
+        <div class="checks-num"><b>40</b><span class="en">checks, grouped by what they guard</span><span class="zh">条检查，按守的是什么分组</span></div>
         <div class="bars" id="bars"></div>
         <div class="legend">
           <span><i style="background:var(--refuse)"></i>error · exit 1</span>
@@ -519,7 +519,7 @@ html[data-lang="zh"] .tier .tl { letter-spacing: .04em; }
         </div>
       </div>
     </div>
-    <p class="ev-foot rv"><span class="en">Each of the 38 codes is tested in both directions — it fires on a bad package and stays quiet on a good one — and a mutation test deletes checks one at a time to prove the suite notices: 14 of 14 caught.</span><span class="zh">38 个检查码每一个都正反两个方向测过：坏包上必须报、好包上必须不报。另有变异测试逐条删掉检查，确认测试套件会发现：14 条全部抓到。</span></p>
+    <p class="ev-foot rv"><span class="en">Each of the 40 codes is tested in both directions — it fires on a bad package and stays quiet on a good one — and a mutation test deletes checks one at a time to prove the suite notices: 22 of 22 caught.</span><span class="zh">40 个检查码每一个都正反两个方向测过：坏包上必须报、好包上必须不报。另有变异测试逐条删掉检查，确认测试套件会发现：22 条全部抓到。</span></p>
 
     <!-- calculator -->
     <div class="calc">
@@ -1006,7 +1006,11 @@ html[data-lang="zh"] .tier .tl { letter-spacing: .04em; }
       ['w', '  ! SKILL.md  [V25] no section says what must NEVER be done in this domain'],
       ['w', '  ! params/soc-x.md  [V22] no 替代记录 section'],
       ['', ''],
-      ['s', 'summary: 5 error(s), 3 warning(s), 0 info'],
+      ['', 'INFO (1)'],
+      ['', '  i demo-skill  [V08d] 2 commit hash(es) cited in 来源 / 复现记录, none checked against git'],
+      ['a', '      → pass --repo <git repo> (once per repository) to check that each one exists'],
+      ['', ''],
+      ['s', 'summary: 5 error(s), 3 warning(s), 1 info'],
       ['', ''],
       ['p', '$ ', 'c', 'echo $?'],
       ['x', '1']
@@ -1050,7 +1054,7 @@ html[data-lang="zh"] .tier .tl { letter-spacing: .04em; }
   /* ───────────── checks chart (counts from `whetstone verify --explain`) ───────────── */
   (function bars() {
     var G = [
-      { en: 'Provenance fields', zh: '溯源字段', E: 7, W: 5, I: 0 },
+      { en: 'Provenance fields', zh: '溯源字段', E: 8, W: 5, I: 1 },
       { en: 'Package structure', zh: '包结构完整性', E: 4, W: 3, I: 0 },
       { en: 'Layering discipline', zh: '分层纪律', E: 3, W: 3, I: 0 },
       { en: 'Reproduction records', zh: '复现记录', E: 3, W: 1, I: 1 },
@@ -1058,7 +1062,7 @@ html[data-lang="zh"] .tier .tl { letter-spacing: .04em; }
       { en: 'Runtime neutrality', zh: 'runtime 中立', E: 2, W: 1, I: 0 },
       { en: 'Prohibition list (§14)', zh: '禁止清单（§14）', E: 0, W: 1, I: 0 }
     ];
-    var host = document.getElementById('bars'), max = 12;
+    var host = document.getElementById('bars'), max = 14;
     function render() {
       host.innerHTML = '';
       G.forEach(function (g) {
@@ -1357,7 +1361,7 @@ html[data-lang="zh"] .tier .tl { letter-spacing: .04em; }
   /* ───────────── cli tabs ───────────── */
   (function tabs() {
     var D = [
-      { t: 'verify', c: ['whetstone verify <pkg> --strict', 'whetstone verify --explain'], d: { en: 'Evidence discipline — the one that says no. --explain lists all 38 checks, their limits, and what stays with humans.', zh: '证据纪律 —— 会说「不」的那个。--explain 列出全部 38 条检查、各自的边界，以及留给人判断的部分。' } },
+      { t: 'verify', c: ['whetstone verify <pkg> --strict', 'whetstone verify --explain'], d: { en: 'Evidence discipline — the one that says no. --explain lists all 40 checks, their limits, and what stays with humans.', zh: '证据纪律 —— 会说「不」的那个。--explain 列出全部 40 条检查、各自的边界，以及留给人判断的部分。' } },
       { t: 'lint', c: ['whetstone lint --src ~/skills', 'whetstone index --src ~/skills'], d: { en: 'Menu hygiene: overlapping triggers, name collisions, vague descriptions — plus a grouped catalog.', zh: '菜单卫生：触发词重叠、名字撞车、描述含糊 —— 再加一份分组目录。' } },
       { t: 'promote', c: ['whetstone promote <proposal>'], d: { en: 'Installs an approved proposal and refuses to overwrite an existing skill without being told to.', zh: '把批准的提案装进库；没有明确指示时，拒绝覆盖已有 skill。' } },
       { t: 'decision', c: ['whetstone decision add …', 'whetstone decision stats', 'whetstone decision alias --from … --to …'], d: { en: 'Records every review call and why. Records only — it analyses nothing yet, and changes no rule.', zh: '记录每一次人审决定和原因。只记录 —— 目前不做分析，也不改任何规则。' } },

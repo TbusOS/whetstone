@@ -25,13 +25,20 @@ WARN (3)
   ! SKILL.md  [V25] no section says what must NEVER be done in this domain
   ! params/soc-x.md  [V22] no 替代记录 section
 
-summary: 5 error(s), 3 warning(s), 0 info
+INFO (1)
+  i demo-skill  [V08d] 2 commit hash(es) cited in 来源 / 复现记录, none checked against git
+
+summary: 5 error(s), 3 warning(s), 1 info
 ```
 
 Five refusals, in order: the same platform counted twice to fake cross-platform evidence ·
 a method claiming `high` on one platform · a reproduction count written as a number instead
 of a record · the same again · a platform value claiming `high` that was never actually
 tested. Drop `--brief` and every line gains the rule it came from.
+
+The INFO line is a check that did not run. The demo's commit hashes are made up; pass
+`--repo <git repo>` and each one becomes an error (V08c), because a source that cites a commit
+nobody can find is no source at all. Without `--repo` the check is skipped, and says so.
 
 That transcript is copied from a real run. `examples/demo-skill` ships in this repo,
 deliberately flawed, so you can reproduce it in one command. Field names stay in Chinese
@@ -129,7 +136,7 @@ are Python standard library, and everything it produces is plain markdown.
 ```bash
 git clone https://github.com/TbusOS/whetstone.git
 cd whetstone
-bash bin/verify_selftest.sh                       # 124 assertions across 38 checks
+bash bin/verify_selftest.sh                       # 137 assertions across 40 checks
 bash bin/verify_mutation_test.sh                  # delete each check; the suite must go red
 ./cli/whetstone verify examples/demo-skill --brief
 ```
@@ -163,7 +170,8 @@ it is CLI:
 
 ```bash
 whetstone verify <pkg> --strict     # evidence discipline — this is the one that says no
-whetstone verify --explain          # all 38 checks, their limits, and what is left to humans
+whetstone verify <pkg> --repo <dir> # also: every commit the provenance cites must exist there
+whetstone verify --explain          # all 40 checks, their limits, and what is left to humans
 whetstone lint --src ~/skills       # selection-menu hygiene: overlaps, collisions, vague descriptions,
                                     # and whether the whole menu fits (menu-snapshot | lint --listing -)
 whetstone index --src ~/skills      # grouped catalog
@@ -219,7 +227,7 @@ spec/review-decisions.md            what a recorded review decision looks like, 
 spec/routing.md                     experience routing: three layers, the neutral event format, six runtimes
 commands/                           /distill and /promote slash-command definitions
 bin/verify.py                       evidence discipline, executable
-bin/verify_selftest.sh              124 assertions, both directions, coverage-enforced
+bin/verify_selftest.sh              137 assertions, both directions, coverage-enforced
 bin/verify_mutation_test.sh         deletes each check in turn; the suite must go red
 bin/decision.py                     the review-decision log (record only; 46 assertions)
 bin/decision_mutation_test.sh       deletes each decision check; the suite must go red

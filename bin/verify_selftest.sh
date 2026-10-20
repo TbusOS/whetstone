@@ -31,9 +31,13 @@ pass=0; fail=0
 ok()  { pass=$((pass+1)); echo "  ok  - $1"; }
 bad() { fail=$((fail+1)); echo "  FAIL- $1"; }
 
-# codes emitted for a package, space separated
+# codes emitted for a package, space separated. REPO_ARG, when set, is passed on as
+# --repo — the V08c block sets it around the assertions that need a real repository.
+REPO_ARG=""
 codes() {
-  python3 "$VERIFY" "$1" --json 2>/dev/null | python3 -c '
+  local extra=()
+  if [ -n "$REPO_ARG" ]; then extra=(--repo "$REPO_ARG"); fi
+  python3 "$VERIFY" "$1" ${extra[@]+"${extra[@]}"} --json 2>/dev/null | python3 -c '
 import json,sys
 d=json.load(sys.stdin)
 print(" ".join(sorted({i["code"] for p in d["packages"] for i in p["items"]})))'
@@ -319,6 +323,78 @@ not_fires "$CLEAN" V06e "clean params table has a 置信度 column"
 d=$(mut m09c); sed -i.bak 's/^- 置信度:high/- 置信度:medium/' "$d/SKILL.md"; rm -f "$d"/*.bak
                                                                   fires "$d" V09c "置信度 spelled medium"
 not_fires "$CLEAN" V09c "clean spells it med/high/low"
+
+echo
+echo "[V08c/V08d] cited commits must exist in a real git repository"
+# Two throwaway repos inside $STAGE. If an init ever failed, a later `git -C <dir>
+# commit` would walk up into the whetstone checkout and commit THERE — that has
+# happened once (autoupdate selftest, 2026-09-29). So: a ceiling at $STAGE, and each
+# repo must resolve to itself before anything is committed into it.
+export GIT_CEILING_DIRECTORIES="$STAGE"
+mkrepo() {
+  mkdir -p "$1" && git -C "$1" init -q >/dev/null 2>&1
+  local top; top="$(git -C "$1" rev-parse --show-toplevel 2>/dev/null)"
+  if [ "$top" != "$(cd "$1" && pwd -P)" ]; then
+    echo "  FATAL test repo $1 resolves to '${top:-nothing}', not to itself — stopping before any commit"
+    exit 2
+  fi
+}
+# no signing, no hooks: the user's global git config must not turn a test commit
+# into a prompt or a policy check
+gcommit() {
+  git -C "$1" -c user.name=selftest -c user.email=selftest@invalid -c commit.gpgsign=false \
+      -c core.hooksPath=/dev/null commit -q --allow-empty -m "$2" &&
+  git -C "$1" rev-parse --short=8 HEAD
+}
+GA="$STAGE/git-a"; GB="$STAGE/git-b"
+mkrepo "$GA"; mkrepo "$GB"
+H1=$(gcommit "$GA" one); H2=$(gcommit "$GA" two); H3=$(gcommit "$GB" three)
+BLOB=$(echo not-a-commit | git -C "$GA" hash-object -w --stdin | cut -c1-8)
+if [ -z "$H1" ] || [ -z "$H2" ] || [ -z "$H3" ] || [ -z "$BLOB" ]; then
+  echo "  FATAL could not create the test commits"; exit 2
+fi
+# swap the fixture's made-up hashes for real ones; $3 optionally edits SKILL.md after
+realhashes() {
+  local d="$1" h2="$2"
+  for f in "$d/SKILL.md" "$d/pitfalls.md" "$d/params/soc-x.md"; do
+    sed -i.bak "s/1a2b3c4d/$H1/g; s/5e6f7a8b/$h2/g" "$f"; rm -f "$f.bak"
+  done
+  if grep -rq -e 1a2b3c4d -e 5e6f7a8b "$d"; then bad "V08c fixture edit did not apply in $(basename "$d")"; fi
+}
+REAL=$(mut m08c-real); realhashes "$REAL" "$H2"
+REPO_ARG="$GA"
+not_fires "$REAL" V08c "every cited commit exists in the given repo"
+not_fires "$REAL" V08d "commits were checked, so there is no not-checked note"
+fires "$CLEAN" V08c "commit 1a2b3c4d is made up and is not in the repo"
+d=$(mut m08c-blob); realhashes "$d" "$BLOB"
+fires "$d" V08c "a blob's hash exists, but it is not a commit"
+d=$(mut m08c-zh); realhashes "$d" "$H2"
+sed -i.bak "s/^- 来源:commit $H1\$/- 来源:那次提交(\`deadbee0\`)/" "$d/SKILL.md"; rm -f "$d/SKILL.md.bak"
+grep -q 'deadbee0' "$d/SKILL.md" || bad "V08c fixture edit did not apply — no 提交 line in m08c-zh"
+fires "$d" V08c "提交 followed by a backticked hash is read as a cited commit"
+d=$(mut m08c-sess); realhashes "$d" "$H2"
+sed -i.bak "s/^- 来源:commit $H1\$/- 来源:commit $H1 · 会话 c0ffee12/" "$d/SKILL.md"; rm -f "$d/SKILL.md.bak"
+grep -q 'c0ffee12' "$d/SKILL.md" || bad "V08c fixture edit did not apply — no session id in m08c-sess"
+not_fires "$d" V08c "a session id is not a commit and is left alone"
+# the only made-up hash sits in a nested 复现记录 bullet, so nothing else can fire it
+d=$(mut m08c-nest); realhashes "$d" "$H2"
+sed -i.bak "s/^  - proj-a · 2026-09-01 · commit $H2\$/  - proj-a · 2026-09-01 · commit deadbee1/" "$d/SKILL.md"; rm -f "$d/SKILL.md.bak"
+grep -q 'deadbee1' "$d/SKILL.md" || bad "V08c fixture edit did not apply — no nested line in m08c-nest"
+fires "$d" V08c "a made-up commit in a nested 复现记录 line is caught"
+TWO=$(mut m08c-two); realhashes "$TWO" "$H3"
+fires "$TWO" V08c "a commit from another repo is missing when only one --repo is given"
+if python3 "$VERIFY" "$TWO" --repo "$GA" --repo "$GB" --json 2>/dev/null | grep -q '"V08c"'; then
+  bad "V08c fired although each commit is in one of the two --repo"
+else ok "V08c quiet — each commit found in one of two --repo"; fi
+REPO_ARG=""
+fires "$CLEAN" V08d "without --repo the skipped check is reported, not silent"
+not_fires "$CLEAN" V08c "without --repo no commit is claimed missing"
+not_fires "$STAGE/m06c" V08d "a package that cites no commit gets no note"
+# m06c cites no commit, so git is never asked about it: only the up-front check on
+# --repo itself stands between a mistyped path and a clean exit 0
+mkdir -p "$STAGE/not-a-repo"
+python3 "$VERIFY" "$STAGE/m06c" --repo "$STAGE/not-a-repo" >/dev/null 2>&1
+[ $? -eq 2 ] && ok "--repo on a directory that is not a git repo exits 2" || bad "--repo on a non-repo should exit 2"
 
 echo
 echo "[bypass] the ways the audit found to slip past the promotion gate"

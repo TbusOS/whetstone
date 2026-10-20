@@ -18,10 +18,12 @@ Deliberately NOT decided here (stays human — Phase 4 review; see --explain):
   - was a contradiction preserved rather than averaged away
   - were this session's write-backs applied (needs the session, not the package)
 
-Runtime-neutral, stdlib only. Exit 1 on ERROR (or on WARN with --strict), 2 on bad input.
+Runtime-neutral, stdlib only (git only when --repo is given).
+Exit 1 on ERROR (or on WARN with --strict), 2 on bad input.
 
   bin/verify.py <package-dir> [<package-dir> ...]
   bin/verify.py --src <skills-dir>          # every */SKILL.md beneath it
+  bin/verify.py <pkg> --repo <git-repo> [--repo <git-repo> ...]   # cited commits must exist
   bin/verify.py --json --strict
   bin/verify.py --explain                   # what each check is and what is not checked
 """
@@ -30,6 +32,7 @@ import re
 import sys
 import json
 import argparse
+import subprocess
 
 # --- tunables (explicit so the contract stays auditable, same spirit as lint.py) ---
 WHY_CELL_LEN = 40          # chars in an L3 cell above which prose-in-params is suspected
@@ -46,6 +49,10 @@ TESTED_NO = re.compile(r"未实测|未验证|not\s+tested", re.I)
 BARE_COUNT = re.compile(r"^\s*\d+\s*(次|times?)?\s*$", re.I)
 UNTRACEABLE = re.compile(r"前面说过|上面提过|之前提到|as\s+mentioned|see\s+above", re.I)
 COMMITISH = re.compile(r"\b[0-9a-f]{7,40}\b|commit|会话|session|transcript|PR\s*#?\d+|issue\s*#?\d+", re.I)
+# A hash counts as a cited COMMIT only right after the word commit / 提交. A bare hex
+# string is often something else — the library this was measured on writes session
+# ids the same way ("会话 c0ffee12"), and a session id is not in any git repo.
+COMMIT_REF = re.compile(r"(?<![A-Za-z])(?i:commits?|提交)[^0-9A-Za-z\n]{0,4}([0-9a-f]{7,40})(?![0-9A-Za-z_])")
 
 FIELD_SOURCE = re.compile(r"来源|source")
 FIELD_DATE = re.compile(r"日期|时间|date")
@@ -572,7 +579,62 @@ def _all_text(pkg):
     return _walk(pkg, TEXT_EXT)
 
 
-def check_package(pkg, rep):
+_COMMIT_CACHE = {}
+
+
+def commits_found(repo, hashes):
+    """The subset of `hashes` that name a commit in `repo`, from one git process.
+    `cat-file --batch-check` answers each `<hash>^{commit}` line in order with
+    '<sha> commit <size>', '<input> missing' or '<input> ambiguous'. The peel makes
+    a blob or tree hash come back missing: it exists, but it is not a commit."""
+    todo = [h for h in hashes if (repo, h) not in _COMMIT_CACHE]
+    if todo:
+        p = subprocess.run(["git", "-C", repo, "cat-file", "--batch-check"],
+                           input="".join(h + "^{commit}\n" for h in todo),
+                           stdout=subprocess.PIPE, stderr=subprocess.DEVNULL,
+                           universal_newlines=True)
+        out = p.stdout.splitlines()
+        if p.returncode != 0 or len(out) != len(todo):
+            raise RuntimeError(f"git cat-file failed in {repo}")
+        for h, line in zip(todo, out):
+            parts = line.split()
+            # ambiguous = more than one object starts with this prefix; something by
+            # that name exists, so it is not a pointer to nothing
+            _COMMIT_CACHE[(repo, h)] = (len(parts) == 3 and parts[1] == "commit") or line.endswith(" ambiguous")
+    return {h for h in hashes if _COMMIT_CACHE[(repo, h)]}
+
+
+def check_commits(records, rep, pkg, name, repos):
+    """V08c / V08d: a commit cited in 来源 or 复现记录 must exist in one of the repos.
+    V08b only sees that a marker is there; a model can write a plausible hash for a
+    commit that never happened, and nothing else here would notice."""
+    cited = []
+    for r in records:
+        f = r["fields"]
+        txt = "\n".join([f["source"], f["repro"]] + list(r.get("repro_lines") or []))
+        for h in dict.fromkeys(COMMIT_REF.findall(txt)):
+            cited.append((r, h))
+    if not cited:
+        return
+    if not repos:
+        # not checking is allowed; not checking SILENTLY is not — a skipped check
+        # and a passed one would otherwise look the same
+        n = len({h for _, h in cited})
+        rep.add("I", "V08d", name, f"{n} commit hash(es) cited in 来源 / 复现记录, none checked against git",
+                "pass --repo <git repo> (once per repository) to check that each one exists")
+        return
+    found, uniq = set(), list(dict.fromkeys(h for _, h in cited))
+    for repo in repos:
+        found |= commits_found(repo, [h for h in uniq if h not in found])
+    where_repos = ("any of " if len(repos) > 1 else "") + ", ".join(repos)
+    for r, h in cited:
+        if h not in found:
+            rep.add("E", "V08c", f"{os.path.relpath(r['file'], pkg)}:{r['line']}",
+                    f"[{r['title']}] commit {h} is not in {where_repos}",
+                    "§7 — a 来源 that resolves to nothing is untraceable: fix the hash, or pass the --repo it lives in")
+
+
+def check_package(pkg, rep, repos=()):
     name = os.path.basename(os.path.abspath(pkg))
     sk = os.path.join(pkg, "SKILL.md")
 
@@ -827,6 +889,7 @@ def check_package(pkg, rep):
     # ---- provenance + confidence over every record ----
     for r in records:
         check_record(r, rep, pkg)
+    check_commits(records, rep, pkg, name, repos)
     if not records:
         rep.add("W", "V06c", name, "no provenance-bearing entry anywhere in the package",
                 "§7 — a knowledge package without it is incomplete; a pure process skill (the distiller itself) has none by nature")
@@ -857,6 +920,10 @@ PROVENANCE — five fields per entry (§7)
   V07b  a relative time word appears inside a date field                        W
   V08   来源 is traceable — no "as mentioned earlier"                            E
   V08b  来源 shows a commit hash or session/transcript marker                     W
+  V08c  a commit cited in 来源 / 复现记录 does not exist in any --repo            E
+  V08d  commits are cited but no --repo was given, so none was checked           I
+        (a hash counts as a cited commit only right after the word commit /
+         提交 — a bare hex string is often a session id, and is left alone)
   V09   置信度 is one of high / med / low                                        E
   V09c  置信度 spelled "medium" instead of "med"                                  W
   V09b  an inline 置信 claim with no provenance record behind it                  E if high, else W
@@ -920,6 +987,8 @@ Mechanising a judgement that is not mechanical only manufactures false positives
     outcome is visible, never the reasoning
   · is the prohibition list (§14) made of real hazards or of filler — V25 sees the
     heading, never the judgement inside it
+  · does a cited commit actually show what the entry claims — V08c proves only
+    that the commit exists; reading it stays with the reviewer
 
   And one thing no check here reaches at all: every code above asks whether the
   knowledge is TRUE and traceable. None asks whether installing this package makes
@@ -938,6 +1007,8 @@ def main():
     ap.add_argument("--strict", action="store_true", help="exit 1 on warnings too")
     ap.add_argument("--brief", action="store_true", help="findings only, without the rule-reference line")
     ap.add_argument("--explain", action="store_true", help="print the check list and what is NOT checked")
+    ap.add_argument("--repo", action="append", default=[], metavar="DIR",
+                    help="a git repository the cited commits may live in (repeatable)")
     args = ap.parse_args()
 
     if args.explain:
@@ -945,6 +1016,17 @@ def main():
         # drifted (it said 34 while 37 codes were published)
         print(EXPLAIN.format(n=len(re.findall(r"^\s+V[0-9a-z]+\s", EXPLAIN, re.M))))
         return 0
+
+    for repo in args.repo:
+        try:
+            rc = subprocess.run(["git", "-C", repo, "rev-parse", "--git-dir"],
+                                stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL).returncode
+        except OSError:
+            print("--repo needs git on PATH", file=sys.stderr)
+            return 2
+        if rc != 0:
+            print(f"not a git repository: {repo}", file=sys.stderr)
+            return 2
 
     targets = list(args.pkgs)
     if args.src:
@@ -963,7 +1045,11 @@ def main():
             print(f"not a directory: {pkg}", file=sys.stderr)
             return 2
         rep = Report()
-        check_package(pkg, rep)
+        try:
+            check_package(pkg, rep, args.repo)
+        except RuntimeError as e:
+            print(str(e), file=sys.stderr)
+            return 2
         e, w, i = rep.counts()
         tE, tW, tI = tE + e, tW + w, tI + i
         all_out.append({"package": os.path.basename(os.path.abspath(pkg)),

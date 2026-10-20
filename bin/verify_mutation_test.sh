@@ -126,6 +126,56 @@ o='    if not EXEMPT_BLACKLIST.search(text):'
 assert o in s; s=s.replace(o,'    if False:',1)
 $W"
 
+mut "V08c: treat every cited commit as found" \
+"$R
+o='        if h not in found:\n'
+assert o in s; s=s.replace(o,'        if False:\n',1)
+$W"
+
+mut "COMMIT_REF: drop the 提交 keyword" \
+"$R
+o='(?i:commits?|提交)'
+assert o in s; s=s.replace(o,'(?i:commits?)',1)
+$W"
+
+mut "COMMIT_REF: read any bare hex string as a commit (session ids too)" \
+"$R
+o='(?<![A-Za-z])(?i:commits?|提交)[^0-9A-Za-z\\\\n]{0,4}('
+assert o in s; s=s.replace(o,'(?<![0-9A-Za-z_])(',1)
+$W"
+
+mut "check_commits: stop reading nested 复现记录 lines" \
+"$R
+o='list(r.get(\"repro_lines\") or [])'
+assert o in s; s=s.replace(o,'[]',1)
+$W"
+
+mut "commits_found: accept any object, not only a commit" \
+"$R
+o='h + \"^{commit}\\\\n\"'
+assert o in s; s=s.replace(o,'h + \"\\\\n\"',1)
+o='parts[1] == \"commit\"'
+assert o in s; s=s.replace(o,'parts[1] != \"missing\"',1)
+$W"
+
+mut "check_commits: search only the first --repo" \
+"$R
+o='    for repo in repos:\n'
+assert o in s; s=s.replace(o,'    for repo in repos[:1]:\n',1)
+$W"
+
+mut "V08d: skip silently when no --repo is given" \
+"$R
+o='        rep.add(\"I\", \"V08d\"'
+assert o in s; s=s.replace(o,'        0 and rep.add(\"I\", \"V08d\"',1)
+$W"
+
+mut "--repo: accept a directory that is not a git repository" \
+"$R
+o='        if rc != 0:\n'
+assert o in s; s=s.replace(o,'        if False:\n',1)
+$W"
+
 cp "$S/verify.orig.py" bin/verify.py
 echo
 echo "mutations caught: $caught   missed: $missed   did-not-apply: $skipped"

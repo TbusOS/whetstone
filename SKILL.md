@@ -140,9 +140,12 @@ whetstone decision add --kind entry --skill <skill> --subject "<这条是什么>
 ```
 对 Phase 3 的提案跑:
   0. 先跑机械检查(判得了的不交给模型判):
-       whetstone verify <提案里的 skill 包> --strict
+       whetstone verify <提案里的 skill 包> --strict --repo <本次会话涉及的仓库>
      ERROR 全清掉再往下 —— 五字段、置信度机械表、复现唯一键、坑拆没拆、
      正文混进具体值、runtime 绑定措辞,这些不需要 LLM 判断。
+     --repo 每个仓库写一次:来源 / 复现记录里写的提交号,必须在其中某个仓库里查得到,
+     查不到报 V08c —— 防的是模型写出一个看着像样、其实不存在的提交号。
+     不给 --repo 不查,只报一条 V08d(INFO),说明这一项没查。
      (V25 禁止清单是 WARN:它只查这一节在不在,写得好不好归下面的人审。)
   - extraction-framework §8 自检清单(剩下的语义项)
   - §9 反例黑名单
